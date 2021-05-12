@@ -442,14 +442,6 @@ while k_it < num_it:
      print("norm_phi_2_est = %f" % norm_phi_2_est)
      #-------------------------#
      # # Update phi_3_est
-     # phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_est[0:3,:].T, phi_est[3:6,:].T).T ))
-     # norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
-     # # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
-     # phi_3_est = norm_phi_3_est * phi_3_est_uni
-     # print("phi_3_est = \n%s" % str(phi_3_est))
-     # print("norm_phi_3_est = %f" % norm_phi_3_est)
-
-     # # Update phi_3_est
      # phi_3_est, norm_phi_3_est = update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est)
 
      # Test
@@ -458,15 +450,6 @@ while k_it < num_it:
      np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
      #---------------------------------#
      # end Test
-
-     # # Update phi_3_est
-     # phi_3_est_uni = np_R_est[2,:].reshape((3,1))
-     # # norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
-     # # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
-     # norm_phi_3_est = 1.0/t3_est
-     # phi_3_est = norm_phi_3_est * phi_3_est_uni
-     # print("phi_3_est = \n%s" % str(phi_3_est))
-     # print("norm_phi_3_est = %f" % norm_phi_3_est)
 
      # Update phi_3_est
      phi_3_est, norm_phi_3_est = update_phi_3_est_m2(np_R_est, t3_est)
@@ -510,18 +493,6 @@ print("phi_1_est_uni = \n%s" % str(phi_1_est_uni))
 print("phi_2_est_uni = \n%s" % str(phi_2_est_uni))
 print("phi_3_est_uni = \n%s" % str(phi_3_est_uni))
 print()
-
-# # Fix phi_3
-# phi_3_est_uni_fix = np.cross(phi_1_est_uni.T, phi_2_est_uni.T).T
-# # phi_3_est = phi_3_est_uni_fix * (0.5*(norm_phi_1_est + norm_phi_2_est))
-# # phi_3_est = phi_3_est_uni_fix * (norm_phi_1_est + norm_phi_2_est + norm_phi_3_est)/3.0
-# phi_3_est = phi_3_est_uni_fix * norm_phi_3_est
-# # phi_3_est = 0.5*phi_3_est + 0.5*phi_3_est_uni_fix*(0.5*(norm_phi_1_est + norm_phi_2_est))
-# print("phi_3_est_uni_fix (Fix by phi_1_est and phi_2_est) = \n%s" % str(phi_3_est_uni_fix))
-# print("phi_3_est (Fix by phi_1_est and phi_2_est) = \n%s" % str(phi_3_est))
-# print()
-
-#
 
 
 
