@@ -416,6 +416,54 @@ def reconstruct_R_t_m2(phi_est, phi_3_est):
     #---------------------------------#
     # end Test
     return (np_R_est, np_t_est, t3_est)
+
+def reconstruct_R_t_m3(phi_est, phi_3_est):
+    '''
+    - Use phi_3_est
+    - Use G_2[2]
+    '''
+    # Test
+    #---------------------------------#
+    phi_1_est = phi_est[0:3,:]
+    phi_2_est = phi_est[3:6,:]
+    Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
+    # Gamma_list = [phi_1_est.T, phi_2_est.T, np.zeros((1,3))]
+    np_Gamma_est = np.vstack(Gamma_list)
+    # Get the "value" of G
+    G_col_norm_vec = np.linalg.norm(np_Gamma_est, axis=0)
+    G_row_norm_vec = np.linalg.norm(np_Gamma_est, axis=1)
+    print("G_col_norm_vec = %s" % str(G_col_norm_vec))
+    print("G_row_norm_vec = %s" % str(G_row_norm_vec))
+    value_G = np.average(G_row_norm_vec)
+    print("value_G = %f" % value_G)
+
+    # Normalize Gamma
+    np_Gamma_est /= (G_row_norm_vec.reshape((3,1)))
+    #
+    print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+    G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
+    # print("G_u = \n%s" % str(G_u))
+    print("G_s = \n%s" % str(G_s))
+    # print("G_vh = \n%s" % str(G_vh))
+    G_D = np.linalg.det(G_u @ G_vh)
+    # print("G_D = %f" % G_D)
+    # Reconstruct R
+    # np_R_est = np_Gamma_est
+    np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
+    print("np_R_est = \n%s" % str(np_R_est))
+    # Convert to Euler angle
+    Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
+    print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+    # roll_est, yaw_est, pitch_est = Euler_angle_est
+    # Reconstruct t vector
+    t3_est = 1.0 / value_G
+    # t3_est = 1.0 / np.average(G_s)
+    print("t3_est = %f" % t3_est)
+    np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
+    print("np_t_est = \n%s" % str(np_t_est))
+    #---------------------------------#
+    # end Test
+    return (np_R_est, np_t_est, t3_est)
 #-----------------------------------------------------------#
 
 
@@ -524,6 +572,8 @@ while k_it < num_it:
          #---------------------------------#
          # np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
          np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est_new)
+         # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est_new)
+
          #---------------------------------#
          # end Test
      else: # update_phi_3_method == 2
@@ -582,6 +632,7 @@ print()
 #--------------------------------------------------------#
 if update_phi_3_method == 1:
     np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+    # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est)
 else:
     np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
 # print("np_R_est = \n%s" % str(np_R_est))
