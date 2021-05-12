@@ -1,6 +1,14 @@
 import numpy as np
 import scipy.linalg as sp_lin
 
+# Mode
+#-----------------------------#
+# is_quantized = True
+is_quantized = False
+print("is_quantized = %s" % str(is_quantized))
+#-----------------------------#
+
+
 #-----------------------------------------------------------#
 def print_matrix_and_eigen_value(m_name, m_in, is_printing_eig_vec=False):
     w, v = np.linalg.eig(m_in)
@@ -15,14 +23,17 @@ def print_matrix_and_eigen_value(m_name, m_in, is_printing_eig_vec=False):
     print("====  (End)  Eigen of %s ===" % m_name)
     print()
     np.set_printoptions(suppress=False)
+    return (w, v)
 
 def print_matrix_and_SVD(m_name, m_in, is_printing_u_vh=False):
     u, s, vh = np.linalg.svd(m_in)
+    _norm = np.linalg.norm(m_in)
     #
     np.set_printoptions(suppress=True)
     print()
     print("==== (Start) SVD of %s ===" % m_name)
     print("%s = \n%s" % (m_name, str(m_in)))
+    print("||%s|| = %f" % (m_name, _norm))
     if is_printing_u_vh:
         print("%s_U = \n%s" % (m_name, str(u)))
     print("%s_S = \n%s" % (m_name, str(s)))
@@ -31,6 +42,7 @@ def print_matrix_and_SVD(m_name, m_in, is_printing_u_vh=False):
     print("====  (End)  SVD of %s ===" % m_name)
     print()
     np.set_printoptions(suppress=False)
+    return (u, s, vh)
 #-----------------------------------------------------------#
 
 #-----------------------------------------------------------#
@@ -49,6 +61,22 @@ def unit_vec(vec_in):
     else:
          _norm_inv = 1.0/_norm
     return (vec_in * _norm_inv)
+#-----------------------------------------------------------#
+
+
+#-----------------------------------------------------------#
+def fix_R_svd(R_in):
+    # print("R_in = \n%s" % str(R_in))
+    G_u, G_s, G_vh = np.linalg.svd(R_in)
+    # print("G_u = \n%s" % str(G_u))
+    # print("G_s = \n%s" % str(G_s))
+    # print("G_vh = \n%s" % str(G_vh))
+    G_D = np.linalg.det(G_u @ G_vh)
+    # print("G_D = %f" % G_D)
+    # Reconstruct R
+    np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
+    # print("np_R_est = \n%s" % str(np_R_est))
+    return np_R_est
 #-----------------------------------------------------------#
 
 #-----------------------------------------------------------#
@@ -102,7 +130,7 @@ def get_Euler_from_rotation_matrix(R_in):
 
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
-fx_camera = 110.0 # 201.0 # 111.0
+fx_camera = 111.0 # 201.0 # 111.0
 fy_camera = fx_camera # 111.0
 xo_camera = 100.0
 yo_camera = 100.0
@@ -148,8 +176,6 @@ print("np_t_GT = \n%s" % str(np_t_GT))
 
 # Generate projection sample
 #--------------------------------------#
-# is_quantized = True
-is_quantized = False
 #
 np_point_image_dict = dict()
 # [x,y,1].T, shape: (3,1)
@@ -242,8 +268,11 @@ np.set_printoptions(suppress=False)
 # Solve phi
 # phi_est = np.linalg.inv(A_all.T @ A_all) @ (A_all.T) @ H_all # Note: This equation only apply when A_all is full rank (i.e. rank(A_all) == 11), or it will fail
 A_inv_H = np.linalg.pinv(A_all) @ H_all
-print("A_inv_H = \n%s" % str(A_inv_H))
+# print("A_inv_H = \n%s" % str(A_inv_H))
+print_matrix_and_SVD("A_inv_H", A_inv_H, is_printing_u_vh=False)
 
+
+# Get the elemental matrices
 T_1 = A_inv_H[0:3,:]
 T_2 = A_inv_H[3:6,:]
 T_3 = A_inv_H[6:9,:]
@@ -258,7 +287,11 @@ T_2_sym = get_symmetry(T_2)
 print_matrix_and_eigen_value("T_1_sym", T_1_sym, is_printing_eig_vec=True)
 print_matrix_and_eigen_value("T_2_sym", T_2_sym, is_printing_eig_vec=True)
 
-
+# T_1_fix = fix_R_svd(T_1)
+# T_2_fix = fix_R_svd(T_2)
+# A_inv_H[0:3,:] = T_1_fix
+# A_inv_H[3:6,:] = T_2_fix
+# print_matrix_and_SVD("A_inv_H (fixed)", A_inv_H, is_printing_u_vh=False)
 
 
 # Solve by iteration
