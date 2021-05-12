@@ -3,8 +3,8 @@ import scipy.linalg as sp_lin
 
 # Mode
 #-----------------------------#
-# is_quantized = True
-is_quantized = False
+is_quantized = True
+# is_quantized = False
 print("is_quantized = %s" % str(is_quantized))
 #-----------------------------#
 
@@ -339,6 +339,7 @@ while k_it < num_it:
      # Update phi_3_est
      phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_est[0:3,:].T, phi_est[3:6,:].T).T ))
      norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+     # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
      phi_3_est = norm_phi_3_est * phi_3_est_uni
      print("phi_3_est = \n%s" % str(phi_3_est))
      print("norm_phi_3_est = %f" % norm_phi_3_est)
@@ -365,7 +366,8 @@ while k_it < num_it:
      # roll_est, yaw_est, pitch_est = Euler_angle_est
      # Reconstruct t vector
      # t3_est = 1.0 / G_s[0]
-     t3_est = 1.0 / G_s[1] # Accurate?
+     # t3_est = 1.0 / G_s[1] # Accurate?
+     t3_est = 1.0 / G_s[2] # Accurate?
      # t3_est = 1.0 / np.average(G_s)
      print("t3_est = %f" % t3_est)
      np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
@@ -468,10 +470,11 @@ roll_est, yaw_est, pitch_est = Euler_angle_est
 
 # Reconstruct t vector
 # t3_est = 1.0 / G_s[0]
-t3_est = 1.0 / G_s[1] # Accurate?
+# t3_est = 1.0 / G_s[1] # Accurate?
+t3_est = 1.0 / G_s[2] # Accurate?
 # t3_est = 1.0 / np.average(G_s)
 print("t3_est = %f" % t3_est)
-np_t_est = np.vstack((phi_est[9:11,:], 1.0)) * t3_est
+np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
 print("np_t_est = \n%s" % str(np_t_est))
 
 # Compare with ground truth
