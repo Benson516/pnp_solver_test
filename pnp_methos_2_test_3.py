@@ -152,8 +152,10 @@ fx_camera = 111.0 # lower resolution in face
 fy_camera = fx_camera # 111.0
 xo_camera = 100.0
 yo_camera = 100.0
-np_K_camera_GT = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]])
-print("np_K_camera = \n%s" % str(np_K_camera_GT))
+np_K_camera_GT = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Grund truth
+np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
+print("np_K_camera_GT = \n%s" % str(np_K_camera_GT))
+print("np_K_camera_est = \n%s" % str(np_K_camera_est))
 
 # 3D landmark point - local coordinate
 #----------------------------------------#
@@ -167,6 +169,7 @@ point_3d_dict["mouse_r"] = [ -0.03, 0.07, 0.0]
 point_3d_dict["nose_t"] = [ 0.0, 0.035, 0.015]
 point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
+# point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
 # Convert to numpy vector, shape: (3,1)
 np_point_3d_dict = dict()
 print("-"*35)
@@ -183,6 +186,7 @@ print("-"*35)
 # Rotation
 roll_GT, yaw_GT, pitch_GT = np.deg2rad(15), np.deg2rad(30), np.deg2rad(25)
 # roll_GT, yaw_GT, pitch_GT = np.deg2rad(15), np.deg2rad(10), np.deg2rad(-30)
+# roll_GT, yaw_GT, pitch_GT = np.deg2rad(0.0), np.deg2rad(0.0), np.deg2rad(45.0)
 print("(roll_GT, yaw_GT, pitch_GT) \t= %s" % str( np.rad2deg((roll_GT, yaw_GT, pitch_GT)) ) )
 np_R_GT = get_rotation_matrix_from_Euler(roll_GT, yaw_GT, pitch_GT)
 print("np_R_GT = \n%s" % str(np_R_GT))
@@ -190,6 +194,10 @@ _result = get_Euler_from_rotation_matrix(np_R_GT)
 print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(_result) ) )
 # Translation (x,y,z) in camera frame
 np_t_GT = np.array([0.2, -0.05, 1.2]).reshape((3,1))
+# np_t_GT = np.array([0.2, -0.05, 1.8]).reshape((3,1))
+# np_t_GT = np.array([0.2, -0.05, 2.8]).reshape((3,1))
+# np_t_GT = np.array([0.2, -0.05, 0.5]).reshape((3,1))
+# np_t_GT = np.array([0.2, -0.05, 0.3]).reshape((3,1))
 print("np_t_GT = \n%s" % str(np_t_GT))
 #---------------------------------------#
 
@@ -470,7 +478,7 @@ def reconstruct_R_t_m3(phi_est, phi_3_est):
 
 
 # Form the problem for solving
-B_all = get_B_all(np_point_image_dict, np_K_camera_GT)
+B_all = get_B_all(np_point_image_dict, np_K_camera_est)
 print("B_all = \n%s" % str(B_all))
 print("B_all.shape = %s" % str(B_all.shape))
 
