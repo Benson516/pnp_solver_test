@@ -258,6 +258,31 @@ def get_B_all(np_point_image_dict_in, K_in):
     B_all = np.vstack(B_i_list)
     return B_all
 
+def update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est):
+    '''
+    '''
+    # Update phi_3_est
+    phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_1_est.T, phi_2_est.T).T ))
+    norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+    # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
+    phi_3_est = norm_phi_3_est * phi_3_est_uni
+    print("phi_3_est = \n%s" % str(phi_3_est))
+    print("norm_phi_3_est = %f" % norm_phi_3_est)
+    return (phi_3_est, norm_phi_3_est)
+
+def update_phi_3_est_m2(np_R_est, t3_est):
+    '''
+    '''
+    # Update phi_3_est
+    phi_3_est_uni = np_R_est[2,:].reshape((3,1))
+    # norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+    # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
+    norm_phi_3_est = 1.0/t3_est
+    phi_3_est = norm_phi_3_est * phi_3_est_uni
+    print("phi_3_est = \n%s" % str(phi_3_est))
+    print("norm_phi_3_est = %f" % norm_phi_3_est)
+    return (phi_3_est, norm_phi_3_est)
+
 def reconstruct_R_t_m1(phi_est, phi_3_est):
     '''
     - Use phi_3_est
@@ -295,7 +320,6 @@ def reconstruct_R_t_m1(phi_est, phi_3_est):
     #---------------------------------#
     # end Test
     return (np_R_est, np_t_est, t3_est)
-
 
 def reconstruct_R_t_m2(phi_est, phi_3_est):
     '''
@@ -417,18 +441,21 @@ while k_it < num_it:
      print("norm_phi_1_est = %f" % norm_phi_1_est)
      print("norm_phi_2_est = %f" % norm_phi_2_est)
      #-------------------------#
-     # Update phi_3_est
-     phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_est[0:3,:].T, phi_est[3:6,:].T).T ))
-     norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
-     # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
-     phi_3_est = norm_phi_3_est * phi_3_est_uni
-     print("phi_3_est = \n%s" % str(phi_3_est))
-     print("norm_phi_3_est = %f" % norm_phi_3_est)
+     # # Update phi_3_est
+     # phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_est[0:3,:].T, phi_est[3:6,:].T).T ))
+     # norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+     # # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
+     # phi_3_est = norm_phi_3_est * phi_3_est_uni
+     # print("phi_3_est = \n%s" % str(phi_3_est))
+     # print("norm_phi_3_est = %f" % norm_phi_3_est)
+
+     # # Update phi_3_est
+     # phi_3_est, norm_phi_3_est = update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est)
 
      # Test
      #---------------------------------#
-     np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
-     # np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
+     # np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+     np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
      #---------------------------------#
      # end Test
 
@@ -440,6 +467,9 @@ while k_it < num_it:
      # phi_3_est = norm_phi_3_est * phi_3_est_uni
      # print("phi_3_est = \n%s" % str(phi_3_est))
      # print("norm_phi_3_est = %f" % norm_phi_3_est)
+
+     # Update phi_3_est
+     phi_3_est, norm_phi_3_est = update_phi_3_est_m2(np_R_est, t3_est)
      #
      print("---")
 
