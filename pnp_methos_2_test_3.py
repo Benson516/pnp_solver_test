@@ -549,8 +549,10 @@ def fix_R_polar_decomposition(R_in):
 
 # Reconstruct (R, t)
 #--------------------------------------------------------#
-np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
-# np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
+if update_phi_3_method == 1:
+    np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+else:
+    np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
 # print("np_R_est = \n%s" % str(np_R_est))
 # Convert to Euler angle
 Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est, verbose=False)
