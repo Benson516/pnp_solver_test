@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.linalg as sp_lin
+import copy
 
 # Mode
 #-----------------------------#
@@ -77,6 +78,19 @@ def fix_R_svd(R_in):
     np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
     # print("np_R_est = \n%s" % str(np_R_est))
     return np_R_est
+
+def cay_trans(A_in):
+    I = np.eye(3)
+    return ( np.linalg.inv(I + A_in) @ (I - A_in) )
+
+def cay_cay_op(R_in):
+    return cay_trans(cay_trans(R_in))
+
+def fix_R_cay_skew_cay(R_in):
+    return cay_trans(get_skew(cay_trans(R_in)))
+
+def fix_R_polar_decomposition(R_in):
+    return (R_in @ np.linalg.inv(sp_lin.sqrtm(R_in.T @ R_in)))
 #-----------------------------------------------------------#
 
 #-----------------------------------------------------------#
@@ -152,6 +166,7 @@ point_3d_dict["mouse_l"] = [ 0.03, 0.07, 0.0]
 point_3d_dict["mouse_r"] = [ -0.03, 0.07, 0.0]
 point_3d_dict["nose_t"] = [ 0.0, 0.035, 0.015]
 point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
+# point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
 # Convert to numpy vector, shape: (3,1)
 np_point_3d_dict = dict()
 print("-"*35)
@@ -296,10 +311,11 @@ def update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, ph
     phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_1_est.T, phi_2_est.T).T ))
     norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
     # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
-    phi_3_est = norm_phi_3_est * phi_3_est_uni
-    print("phi_3_est = \n%s" % str(phi_3_est))
+    # norm_phi_3_est = 0.83333333333 # Ground truth
+    phi_3_est_new = norm_phi_3_est * phi_3_est_uni
+    print("phi_3_est_new = \n%s" % str(phi_3_est_new))
     print("norm_phi_3_est = %f" % norm_phi_3_est)
-    return (phi_3_est, norm_phi_3_est)
+    return (phi_3_est_new, norm_phi_3_est)
 
 def update_phi_3_est_m2(np_R_est, t3_est):
     '''
@@ -309,10 +325,10 @@ def update_phi_3_est_m2(np_R_est, t3_est):
     # norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
     # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
     norm_phi_3_est = 1.0/t3_est
-    phi_3_est = norm_phi_3_est * phi_3_est_uni
-    print("phi_3_est = \n%s" % str(phi_3_est))
+    phi_3_est_new = norm_phi_3_est * phi_3_est_uni
+    print("phi_3_est_new = \n%s" % str(phi_3_est_new))
     print("norm_phi_3_est = %f" % norm_phi_3_est)
-    return (phi_3_est, norm_phi_3_est)
+    return (phi_3_est_new, norm_phi_3_est)
 
 def reconstruct_R_t_m1(phi_est, phi_3_est):
     '''
@@ -334,6 +350,7 @@ def reconstruct_R_t_m1(phi_est, phi_3_est):
     G_D = np.linalg.det(G_u @ G_vh)
     # print("G_D = %f" % G_D)
     # Reconstruct R
+    # np_R_est = np_Gamma_est
     np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
     print("np_R_est = \n%s" % str(np_R_est))
     # Convert to Euler angle
@@ -341,9 +358,19 @@ def reconstruct_R_t_m1(phi_est, phi_3_est):
     print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
     # roll_est, yaw_est, pitch_est = Euler_angle_est
     # Reconstruct t vector
-    # t3_est = 1.0 / G_s[0]
-    # t3_est = 1.0 / G_s[1] # Accurate?
-    t3_est = 1.0 / G_s[2] # Accurate?
+    # Get the "value" of G
+    G_col_norm_vec = np.linalg.norm(np_Gamma_est, axis=0)
+    G_row_norm_vec = np.linalg.norm(np_Gamma_est, axis=1)
+    print("G_col_norm_vec = %s" % str(G_col_norm_vec))
+    print("G_row_norm_vec = %s" % str(G_row_norm_vec))
+    # value_G = G_s[0] # Note: G_s[0] = np.linalg.norm(np_Gamma_est, ord=2)
+    # value_G = G_s[1] # Accurate?
+    # value_G = G_s[2] # Accurate? Note: G_s[2] = np.linalg.norm(np_Gamma_est, ord=-2)
+    # value_G = np.average(G_s)
+    value_G = np.linalg.norm(np_Gamma_est, ord=-2)
+    print("value_G = %f" % value_G)
+    #
+    t3_est = 1.0 / value_G
     # t3_est = 1.0 / np.average(G_s)
     print("t3_est = %f" % t3_est)
     np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
@@ -431,8 +458,14 @@ print("B_all.shape = %s" % str(B_all.shape))
 # Initial guess, not neccessaryly unit vector!!
 # phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
 phi_3_est = np.array([0.0, 0.0, 1.0]).reshape((3,1))
+phi_3_est_new = copy.deepcopy(phi_3_est)
 step_alpha = 1.0 # 0.5
 num_it = 3
+#
+# W_all_diag = np.ones((B_all.shape[0],))
+# # W_all_diag[8:10] *= 10**-10
+# W_all = np.diag(W_all_diag)
+# print("W_all_diag = \n%s" % str(W_all_diag))
 #
 update_phi_3_method = 1
 # update_phi_3_method = 2
@@ -458,11 +491,16 @@ while k_it < num_it:
 
      # Solve for phi
      #-------------------------#
+     # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
+     # phi_est = np.linalg.inv(A_all.T @ W_all @ A_all) @ A_all.T @ W_all @ B_all
      phi_est = np.linalg.pinv(A_all) @ B_all
      print("phi_est = \n%s" % str(phi_est))
      # residule
-     _res = (A_all @ phi_est) - B_all
+     # _res = (A_all @ phi_est) - B_all
+     _res = B_all - (A_all @ phi_est)
      print("_res = \n%s" % str(_res))
+     _res_delta = _res - np_quantization_error_world_space_vec
+     print("_res_delta = \n%s" % str(_res_delta))
      print("norm(_res) = %f" % np.linalg.norm(_res))
      #-------------------------#
 
@@ -475,22 +513,26 @@ while k_it < num_it:
      norm_phi_2_est = np.linalg.norm(phi_2_est)
      print("norm_phi_1_est = %f" % norm_phi_1_est)
      print("norm_phi_2_est = %f" % norm_phi_2_est)
+     #
+     print("phi_3_est = \n%s" % str(phi_3_est_new))
      #-------------------------#
 
      if update_phi_3_method == 1:
          # First update phi_3_est
-         phi_3_est, norm_phi_3_est = update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est)
+         phi_3_est_new, norm_phi_3_est = update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est)
          # Then, test (not necessary)
          #---------------------------------#
-         np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+         # np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+         np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est_new)
          #---------------------------------#
          # end Test
      else: # update_phi_3_method == 2
          # First reconstructing R, necessary for this method
          np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
          # Then, update phi_3_est
-         phi_3_est, norm_phi_3_est = update_phi_3_est_m2(np_R_est, t3_est)
-     #
+         phi_3_est_new, norm_phi_3_est = update_phi_3_est_m2(np_R_est, t3_est)
+     # Real update of phi_3_est
+     phi_3_est = copy.deepcopy(phi_3_est_new)
      print("---")
 
 #--------------------------------------#
@@ -533,18 +575,7 @@ print()
 
 
 
-def cay_trans(A_in):
-    I = np.eye(3)
-    return ( np.linalg.inv(I + A_in) @ (I - A_in) )
 
-def cay_cay_op(R_in):
-    return cay_trans(cay_trans(R_in))
-
-def fix_R_cay_skew_cay(R_in):
-    return cay_trans(get_skew(cay_trans(R_in)))
-
-def fix_R_polar_decomposition(R_in):
-    return (R_in @ np.linalg.inv(sp_lin.sqrtm(R_in.T @ R_in)))
 
 
 # Reconstruct (R, t)
