@@ -182,10 +182,15 @@ print("np_t_GT = \n%s" % str(np_t_GT))
 #--------------------------------------#
 #
 np_point_image_dict = dict()
+np_point_image_no_q_err_dict = dict()
+np_point_quantization_error_dict = dict()
 # [x,y,1].T, shape: (3,1)
-print("-"*35)
-print("is_quantized = %s" % str(is_quantized))
-print("2D points on image:")
+# print("-"*35)
+# print("is_quantized = %s" % str(is_quantized))
+# print("2D points on image:")
+#
+# Perspective Projection + quantization
+#--------------------------------------------------#
 for _k in np_point_3d_dict:
     _ray = np_K_camera_GT @ (np_R_GT @ np_point_3d_dict[_k] + np_t_GT)
     # normalize
@@ -195,9 +200,35 @@ for _k in np_point_3d_dict:
         np_point_image_dict[_k] = np.around(_projection_i) # with quantization
     else:
         np_point_image_dict[_k] = _projection_i # no quantization
-    print("%s:\n%s" % (_k, str(np_point_image_dict[_k])))
-print("-"*35)
+    np_point_quantization_error_dict[_k] = (np_point_image_dict[_k] - _projection_i)
+    np_point_image_no_q_err_dict[_k] = _projection_i
+    # print("%s:\n%s" % (_k, str(np_point_image_dict[_k])))
+    # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
+#--------------------------------------------------#
+# print("-"*35)
 # print("np_point_image_dict = \n%s" % str(np_point_image_dict))
+
+# Print
+print("-"*35)
+print("is_quantized = %s" % str(is_quantized))
+print("2D points on image:")
+for _k in np_point_image_dict:
+    print("%s:%sp=%s.T | p_no_q_err=%s.T | q_e=%s.T" % (_k, " "*(12-len(_k)), str(np_point_image_dict[_k].T), str(np_point_image_no_q_err_dict[_k].T), str(np_point_quantization_error_dict[_k].T) ))
+    # print("%s:\n%s" % (_k, str(np_point_image_dict[_k])))
+    # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
+print("-"*35)
+
+# Generate the list of quantization error
+np_K_camera_GT_inv = np.linalg.inv(np_K_camera_GT)
+np_quantization_error_list = list()
+np_quantization_error_world_space_list = list()
+for _k in np_point_quantization_error_dict:
+    np_quantization_error_list.append( np_point_quantization_error_dict[_k][0:2,:] )
+    np_quantization_error_world_space_list.append( (np_K_camera_GT_inv @ np_point_quantization_error_dict[_k])[0:2,:] )
+np_quantization_error_vec = np.vstack(np_quantization_error_list)
+np_quantization_error_world_space_vec = np.vstack(np_quantization_error_world_space_list)
+print("np_quantization_error_vec (pixel space) = \n%s" % str(np_quantization_error_vec))
+print("np_quantization_error_world_space_vec = \n%s" % str(np_quantization_error_world_space_vec))
 #--------------------------------------#
 
 # Solution (approach 2-3)
@@ -401,7 +432,7 @@ print("B_all.shape = %s" % str(B_all.shape))
 # phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
 phi_3_est = np.array([0.0, 0.0, 1.0]).reshape((3,1))
 step_alpha = 1.0 # 0.5
-num_it = 10
+num_it = 3
 #
 update_phi_3_method = 1
 # update_phi_3_method = 2
