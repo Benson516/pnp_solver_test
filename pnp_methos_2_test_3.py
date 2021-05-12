@@ -401,7 +401,11 @@ print("B_all.shape = %s" % str(B_all.shape))
 # phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
 phi_3_est = np.array([0.0, 0.0, 1.0]).reshape((3,1))
 step_alpha = 1.0 # 0.5
-num_it = 3
+num_it = 10
+#
+update_phi_3_method = 1
+# update_phi_3_method = 2
+
 # Iteration
 k_it = 0
 print("---")
@@ -427,7 +431,7 @@ while k_it < num_it:
      print("phi_est = \n%s" % str(phi_est))
      # residule
      _res = (A_all @ phi_est) - B_all
-     # print("_res = \n%s" % str(_res))
+     print("_res = \n%s" % str(_res))
      print("norm(_res) = %f" % np.linalg.norm(_res))
      #-------------------------#
 
@@ -441,18 +445,20 @@ while k_it < num_it:
      print("norm_phi_1_est = %f" % norm_phi_1_est)
      print("norm_phi_2_est = %f" % norm_phi_2_est)
      #-------------------------#
-     # # Update phi_3_est
-     # phi_3_est, norm_phi_3_est = update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est)
 
-     # Test
-     #---------------------------------#
-     # np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
-     np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
-     #---------------------------------#
-     # end Test
-
-     # Update phi_3_est
-     phi_3_est, norm_phi_3_est = update_phi_3_est_m2(np_R_est, t3_est)
+     if update_phi_3_method == 1:
+         # First update phi_3_est
+         phi_3_est, norm_phi_3_est = update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est)
+         # Then, test (not necessary)
+         #---------------------------------#
+         np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+         #---------------------------------#
+         # end Test
+     else: # update_phi_3_method == 2
+         # First reconstructing R, necessary for this method
+         np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
+         # Then, update phi_3_est
+         phi_3_est, norm_phi_3_est = update_phi_3_est_m2(np_R_est, t3_est)
      #
      print("---")
 
