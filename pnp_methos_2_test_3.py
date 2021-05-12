@@ -99,7 +99,7 @@ def get_rotation_matrix_from_Euler(roll, yaw, pitch):
     R = np.concatenate((_R01, R_roll_2), axis=0)
     return R
 
-def get_Euler_from_rotation_matrix(R_in):
+def get_Euler_from_rotation_matrix(R_in, verbose=True):
     '''
     R --> roll, yaw, pitch
     '''
@@ -119,10 +119,12 @@ def get_Euler_from_rotation_matrix(R_in):
         c1 = np.cos(roll)
         c3 = np.cos(pitch)
         if np.abs(c1) > np.abs(c3):
-            print("Set c2 as (r11/c1)")
+            if verbose:
+                print("Set c2 as (r11/c1)")
             c2 = R_in[0,0]/c1
         else:
-            print("Set c2 as (r33/c3)")
+            if verbose:
+                print("Set c2 as (r33/c3)")
             c2 = R_in[2,2]/c3
         yaw = np.arctan2(R_in[2,0], c2) # theta_2
     return (roll, yaw, pitch)
@@ -130,7 +132,9 @@ def get_Euler_from_rotation_matrix(R_in):
 
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
-fx_camera = 111.0 # 201.0 # 111.0
+fx_camera = 111.0 # lower resolution in face
+# fx_camera = 201.0 # higher resolution in face
+# fx_camera = 251.0 # even higher resolution in face
 fy_camera = fx_camera # 111.0
 xo_camera = 100.0
 yo_camera = 100.0
@@ -196,7 +200,7 @@ print("-"*35)
 # print("np_point_image_dict = \n%s" % str(np_point_image_dict))
 #--------------------------------------#
 
-# Solution (approach 2)
+# Solution (approach 2-3)
 #-----------------------------------------------------------#
 def get_Delta_i(theta_i, phi_3_est, id=None):
     '''
@@ -225,7 +229,7 @@ def get_A_i(theta_i, Delta_i):
     A_i_c1 = np.concatenate( ( np.zeros((1,3))       ,  _theta_i_T_div_Delta_i  ), axis=0)
     #
     A_i_c01 = np.concatenate((A_i_c0, A_i_c1), axis=1)
-    A_i = np.concatenate((A_i_c01, np.eye(2)), axis=1)
+    A_i = np.concatenate((A_i_c01, np.eye(2)/Delta_i), axis=1)
     return A_i
 
 def get_Delta_A_all(np_point_3d_dict_in, np_point_image_dict_in, phi_3_est):
@@ -254,7 +258,83 @@ def get_B_all(np_point_image_dict_in, K_in):
     B_all = np.vstack(B_i_list)
     return B_all
 
+def reconstruct_R_t_m1(phi_est, phi_3_est):
+    '''
+    - Use phi_3_est
+    - Use G_2[2]
+    '''
+    # Test
+    #---------------------------------#
+    phi_1_est = phi_est[0:3,:]
+    phi_2_est = phi_est[3:6,:]
+    Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
+    # Gamma_list = [phi_1_est.T, phi_2_est.T, np.zeros((1,3))]
+    np_Gamma_est = np.vstack(Gamma_list)
+    print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+    G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
+    # print("G_u = \n%s" % str(G_u))
+    print("G_s = \n%s" % str(G_s))
+    # print("G_vh = \n%s" % str(G_vh))
+    G_D = np.linalg.det(G_u @ G_vh)
+    # print("G_D = %f" % G_D)
+    # Reconstruct R
+    np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
+    print("np_R_est = \n%s" % str(np_R_est))
+    # Convert to Euler angle
+    Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
+    print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+    # roll_est, yaw_est, pitch_est = Euler_angle_est
+    # Reconstruct t vector
+    # t3_est = 1.0 / G_s[0]
+    # t3_est = 1.0 / G_s[1] # Accurate?
+    t3_est = 1.0 / G_s[2] # Accurate?
+    # t3_est = 1.0 / np.average(G_s)
+    print("t3_est = %f" % t3_est)
+    np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
+    print("np_t_est = \n%s" % str(np_t_est))
+    #---------------------------------#
+    # end Test
+    return (np_R_est, np_t_est, t3_est)
 
+
+def reconstruct_R_t_m2(phi_est, phi_3_est):
+    '''
+    - Not using phi_3_est
+    - Use G_s[2]
+    '''
+    # Test
+    #---------------------------------#
+    phi_1_est = phi_est[0:3,:]
+    phi_2_est = phi_est[3:6,:]
+    # Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
+    Gamma_list = [phi_1_est.T, phi_2_est.T, np.zeros((1,3))]
+    np_Gamma_est = np.vstack(Gamma_list)
+    print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+    G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
+    # print("G_u = \n%s" % str(G_u))
+    print("G_s = \n%s" % str(G_s))
+    # print("G_vh = \n%s" % str(G_vh))
+    G_D = np.linalg.det(G_u @ G_vh)
+    # print("G_D = %f" % G_D)
+    # Reconstruct R
+    np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
+    print("np_R_est = \n%s" % str(np_R_est))
+    # Convert to Euler angle
+    Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
+    print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+    # roll_est, yaw_est, pitch_est = Euler_angle_est
+    # Reconstruct t vector
+    # t3_est = 1.0 / G_s[0]
+    t3_est = 1.0 / G_s[1] # Accurate?
+    # t3_est = 1.0 / G_s[2] # Accurate?
+    # t3_est = 1.0 / np.average(G_s)
+    print("t3_est = %f" % t3_est)
+    np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
+    print("np_t_est = \n%s" % str(np_t_est))
+    #---------------------------------#
+    # end Test
+    return (np_R_est, np_t_est, t3_est)
+#-----------------------------------------------------------#
 
 
 
@@ -294,7 +374,8 @@ print("B_all.shape = %s" % str(B_all.shape))
 # Solve by iteration
 #--------------------------------------#
 # Initial guess, not neccessaryly unit vector!!
-phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
+# phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
+phi_3_est = np.array([0.0, 0.0, 1.0]).reshape((3,1))
 step_alpha = 1.0 # 0.5
 num_it = 3
 # Iteration
@@ -346,34 +427,20 @@ while k_it < num_it:
 
      # Test
      #---------------------------------#
-     phi_1_est = phi_est[0:3,:]
-     phi_2_est = phi_est[3:6,:]
-     Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
-     np_Gamma_est = np.vstack(Gamma_list)
-     print("np_Gamma_est = \n%s" % str(np_Gamma_est))
-     G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
-     # print("G_u = \n%s" % str(G_u))
-     print("G_s = \n%s" % str(G_s))
-     # print("G_vh = \n%s" % str(G_vh))
-     G_D = np.linalg.det(G_u @ G_vh)
-     # print("G_D = %f" % G_D)
-     # Reconstruct R
-     np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
-     print("np_R_est = \n%s" % str(np_R_est))
-     # Convert to Euler angle
-     Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
-     print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
-     # roll_est, yaw_est, pitch_est = Euler_angle_est
-     # Reconstruct t vector
-     # t3_est = 1.0 / G_s[0]
-     # t3_est = 1.0 / G_s[1] # Accurate?
-     t3_est = 1.0 / G_s[2] # Accurate?
-     # t3_est = 1.0 / np.average(G_s)
-     print("t3_est = %f" % t3_est)
-     np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
-     print("np_t_est = \n%s" % str(np_t_est))
+     np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+     # np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
      #---------------------------------#
      # end Test
+
+     # # Update phi_3_est
+     # phi_3_est_uni = np_R_est[2,:].reshape((3,1))
+     # # norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+     # # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
+     # norm_phi_3_est = 1.0/t3_est
+     # phi_3_est = norm_phi_3_est * phi_3_est_uni
+     # print("phi_3_est = \n%s" % str(phi_3_est))
+     # print("norm_phi_3_est = %f" % norm_phi_3_est)
+     #
      print("---")
 
 #--------------------------------------#
@@ -424,20 +491,7 @@ print()
 # print("phi_3_est (Fix by phi_1_est and phi_2_est) = \n%s" % str(phi_3_est))
 # print()
 
-# Gamma_list = [phi_est[0:3,:].T, phi_est[3:6,:].T, phi_est[6:9,:].T]
-Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
-np_Gamma_est = np.vstack(Gamma_list)
-print("np_Gamma_est = \n%s" % str(np_Gamma_est))
-
-G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
-print("G_u = \n%s" % str(G_u))
-print("G_s = \n%s" % str(G_s))
-print("G_vh = \n%s" % str(G_vh))
-G_D = np.linalg.det(G_u @ G_vh)
-print("G_D = %f" % G_D)
-
-# np_Gamma_est_div_G_s_1 = np_Gamma_est / G_s[1]
-# print("np_Gamma_est_div_G_s_1 = \n%s" % str(np_Gamma_est_div_G_s_1))
+#
 
 
 
@@ -455,27 +509,20 @@ def fix_R_polar_decomposition(R_in):
     return (R_in @ np.linalg.inv(sp_lin.sqrtm(R_in.T @ R_in)))
 
 
-# Reconstruct R
+# Reconstruct (R, t)
 #--------------------------------------------------------#
-np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
-# np_R_est = cay_cay_op(np_Gamma_est)
-# np_R_est = fix_R_cay_skew_cay(np_Gamma_est)
-# np_R_est = fix_R_polar_decomposition(np_Gamma_est)
-print("np_R_est = \n%s" % str(np_R_est))
+np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+# np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
+# print("np_R_est = \n%s" % str(np_R_est))
 # Convert to Euler angle
-Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
-print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est, verbose=False)
+# print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
 roll_est, yaw_est, pitch_est = Euler_angle_est
+#
+# print("t3_est = %f" % t3_est)
+# print("np_t_est = \n%s" % str(np_t_est))
 #--------------------------------------------------------#
 
-# Reconstruct t vector
-# t3_est = 1.0 / G_s[0]
-# t3_est = 1.0 / G_s[1] # Accurate?
-t3_est = 1.0 / G_s[2] # Accurate?
-# t3_est = 1.0 / np.average(G_s)
-print("t3_est = %f" % t3_est)
-np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
-print("np_t_est = \n%s" % str(np_t_est))
 
 # Compare with ground truth
 #-------------------------------------------------#
