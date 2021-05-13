@@ -6,22 +6,27 @@ import copy
 class PNP_SOLVER_A2_M3(object):
     '''
     '''
-    def __init__(self, np_K_camera_est, point_3d_dict):
+    def __init__(self, np_K_camera_est, point_3d_dict, verbose=False):
         '''
         '''
+        self.verbose = verbose
         self.np_K_camera_est = copy.deepcopy(np_K_camera_est)
 
         # LM in face local frame
         self.point_3d_dict = copy.deepcopy(point_3d_dict)
         # Convert to numpy vector, shape: (3,1)
         self.np_point_3d_dict = dict()
-        print("-"*35)
-        print("3D points in local coordinate:")
+        self.lib_print("-"*35)
+        self.lib_print("3D points in local coordinate:")
         for _k in point_3d_dict:
             self.np_point_3d_dict[_k] = np.array(point_3d_dict[_k]).reshape((3,1))
-            print("%s:\n%s" % (_k, str(self.np_point_3d_dict[_k])))
-        print("-"*35)
-        # print(self.np_point_3d_dict)
+            self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_dict[_k])))
+        self.lib_print("-"*35)
+        # self.lib_print(self.np_point_3d_dict)
+
+    def lib_print(self, str=''):
+        if self.verbose:
+            print(str)
 
     # Solution
     #-----------------------------------------------------------#
@@ -32,8 +37,8 @@ class PNP_SOLVER_A2_M3(object):
         '''
         # Form the problem for solving
         B_all = self.get_B_all(np_point_image_dict, self.np_K_camera_est)
-        print("B_all = \n%s" % str(B_all))
-        print("B_all.shape = %s" % str(B_all.shape))
+        self.lib_print("B_all = \n%s" % str(B_all))
+        self.lib_print("B_all.shape = %s" % str(B_all.shape))
 
         # Solve by iteration
         #--------------------------------------#
@@ -47,26 +52,26 @@ class PNP_SOLVER_A2_M3(object):
         # W_all_diag = np.ones((B_all.shape[0],))
         # # W_all_diag[8:10] *= 10**-10
         # W_all = np.diag(W_all_diag)
-        # print("W_all_diag = \n%s" % str(W_all_diag))
+        # self.lib_print("W_all_diag = \n%s" % str(W_all_diag))
         #
         update_phi_3_method = 1
         # update_phi_3_method = 2
         # Iteration
         k_it = 0
-        print("---")
+        self.lib_print("---")
         while k_it < num_it:
              k_it += 1
-             print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
              # Generate Delta_i(k-1) and A(k-1)
              Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
              #-------------------------#
-             # print("A_all = \n%s" % str(A_all))
-             print("A_all.shape = %s" % str(A_all.shape))
+             # self.lib_print("A_all = \n%s" % str(A_all))
+             self.lib_print("A_all.shape = %s" % str(A_all.shape))
              rank_A_all = np.linalg.matrix_rank(A_all)
-             print("rank_A_all = %d" % rank_A_all)
+             self.lib_print("rank_A_all = %d" % rank_A_all)
              A_u, A_s, A_vh = np.linalg.svd(A_all)
              # np.set_printoptions(suppress=True, precision=4)
-             print("A_s = \n%s" % str(A_s))
+             self.lib_print("A_s = \n%s" % str(A_s))
              # np.set_printoptions(suppress=False, precision=8)
              #-------------------------#
 
@@ -75,27 +80,27 @@ class PNP_SOLVER_A2_M3(object):
              # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
              # phi_est = np.linalg.inv(A_all.T @ W_all @ A_all) @ A_all.T @ W_all @ B_all
              phi_est = np.linalg.pinv(A_all) @ B_all
-             print("phi_est = \n%s" % str(phi_est))
+             self.lib_print("phi_est = \n%s" % str(phi_est))
              # residule
              # _res = (A_all @ phi_est) - B_all
              _res = B_all - (A_all @ phi_est)
-             # print("_res = \n%s" % str(_res))
+             # self.lib_print("_res = \n%s" % str(_res))
              # _res_delta = _res - np_quantization_error_world_space_vec
-             # print("_res_delta = \n%s" % str(_res_delta))
-             print("norm(_res) = %f" % np.linalg.norm(_res))
+             # self.lib_print("_res_delta = \n%s" % str(_res_delta))
+             self.lib_print("norm(_res) = %f" % np.linalg.norm(_res))
              #-------------------------#
 
              #-------------------------#
              phi_1_est = phi_est[0:3,:]
              phi_2_est = phi_est[3:6,:]
-             print("phi_1_est = \n%s" % str(phi_1_est))
-             print("phi_2_est = \n%s" % str(phi_2_est))
+             self.lib_print("phi_1_est = \n%s" % str(phi_1_est))
+             self.lib_print("phi_2_est = \n%s" % str(phi_2_est))
              norm_phi_1_est = np.linalg.norm(phi_1_est)
              norm_phi_2_est = np.linalg.norm(phi_2_est)
-             print("norm_phi_1_est = %f" % norm_phi_1_est)
-             print("norm_phi_2_est = %f" % norm_phi_2_est)
+             self.lib_print("norm_phi_1_est = %f" % norm_phi_1_est)
+             self.lib_print("norm_phi_2_est = %f" % norm_phi_2_est)
              #
-             print("phi_3_est = \n%s" % str(phi_3_est_new))
+             self.lib_print("phi_3_est = \n%s" % str(phi_3_est_new))
              #-------------------------#
 
              if update_phi_3_method == 1:
@@ -116,14 +121,14 @@ class PNP_SOLVER_A2_M3(object):
                  phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
              # Real update of phi_3_est
              phi_3_est = copy.deepcopy(phi_3_est_new)
-             print("---")
+             self.lib_print("---")
 
         #--------------------------------------#
 
-        print()
-        print("phi_est = \n%s" % str(phi_est))
-        print("phi_3_est = \n%s" % str(phi_3_est))
-        print()
+        self.lib_print()
+        self.lib_print("phi_est = \n%s" % str(phi_est))
+        self.lib_print("phi_3_est = \n%s" % str(phi_3_est))
+        self.lib_print()
         # Reconstruct (R, t)
         #--------------------------------------------------------#
         if update_phi_3_method == 1:
@@ -131,14 +136,14 @@ class PNP_SOLVER_A2_M3(object):
             # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est)
         else:
             np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
-        # print("np_R_est = \n%s" % str(np_R_est))
+        # self.lib_print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
         Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False)
-        # print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         roll_est, yaw_est, pitch_est = Euler_angle_est
         #
-        # print("t3_est = %f" % t3_est)
-        # print("np_t_est = \n%s" % str(np_t_est))
+        # self.lib_print("t3_est = %f" % t3_est)
+        # self.lib_print("np_t_est = \n%s" % str(np_t_est))
         #--------------------------------------------------------#
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
 
@@ -156,7 +161,7 @@ class PNP_SOLVER_A2_M3(object):
         Delta_i = (_theta_i_T @ _phi_3 + 1.0)
         _eps = 10**-7
         if np.abs(Delta_i) <= _eps:
-            print("Delta[%d] is too close to zero!!" % (id if id is not None else -1) )
+            self.lib_print("Delta[%d] is too close to zero!!" % (id if id is not None else -1) )
             Delta_i = _eps
         return Delta_i
 
@@ -211,8 +216,8 @@ class PNP_SOLVER_A2_M3(object):
         # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
         # norm_phi_3_est = 0.83333333333 # Ground truth
         phi_3_est_new = norm_phi_3_est * phi_3_est_uni
-        print("phi_3_est_new = \n%s" % str(phi_3_est_new))
-        print("norm_phi_3_est = %f" % norm_phi_3_est)
+        self.lib_print("phi_3_est_new = \n%s" % str(phi_3_est_new))
+        self.lib_print("norm_phi_3_est = %f" % norm_phi_3_est)
         return (phi_3_est_new, norm_phi_3_est)
 
     def update_phi_3_est_m2(self, np_R_est, t3_est):
@@ -224,8 +229,8 @@ class PNP_SOLVER_A2_M3(object):
         # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
         norm_phi_3_est = 1.0/t3_est
         phi_3_est_new = norm_phi_3_est * phi_3_est_uni
-        print("phi_3_est_new = \n%s" % str(phi_3_est_new))
-        print("norm_phi_3_est = %f" % norm_phi_3_est)
+        self.lib_print("phi_3_est_new = \n%s" % str(phi_3_est_new))
+        self.lib_print("norm_phi_3_est = %f" % norm_phi_3_est)
         return (phi_3_est_new, norm_phi_3_est)
 
     def reconstruct_R_t_m1(self, phi_est, phi_3_est):
@@ -240,39 +245,39 @@ class PNP_SOLVER_A2_M3(object):
         Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
         # Gamma_list = [phi_1_est.T, phi_2_est.T, np.zeros((1,3))]
         np_Gamma_est = np.vstack(Gamma_list)
-        print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+        self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
         G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
-        # print("G_u = \n%s" % str(G_u))
-        print("G_s = \n%s" % str(G_s))
-        # print("G_vh = \n%s" % str(G_vh))
+        # self.lib_print("G_u = \n%s" % str(G_u))
+        self.lib_print("G_s = \n%s" % str(G_s))
+        # self.lib_print("G_vh = \n%s" % str(G_vh))
         G_D = np.linalg.det(G_u @ G_vh)
-        # print("G_D = %f" % G_D)
+        # self.lib_print("G_D = %f" % G_D)
         # Reconstruct R
         # np_R_est = np_Gamma_est
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
-        print("np_R_est = \n%s" % str(np_R_est))
+        self.lib_print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
         Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
-        print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
         # Get the "value" of G
         G_col_norm_vec = np.linalg.norm(np_Gamma_est, axis=0)
         G_row_norm_vec = np.linalg.norm(np_Gamma_est, axis=1)
-        print("G_col_norm_vec = %s" % str(G_col_norm_vec))
-        print("G_row_norm_vec = %s" % str(G_row_norm_vec))
+        self.lib_print("G_col_norm_vec = %s" % str(G_col_norm_vec))
+        self.lib_print("G_row_norm_vec = %s" % str(G_row_norm_vec))
         # value_G = G_s[0] # Note: G_s[0] = np.linalg.norm(np_Gamma_est, ord=2)
         # value_G = G_s[1] # Accurate?
         # value_G = G_s[2] # Accurate? Note: G_s[2] = np.linalg.norm(np_Gamma_est, ord=-2)
         # value_G = np.average(G_s)
         value_G = np.linalg.norm(np_Gamma_est, ord=-2)
-        print("value_G = %f" % value_G)
+        self.lib_print("value_G = %f" % value_G)
         #
         t3_est = 1.0 / value_G
         # t3_est = 1.0 / np.average(G_s)
-        print("t3_est = %f" % t3_est)
+        self.lib_print("t3_est = %f" % t3_est)
         np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
-        print("np_t_est = \n%s" % str(np_t_est))
+        self.lib_print("np_t_est = \n%s" % str(np_t_est))
         #---------------------------------#
         # end Test
         return (np_R_est, np_t_est, t3_est)
@@ -289,28 +294,28 @@ class PNP_SOLVER_A2_M3(object):
         # Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
         Gamma_list = [phi_1_est.T, phi_2_est.T, np.zeros((1,3))]
         np_Gamma_est = np.vstack(Gamma_list)
-        print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+        self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
         G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
-        # print("G_u = \n%s" % str(G_u))
-        print("G_s = \n%s" % str(G_s))
-        # print("G_vh = \n%s" % str(G_vh))
+        # self.lib_print("G_u = \n%s" % str(G_u))
+        self.lib_print("G_s = \n%s" % str(G_s))
+        # self.lib_print("G_vh = \n%s" % str(G_vh))
         G_D = np.linalg.det(G_u @ G_vh)
-        # print("G_D = %f" % G_D)
+        # self.lib_print("G_D = %f" % G_D)
         # Reconstruct R
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
-        print("np_R_est = \n%s" % str(np_R_est))
+        self.lib_print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
         Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
-        print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
         # t3_est = 1.0 / G_s[0]
         t3_est = 1.0 / G_s[1] # Accurate?
         # t3_est = 1.0 / G_s[2] # Accurate?
         # t3_est = 1.0 / np.average(G_s)
-        print("t3_est = %f" % t3_est)
+        self.lib_print("t3_est = %f" % t3_est)
         np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
-        print("np_t_est = \n%s" % str(np_t_est))
+        self.lib_print("np_t_est = \n%s" % str(np_t_est))
         #---------------------------------#
         # end Test
         return (np_R_est, np_t_est, t3_est)
@@ -330,35 +335,35 @@ class PNP_SOLVER_A2_M3(object):
         # Get the "value" of G
         G_col_norm_vec = np.linalg.norm(np_Gamma_est, axis=0)
         G_row_norm_vec = np.linalg.norm(np_Gamma_est, axis=1)
-        print("G_col_norm_vec = %s" % str(G_col_norm_vec))
-        print("G_row_norm_vec = %s" % str(G_row_norm_vec))
+        self.lib_print("G_col_norm_vec = %s" % str(G_col_norm_vec))
+        self.lib_print("G_row_norm_vec = %s" % str(G_row_norm_vec))
         value_G = np.average(G_row_norm_vec)
-        print("value_G = %f" % value_G)
+        self.lib_print("value_G = %f" % value_G)
 
         # Normalize Gamma
         np_Gamma_est /= (G_row_norm_vec.reshape((3,1)))
         #
-        print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+        self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
         G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
-        # print("G_u = \n%s" % str(G_u))
-        print("G_s = \n%s" % str(G_s))
-        # print("G_vh = \n%s" % str(G_vh))
+        # self.lib_print("G_u = \n%s" % str(G_u))
+        self.lib_print("G_s = \n%s" % str(G_s))
+        # self.lib_print("G_vh = \n%s" % str(G_vh))
         G_D = np.linalg.det(G_u @ G_vh)
-        # print("G_D = %f" % G_D)
+        # self.lib_print("G_D = %f" % G_D)
         # Reconstruct R
         # np_R_est = np_Gamma_est
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
-        print("np_R_est = \n%s" % str(np_R_est))
+        self.lib_print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
         Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
-        print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
         t3_est = 1.0 / value_G
         # t3_est = 1.0 / np.average(G_s)
-        print("t3_est = %f" % t3_est)
+        self.lib_print("t3_est = %f" % t3_est)
         np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
-        print("np_t_est = \n%s" % str(np_t_est))
+        self.lib_print("np_t_est = \n%s" % str(np_t_est))
         #---------------------------------#
         # end Test
         return (np_R_est, np_t_est, t3_est)
@@ -378,8 +383,8 @@ class PNP_SOLVER_A2_M3(object):
         R_roll_0 = np.array([[ c1*c2, (s1*c3 + c1*s2*s3), (s1*s3 - c1*s2*c3)]])
         R_roll_1 = np.array([[-s1*c2, (c1*c3 - s1*s2*s3), (c1*s3 + s1*s2*c3)]])
         R_roll_2 = np.array([[ s2,    -c2*s3,              c2*c3            ]])
-        # print("np.cross(R_roll_0, R_roll_1) = %s" % str(np.cross(R_roll_0, R_roll_1)))
-        # print("R_roll_2 = %s" % str(R_roll_2))
+        # self.lib_print("np.cross(R_roll_0, R_roll_1) = %s" % str(np.cross(R_roll_0, R_roll_1)))
+        # self.lib_print("R_roll_2 = %s" % str(R_roll_2))
         _R01 = np.concatenate((R_roll_0, R_roll_1), axis=0)
         R = np.concatenate((_R01, R_roll_2), axis=0)
         return R
@@ -405,11 +410,11 @@ class PNP_SOLVER_A2_M3(object):
             c3 = np.cos(pitch)
             if np.abs(c1) > np.abs(c3):
                 if verbose:
-                    print("Set c2 as (r11/c1)")
+                    self.lib_print("Set c2 as (r11/c1)")
                 c2 = R_in[0,0]/c1
             else:
                 if verbose:
-                    print("Set c2 as (r33/c3)")
+                    self.lib_print("Set c2 as (r33/c3)")
                 c2 = R_in[2,2]/c3
             yaw = np.arctan2(R_in[2,0], c2) # theta_2
         return (roll, yaw, pitch)
@@ -420,14 +425,14 @@ class PNP_SOLVER_A2_M3(object):
         w, v = np.linalg.eig(m_in)
         #
         np.set_printoptions(suppress=True)
-        print()
-        print("==== (Start) Eigen of %s ===" % m_name)
-        print("%s = \n%s" % (m_name, str(m_in)))
-        print("%s_eig_value = \n%s" % (m_name, str(w)))
+        self.lib_print()
+        self.lib_print("==== (Start) Eigen of %s ===" % m_name)
+        self.lib_print("%s = \n%s" % (m_name, str(m_in)))
+        self.lib_print("%s_eig_value = \n%s" % (m_name, str(w)))
         if is_printing_eig_vec:
-            print("%s_eig_vec = \n%s" % (m_name, str(v)))
-        print("====  (End)  Eigen of %s ===" % m_name)
-        print()
+            self.lib_print("%s_eig_vec = \n%s" % (m_name, str(v)))
+        self.lib_print("====  (End)  Eigen of %s ===" % m_name)
+        self.lib_print()
         np.set_printoptions(suppress=False)
         return (w, v)
 
@@ -436,17 +441,17 @@ class PNP_SOLVER_A2_M3(object):
         _norm = np.linalg.norm(m_in)
         #
         np.set_printoptions(suppress=True)
-        print()
-        print("==== (Start) SVD of %s ===" % m_name)
-        print("%s = \n%s" % (m_name, str(m_in)))
-        print("||%s|| = %f" % (m_name, _norm))
+        self.lib_print()
+        self.lib_print("==== (Start) SVD of %s ===" % m_name)
+        self.lib_print("%s = \n%s" % (m_name, str(m_in)))
+        self.lib_print("||%s|| = %f" % (m_name, _norm))
         if is_printing_u_vh:
-            print("%s_U = \n%s" % (m_name, str(u)))
-        print("%s_S = \n%s" % (m_name, str(s)))
+            self.lib_print("%s_U = \n%s" % (m_name, str(u)))
+        self.lib_print("%s_S = \n%s" % (m_name, str(s)))
         if is_printing_u_vh:
-            print("%s_Vh = \n%s" % (m_name, str(vh)))
-        print("====  (End)  SVD of %s ===" % m_name)
-        print()
+            self.lib_print("%s_Vh = \n%s" % (m_name, str(vh)))
+        self.lib_print("====  (End)  SVD of %s ===" % m_name)
+        self.lib_print()
         np.set_printoptions(suppress=False)
         return (u, s, vh)
     #-----------------------------------------------------------#
@@ -462,8 +467,8 @@ class PNP_SOLVER_A2_M3(object):
         _norm = np.linalg.norm(vec_in)
         if np.abs(_norm) <= 10**-7:
              _norm_inv = 1.0
-             print("_norm = %f" % _norm)
-             print("_norm approaches zeros!!")
+             self.lib_print("_norm = %f" % _norm)
+             self.lib_print("_norm approaches zeros!!")
         else:
              _norm_inv = 1.0/_norm
         return (vec_in * _norm_inv)
@@ -472,16 +477,16 @@ class PNP_SOLVER_A2_M3(object):
 
     #-----------------------------------------------------------#
     def fix_R_svd(self, R_in):
-        # print("R_in = \n%s" % str(R_in))
+        # self.lib_print("R_in = \n%s" % str(R_in))
         G_u, G_s, G_vh = np.linalg.svd(R_in)
-        # print("G_u = \n%s" % str(G_u))
-        # print("G_s = \n%s" % str(G_s))
-        # print("G_vh = \n%s" % str(G_vh))
+        # self.lib_print("G_u = \n%s" % str(G_u))
+        # self.lib_print("G_s = \n%s" % str(G_s))
+        # self.lib_print("G_vh = \n%s" % str(G_vh))
         G_D = np.linalg.det(G_u @ G_vh)
-        # print("G_D = %f" % G_D)
+        # self.lib_print("G_D = %f" % G_D)
         # Reconstruct R
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
-        # print("np_R_est = \n%s" % str(np_R_est))
+        # self.lib_print("np_R_est = \n%s" % str(np_R_est))
         return np_R_est
 
     def cay_trans(self, A_in):
