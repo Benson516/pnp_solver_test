@@ -59,6 +59,7 @@ class PNP_SOLVER_A2_M3(object):
         # Iteration
         k_it = 0
         self.lib_print("---")
+        res_norm = 10*3
         while k_it < num_it:
              k_it += 1
              self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
@@ -87,7 +88,8 @@ class PNP_SOLVER_A2_M3(object):
              # self.lib_print("_res = \n%s" % str(_res))
              # _res_delta = _res - np_quantization_error_world_space_vec
              # self.lib_print("_res_delta = \n%s" % str(_res_delta))
-             self.lib_print("norm(_res) = %f" % np.linalg.norm(_res))
+             res_norm = np.linalg.norm(_res)
+             self.lib_print("norm(_res) = %f" % res_norm)
              #-------------------------#
 
              #-------------------------#
@@ -145,7 +147,7 @@ class PNP_SOLVER_A2_M3(object):
         # self.lib_print("t3_est = %f" % t3_est)
         # self.lib_print("np_t_est = \n%s" % str(np_t_est))
         #--------------------------------------------------------#
-        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
     #-----------------------------------------------------------#
 
@@ -419,6 +421,42 @@ class PNP_SOLVER_A2_M3(object):
             yaw = np.arctan2(R_in[2,0], c2) # theta_2
         return (roll, yaw, pitch)
     #-----------------------------------------------------------#
+
+
+    def perspective_projection(self, np_R, np_t, is_quantized=False):
+        '''
+        '''
+        # [x,y,1].T, shape: (3,1)
+        np_point_image_dict = dict()
+        np_point_image_no_q_err_dict = dict()
+        np_point_quantization_error_dict = dict()
+
+        # Perspective Projection + quantization
+        #--------------------------------------------------#
+        for _k in self.np_point_3d_dict:
+            _ray = self.np_K_camera_est @ (np_R @ self.np_point_3d_dict[_k] + np_t)
+            # normalize
+            _projection_i = _ray/_ray[2,0]
+            # Quantize
+            if is_quantized:
+                np_point_image_dict[_k] = np.around(_projection_i) # with quantization
+            else:
+                np_point_image_dict[_k] = _projection_i # no quantization
+            np_point_quantization_error_dict[_k] = (np_point_image_dict[_k] - _projection_i)
+            np_point_image_no_q_err_dict[_k] = _projection_i
+            # print("%s:\n%s" % (_k, str(np_point_image_dict[_k])))
+            # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
+        #--------------------------------------------------#
+        # Print
+        # print("-"*35)
+        # print("is_quantized = %s" % str(is_quantized))
+        # print("2D points on image:")
+        # for _k in np_point_image_dict:
+        #     print("%s:%sp=%s.T | p_no_q_err=%s.T | q_e=%s.T" % (_k, " "*(12-len(_k)), str(np_point_image_dict[_k].T), str(np_point_image_no_q_err_dict[_k].T), str(np_point_quantization_error_dict[_k].T) ))
+        #     # print("%s:\n%s" % (_k, str(np_point_image_dict[_k])))
+        #     # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
+        # print("-"*35)
+        return np_point_image_dict
 
     #-----------------------------------------------------------#
     def print_matrix_and_eigen_value(self, m_name, m_in, is_printing_eig_vec=False):

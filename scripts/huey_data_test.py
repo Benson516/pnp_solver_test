@@ -86,7 +86,8 @@ point_3d_dict["eye_r_97"] = [-0.035, 0.0, 0.0]
 point_3d_dict["mouse_l_76"] = [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.025, 0.085, 0.0]
 point_3d_dict["nose_t_54"] = [ 0.0, 0.046, 0.03]
-point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+# point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+# point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
 # point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
@@ -132,7 +133,8 @@ for _idx in range(len(data_list)):
     np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
     np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
     np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
+    # np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
+    # np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
     #
     # Print
     print("-"*35)
@@ -144,8 +146,29 @@ for _idx in range(len(data_list)):
     print("-"*35)
 
     # Solve
-    np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est = pnp_solver.solve_pnp(np_point_image_dict)
+    np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
+
     # Compare result
+    #-----------------------------#
+    np_point_image_dict_reproject = pnp_solver.perspective_projection(np_R_est, np_t_est, is_quantized=False)
+    #
+    print("2D points on image (reproject):")
+    for _k in np_point_image_dict:
+        np.set_printoptions(suppress=True, precision=2)
+        print("%s:%sp_data=%s.T | p_reproject=%s.T | err=%s.T" %
+            (   _k,
+                " "*(12-len(_k)),
+                str(np_point_image_dict[_k].T),
+                str(np_point_image_dict_reproject[_k].T),
+                str((np_point_image_dict_reproject[_k]-np_point_image_dict[_k]).T)
+            )
+        )
+        np.set_printoptions(suppress=False, precision=8)
+        # print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
+        # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
+    print("-"*35)
+    #
+    print("res_norm = %f" % res_norm)
     print("np_R_est = \n%s" % str(np_R_est))
     print("(roll_est, yaw_est, pitch_est) \t\t= %s" % str( np.rad2deg( (roll_est, yaw_est, pitch_est) ) ) )
     print("t3_est = %f" % t3_est)
