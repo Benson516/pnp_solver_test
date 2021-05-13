@@ -6,10 +6,10 @@ import copy
 class PNP_SOLVER_A2_M3(object):
     '''
     '''
-    def __init__(self, K_camera_est, point_3d_dict):
+    def __init__(self, np_K_camera_est, point_3d_dict):
         '''
         '''
-        self.K_camera_est = copy.deepcopy(K_camera_est)
+        self.np_K_camera_est = copy.deepcopy(np_K_camera_est)
 
         # LM in face local frame
         self.point_3d_dict = copy.deepcopy(point_3d_dict)
@@ -27,10 +27,11 @@ class PNP_SOLVER_A2_M3(object):
     #-----------------------------------------------------------#
     def solve_pnp(self, np_point_image_dict):
         '''
-        For each image frame
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
         '''
         # Form the problem for solving
-        B_all = self.get_B_all(np_point_image_dict, self.K_camera_est)
+        B_all = self.get_B_all(np_point_image_dict, self.np_K_camera_est)
         print("B_all = \n%s" % str(B_all))
         print("B_all.shape = %s" % str(B_all.shape))
 
@@ -99,20 +100,20 @@ class PNP_SOLVER_A2_M3(object):
 
              if update_phi_3_method == 1:
                  # First update phi_3_est
-                 phi_3_est_new, norm_phi_3_est = update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est)
+                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha)
                  # Then, test (not necessary)
                  #---------------------------------#
                  # np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
-                 np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est_new)
+                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est_new)
                  # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est_new)
 
                  #---------------------------------#
                  # end Test
              else: # update_phi_3_method == 2
                  # First reconstructing R, necessary for this method
-                 np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
+                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
                  # Then, update phi_3_est
-                 phi_3_est_new, norm_phi_3_est = update_phi_3_est_m2(np_R_est, t3_est)
+                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
              # Real update of phi_3_est
              phi_3_est = copy.deepcopy(phi_3_est_new)
              print("---")
@@ -126,20 +127,20 @@ class PNP_SOLVER_A2_M3(object):
         # Reconstruct (R, t)
         #--------------------------------------------------------#
         if update_phi_3_method == 1:
-            np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+            np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est)
             # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est)
         else:
-            np_R_est, np_t_est, t3_est = reconstruct_R_t_m2(phi_est, phi_3_est)
+            np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
         # print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
-        Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est, verbose=False)
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False)
         # print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         roll_est, yaw_est, pitch_est = Euler_angle_est
         #
         # print("t3_est = %f" % t3_est)
         # print("np_t_est = \n%s" % str(np_t_est))
         #--------------------------------------------------------#
-        return (np_R_est, np_t_est, t3_est, (roll_est, yaw_est, pitch_est) )
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
 
     #-----------------------------------------------------------#
 
@@ -201,11 +202,11 @@ class PNP_SOLVER_A2_M3(object):
         B_all = np.vstack(B_i_list)
         return B_all
 
-    def update_phi_3_est_m1(self, phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est):
+    def update_phi_3_est_m1(self, phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha=1.0):
         '''
         '''
         # Update phi_3_est
-        phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_1_est.T, phi_2_est.T).T ))
+        phi_3_est_uni = self.unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*self.unit_vec( np.cross(phi_1_est.T, phi_2_est.T).T ))
         norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
         # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
         # norm_phi_3_est = 0.83333333333 # Ground truth
@@ -251,7 +252,7 @@ class PNP_SOLVER_A2_M3(object):
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
         print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
-        Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
         print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
@@ -299,7 +300,7 @@ class PNP_SOLVER_A2_M3(object):
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
         print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
-        Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
         print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
@@ -349,7 +350,7 @@ class PNP_SOLVER_A2_M3(object):
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
         print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
-        Euler_angle_est = get_Euler_from_rotation_matrix(np_R_est)
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
         print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
