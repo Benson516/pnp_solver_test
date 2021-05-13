@@ -5,6 +5,7 @@ import PNP_SOLVER_LIB as PNPS
 
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
 data_file_str = 'test_Alexander.txt'
+# data_file_str = 'test_Alexey.txt'
 #
 data_path_str = data_dir_str + data_file_str
 
@@ -66,7 +67,7 @@ for _idx in range(len(data_str_list_list)):
 #-------------------------------------------------------#
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
-fx_camera = 188.55
+fx_camera = 188.55 # 175.0
 fy_camera = fx_camera # 111.0
 xo_camera = 320/2.0
 yo_camera = 240/2.0
@@ -122,6 +123,9 @@ def convert_pixel_to_homo(pixel_xy, mirrored=True):
         return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
 
 # Loop through data
+#-------------------------------------------------------#
+distance_error_list = list()
+distance_ratio_list = list()
 for _idx in range(len(data_list)):
     print("\n-------------- (idx = %d)--------------\n" % _idx)
 
@@ -136,23 +140,26 @@ for _idx in range(len(data_list)):
     # np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
     # np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
     #
-    # Print
-    print("-"*35)
-    print("2D points on image:")
-    for _k in np_point_image_dict:
-        # print("%s:%sp=%s.T | p_no_q_err=%s.T | q_e=%s.T" % (_k, " "*(12-len(_k)), str(np_point_image_dict[_k].T), str(np_point_image_no_q_err_dict[_k].T), str(np_point_quantization_error_dict[_k].T) ))
-        print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
-        # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
-    print("-"*35)
+    # # Print
+    # print("-"*35)
+    # print("2D points on image:")
+    # for _k in np_point_image_dict:
+    #     # print("%s:%sp=%s.T | p_no_q_err=%s.T | q_e=%s.T" % (_k, " "*(12-len(_k)), str(np_point_image_dict[_k].T), str(np_point_image_no_q_err_dict[_k].T), str(np_point_quantization_error_dict[_k].T) ))
+    #     print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
+    #     # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
+    # print("-"*35)
 
     # Solve
     np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
 
     # Compare result
     #-----------------------------#
+    print("Result from the solver:\n")
+
     np_point_image_dict_reproject = pnp_solver.perspective_projection(np_R_est, np_t_est, is_quantized=False)
     #
     print("2D points on image (reproject):")
+    print("-"*35)
     for _k in np_point_image_dict:
         np.set_printoptions(suppress=True, precision=2)
         print("%s:%sp_data=%s.T | p_reproject=%s.T | err=%s.T" %
@@ -166,6 +173,7 @@ for _idx in range(len(data_list)):
         np.set_printoptions(suppress=False, precision=8)
         # print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
         # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
+    #
     print("-"*35)
     #
     print("res_norm = %f" % res_norm)
@@ -184,3 +192,17 @@ for _idx in range(len(data_list)):
     print("(roll_GT, yaw_GT, pitch_GT) \t\t= %s" % str(  [ data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'] ]) )
     print("-"*30 + " The End " + "-"*30)
     print()
+    #----------------------------#
+    distance_ratio_list.append( (t3_est*100.0 / data_list[_idx]['distance']))
+    distance_error_list.append( (t3_est*100.0 - data_list[_idx]['distance']))
+#-------------------------------------------------------#
+
+np_distance_ratio_vec = np.vstack(distance_ratio_list)
+np_distance_error_vec = np.vstack(distance_error_list)
+
+mean_distance_ratio = np.average(np_distance_ratio_vec)
+mean_distance_error = np.average(np_distance_error_vec)
+error_distance_MAE = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
+print("mean_distance_ratio = %f" % mean_distance_ratio)
+print("mean_distance_error = %f" % mean_distance_error)
+print("error_distance_MAE = %f" % error_distance_MAE)
