@@ -1,4 +1,6 @@
 import numpy as np
+#
+import PNP_SOLVER_LIB as PNPS
 
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
 data_file_str = 'test_Alexander.txt'
@@ -54,3 +56,4 @@ for _idx in range(len(data_str_list_list)):
 
 # Start testing
 #-------------------------------------------------------#
+pnp_solver = PNPS.PNP_SOLVER_A2_M3()
