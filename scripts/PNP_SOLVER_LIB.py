@@ -422,9 +422,59 @@ class PNP_SOLVER_A2_M3(object):
         return (roll, yaw, pitch)
     #-----------------------------------------------------------#
 
-
-    def perspective_projection(self, np_R, np_t, is_quantized=False):
+    def perspective_projection(self, np_point_3d, np_K_camera, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=True):
         '''
+        input:
+        - np_point_3d: [[x,y,z]].T
+        output:
+            if is_returning_homogeneous_vec:
+                - np_point_image:  [[u, v, 1.0]].T
+                - projection_no_q: [[u, v, 1.0]].T
+            else:
+                - np_point_image:  [u, v]
+                - projection_no_q: [u, v]
+        '''
+        _np_point_3d = np_point_3d.reshape((3,1))
+        _ray = np_K_camera @ (np_R @ _np_point_3d + np_t)
+        # normalize
+        projection_no_q = _ray/_ray[2,0]
+        # Quantize
+        if is_quantized:
+            np_point_image = np.around(projection_no_q) # with quantization
+        else:
+            np_point_image = projection_no_q # no quantization
+        if is_returning_homogeneous_vec:
+            return (np_point_image, projection_no_q)
+        else:
+            return (np_point_image[0:2,0], projection_no_q[0:2,0])
+
+
+    def perspective_projection_obj_axis(self, np_R, np_t):
+        '''
+        Project the unit vector of each axis onto the image space.
+        output:
+        - uv_o: [uo, vo]
+        - dir_x: [dx_u, dx_y]
+        - dir_y: [dy_u, dy_y]
+        - dir_z: [dz_u, dz_y]
+        '''
+        # Calculate the control points of each axis (i.e. the point at distance 1.0 on each axis)
+        # Note: For uv_0, this operation is eqivelent to "uv_o = (K @ np_t)[0:2,0] "
+        uv_o, _ = self.perspective_projection(np.array([[0.0, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_x1, _ = self.perspective_projection(np.array([[1.0, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_y1, _ = self.perspective_projection(np.array([[0.0, 1.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_z1, _ = self.perspective_projection(np.array([[0.0, 0.0, 1.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        # Calculate the direction vector for each axis in the image space
+        # Note: This operation is eqivelent to "dir_x = self.unit_vec(K @ np_R[:,0])"
+        dir_x = self.unit_vec(uv_x1 - uv_o)
+        dir_y = self.unit_vec(uv_y1 - uv_o)
+        dir_z = self.unit_vec(uv_z1 - uv_o)
+        return (uv_o, dir_x, dir_y, dir_z)
+
+
+    def perspective_projection_golden_landmarks(self, np_R, np_t, is_quantized=False):
+        '''
+        Project the golden landmarks onto the image space using the given camera intrinsic.
         '''
         # [x,y,1].T, shape: (3,1)
         np_point_image_dict = dict()
@@ -434,16 +484,10 @@ class PNP_SOLVER_A2_M3(object):
         # Perspective Projection + quantization
         #--------------------------------------------------#
         for _k in self.np_point_3d_dict:
-            _ray = self.np_K_camera_est @ (np_R @ self.np_point_3d_dict[_k] + np_t)
-            # normalize
-            _projection_i = _ray/_ray[2,0]
-            # Quantize
-            if is_quantized:
-                np_point_image_dict[_k] = np.around(_projection_i) # with quantization
-            else:
-                np_point_image_dict[_k] = _projection_i # no quantization
-            np_point_quantization_error_dict[_k] = (np_point_image_dict[_k] - _projection_i)
-            np_point_image_no_q_err_dict[_k] = _projection_i
+            _np_point_image, _projection_no_q = self.perspective_projection(self.np_point_3d_dict[_k], self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized)
+            np_point_image_dict[_k] = _np_point_image
+            np_point_quantization_error_dict[_k] = (_np_point_image - _projection_no_q)
+            np_point_image_no_q_err_dict[_k] = _projection_no_q
             # print("%s:\n%s" % (_k, str(np_point_image_dict[_k])))
             # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
         #--------------------------------------------------#

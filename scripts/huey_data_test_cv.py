@@ -191,7 +191,7 @@ for _idx in range(len(data_list)):
     #-----------------------------#
     print("Result from the solver:\n")
 
-    np_point_image_dict_reproject = pnp_solver.perspective_projection(np_R_est, np_t_est, is_quantized=False)
+    np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False)
     #
     print("2D points on image (re-projection):")
     # print("2D points on image (is_h_mirrored_image=%s):" % str(is_h_mirrored_image))
