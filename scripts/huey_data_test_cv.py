@@ -1,26 +1,49 @@
 import numpy as np
 import copy
+import time
+#
+import cv2
 #
 import PNP_SOLVER_LIB as PNPS
 
+#---------------------------#
+# Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
 data_file_str = 'test_Alexander.txt'
 # data_file_str = 'test_Alexey.txt'
-#
-data_path_str = data_dir_str + data_file_str
-
-
 #---------------------------#
-is_v_mirrored_image = True
+# Original image
+image_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ/'
+# The image used for analysis
+image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ_result_unflipped/'
+# The same as the original image
+image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ_result/'
 #---------------------------#
 
-#----------------------#
+
+
+# Behavior of this program
+#---------------------------#
+# Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
-DATA_START_ID = 0
-# DATA_START_ID = 658
+# DATA_START_ID = 0
+DATA_START_ID = 658
 DATA_COUNT =  3
-#----------------------#
+# Image display
+is_showing_image = True
+#---------------------------#
+
+# Parameters of the data
+#---------------------------#
+is_h_mirrored_image = True
+#---------------------------#
+
+
+# Loading Data
+#----------------------------------------------------------#
+data_path_str = data_dir_str + data_file_str
+#
 data_str_list_list = list()
 data_name_split_list_list = list()
 with open(data_path_str, 'r') as _f:
@@ -43,7 +66,7 @@ with open(data_path_str, 'r') as _f:
 #
 print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
 print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
-
+#----------------------------------------------------------#
 
 # Convert the original data to structured data_list
 #-------------------------------------------------------#
@@ -77,7 +100,7 @@ for _idx in range(len(data_str_list_list)):
 f_camera = 188.55 # 175.0
 #
 fx_camera = f_camera
-# fx_camera = (-f_camera) if is_v_mirrored_image else f_camera # Note: mirrored image LM features
+# fx_camera = (-f_camera) if is_h_mirrored_image else f_camera # Note: mirrored image LM features
 fy_camera = f_camera
 xo_camera = 320/2.0
 yo_camera = 240/2.0
@@ -139,6 +162,8 @@ distance_ratio_list = list()
 for _idx in range(len(data_list)):
     print("\n-------------- (idx = %d)--------------\n" % _idx)
 
+
+
     LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
     np_point_image_dict = dict()
     # [x,y,1].T, shape: (3,1)
@@ -169,7 +194,7 @@ for _idx in range(len(data_list)):
     np_point_image_dict_reproject = pnp_solver.perspective_projection(np_R_est, np_t_est, is_quantized=False)
     #
     print("2D points on image (re-projection):")
-    # print("2D points on image (is_v_mirrored_image=%s):" % str(is_v_mirrored_image))
+    # print("2D points on image (is_h_mirrored_image=%s):" % str(is_h_mirrored_image))
     print("-"*35)
     for _k in np_point_image_dict:
         np.set_printoptions(suppress=True, precision=2)
@@ -204,8 +229,97 @@ for _idx in range(len(data_list)):
     print("-"*30 + " The End " + "-"*30)
     print()
     #----------------------------#
+
+    # Store the error for statistic
+    #----------------------------#
     distance_ratio_list.append( (t3_est*100.0 / data_list[_idx]['distance']))
     distance_error_list.append( (t3_est*100.0 - data_list[_idx]['distance']))
+    #----------------------------#
+
+    # Get the file name of the image
+    #--------------------------------------------#
+    _file_name = data_list[_idx]['file_name']
+    _image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
+    print('image file name: [%s]' % _image_file_name_str)
+    _image_ori_path_str = image_dir_str + _image_file_name_str
+    _image_result_unflipped_path_str = image_result_unflipped_dir_str + _image_file_name_str
+    _image_result_path_str = image_result_dir_str + _image_file_name_str
+    #--------------------------------------------#
+
+    # Load the original image
+    #--------------------------------------------#
+    _img = cv2.imread(_image_ori_path_str)
+    if _img is None:
+        print("!! Error occured while loading the image !!\n")
+        time.sleep(3.0)
+        continue
+    _img_shape = _img.shape
+    print("_img.shape = %s" % str(_img_shape))
+    LM_2_image_scale = _img_shape[1] / 320.0
+
+    # Flip the image if needed
+    #----------------------------------#
+    if is_h_mirrored_image:
+        _img_preprocessed = cv2.flip(_img, 1)
+    else:
+        _img_preprocessed = _img
+    #----------------------------------#
+
+    # Ploting LMs onto the image
+    #----------------------------------#
+    _img_LM = copy.deepcopy(_img_preprocessed)
+    # [[u,v,1]].T
+    for _k in np_point_image_dict:
+        _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _radius = 5
+        # _color = (127,0,0) # BGR
+        _color = (0,0,255) # BGR
+        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    #----------------------------------#
+
+    # Ploting Reprojections and axes onto the image
+    #----------------------------------#
+    # [[u,v,1]].T
+    for _k in np_point_image_dict:
+        _center_pixel = (np_point_image_dict_reproject[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _radius = 3
+        # _color = (0,0,255) # BGR
+        _color = (255,0,0) # BGR
+        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    #----------------------------------#
+
+    # Dtermine the final image
+    #-------------------------#
+    # _img_result = _img
+    # _img_result = _img_preprocessed
+    _img_result = _img_LM
+    #-------------------------#
+
+    # Flip the result image if needed
+    #----------------------------------#
+    if is_h_mirrored_image:
+        _img_result_flipped = cv2.flip(_img_result, 1)
+    else:
+        _img_result_flipped = _img_result
+    #----------------------------------#
+
+    # Save the resulted image
+    #----------------------------------#
+    cv2.imwrite(_image_result_unflipped_path_str, _img_result )
+    cv2.imwrite(_image_result_path_str, _img_result_flipped )
+    #----------------------------------#
+
+    # Displaying the image
+    #----------------------------------#
+    if is_showing_image:
+        cv2.imshow(_image_file_name_str, _img_result)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    #----------------------------------#
+
+    #--------------------------------------------#
+
+
 #-------------------------------------------------------#
 
 np_distance_ratio_vec = np.vstack(distance_ratio_list)
