@@ -372,10 +372,16 @@ class PNP_SOLVER_A2_M3(object):
     #-----------------------------------------------------------#
 
     #-----------------------------------------------------------#
-    def get_rotation_matrix_from_Euler(self, roll, yaw, pitch):
+    def get_rotation_matrix_from_Euler(self, roll, yaw, pitch, is_degree=False):
         '''
         roll, yaw, pitch --> R
+
+        is_degree - True: the angle unit is degree, False: the angle unit is rad
         '''
+        if is_degree:
+            roll = np.deg2rad(roll)
+            yaw = np.deg2rad(yaw)
+            pitch = np.deg2rad(pitch)
         c1 = np.cos(roll)
         s1 = np.sin(roll)
         c2 = np.cos(yaw)
@@ -466,9 +472,12 @@ class PNP_SOLVER_A2_M3(object):
         uv_z1, _ = self.perspective_projection(np.array([[0.0, 0.0, 1.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
         # Calculate the direction vector for each axis in the image space
         # Note: This operation is eqivelent to "dir_x = self.unit_vec(K @ np_R[:,0])"
-        dir_x = self.unit_vec(uv_x1 - uv_o)
-        dir_y = self.unit_vec(uv_y1 - uv_o)
-        dir_z = self.unit_vec(uv_z1 - uv_o)
+        # dir_x = self.unit_vec(uv_x1 - uv_o)
+        # dir_y = self.unit_vec(uv_y1 - uv_o)
+        # dir_z = self.unit_vec(uv_z1 - uv_o)
+        dir_x = (uv_x1 - uv_o)
+        dir_y = (uv_y1 - uv_o)
+        dir_z = (uv_z1 - uv_o)
         return (uv_o, dir_x, dir_y, dir_z)
 
 

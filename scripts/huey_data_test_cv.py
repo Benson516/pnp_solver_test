@@ -120,8 +120,8 @@ point_3d_dict["eye_r_97"] = [-0.035, 0.0, 0.0]
 point_3d_dict["mouse_l_76"] = [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.025, 0.085, 0.0]
 point_3d_dict["nose_t_54"] = [ 0.0, 0.046, 0.03]
-# point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
-# point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
 # point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
@@ -172,8 +172,8 @@ for _idx in range(len(data_list)):
     np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
     np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
     np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    # np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
-    # np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
+    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
+    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
     #
     # # Print
     # print("-"*35)
@@ -214,6 +214,8 @@ for _idx in range(len(data_list)):
     #
     print("res_norm = %f" % res_norm)
     print("np_R_est = \n%s" % str(np_R_est))
+    _det = np.linalg.det(np_R_est)
+    print("_det = %f" % _det)
     print("(roll_est, yaw_est, pitch_est) \t\t= %s" % str( np.rad2deg( (roll_est, yaw_est, pitch_est) ) ) )
     print("t3_est = %f" % t3_est)
     print("np_t_est = \n%s" % str(np_t_est))
@@ -266,27 +268,70 @@ for _idx in range(len(data_list)):
     #----------------------------------#
 
     # Ploting LMs onto the image
+    _color_RED   = (0, 0, 255)
+    _color_GREEN = (0, 255, 0)
+    _color_BLUE  = (255, 0, 0)
+    # _color_RED   = np.array((0, 0, 255))
+    # _color_GREEN = np.array((0, 255, 0))
+    # _color_BLUE  = np.array((255, 0, 0))
     #----------------------------------#
+    # Landmarks
     _img_LM = copy.deepcopy(_img_preprocessed)
     # [[u,v,1]].T
     for _k in np_point_image_dict:
         _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 5
-        # _color = (127,0,0) # BGR
-        _color = (0,0,255) # BGR
+        _radius = 3
+        _color = _color_BLUE # BGR
+        # _color = _color_RED # BGR
         cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
     #----------------------------------#
 
-    # Ploting Reprojections and axes onto the image
+    # Ploting reprojections onto the image
     #----------------------------------#
     # [[u,v,1]].T
     for _k in np_point_image_dict:
         _center_pixel = (np_point_image_dict_reproject[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 3
-        # _color = (0,0,255) # BGR
-        _color = (255,0,0) # BGR
+        _radius = 2
+        _color = _color_RED # BGR
+        # _color = _color_BLUE # BGR
         cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
     #----------------------------------#
+
+    # Ploting axies
+    #-----------------------------------#
+    # Grund truth axes
+    _R_GT = pnp_solver.get_rotation_matrix_from_Euler( data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'], is_degree=True )
+    _det = np.linalg.det(_R_GT)
+    print("_R_GT = \n%s" % str(_R_GT))
+    print("_det = %f" % _det)
+    #
+    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(_R_GT, np_t_est) # Note: use the estimated t since we don't have the grund truth.
+    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
+    vector_scale = 0.2
+    _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
+    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x*vector_scale)).astype('int')
+    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y*vector_scale)).astype('int')
+    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z*vector_scale)).astype('int')
+    # Draw lines
+    _line_width = 2
+    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0,0,127), _line_width)
+    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, (0,127,0), _line_width)
+    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, (127,0,0), _line_width)
+
+    # Estimated axes
+    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_est, np_t_est)
+    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
+    vector_scale = 0.2
+    _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
+    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x*vector_scale)).astype('int')
+    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y*vector_scale)).astype('int')
+    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z*vector_scale)).astype('int')
+    # Draw lines
+    _line_width = 1
+    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, _color_RED, _line_width)
+    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, _color_GREEN, _line_width)
+    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, _color_BLUE, _line_width)
+    #-----------------------------------#
 
     # Dtermine the final image
     #-------------------------#
