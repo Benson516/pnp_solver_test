@@ -10,9 +10,15 @@ data_file_str = 'test_Alexander.txt'
 data_path_str = data_dir_str + data_file_str
 
 
+#---------------------------#
+is_v_mirrored_image = True
+#---------------------------#
+
 #----------------------#
 is_limiting_line_count = True
 # is_limiting_line_count = False
+DATA_START_ID = 0
+# DATA_START_ID = 658
 DATA_COUNT =  3
 #----------------------#
 data_str_list_list = list()
@@ -21,18 +27,19 @@ with open(data_path_str, 'r') as _f:
     # Read and print the entire file line by line
     _line = _f.readline()
     _count = 0
-    while (_line != '') and ((not is_limiting_line_count) or (_count < DATA_COUNT) ):  # The EOF char is an empty string
-        _count += 1
-        # print(_line, end='')
-        _line_split_list = _line.split()
-        # print(_line_split_list)
-        data_str_list_list.append(_line_split_list)
-        #
-        data_name_split_list = _line_split_list[0].split('_')
-        # print("data_name_split_list = %s" % str(data_name_split_list))
-        data_name_split_list_list.append( data_name_split_list )
+    while (_line != '') and ((not is_limiting_line_count) or (_count < (DATA_START_ID+DATA_COUNT) ) ):  # The EOF char is an empty string
+        if _count >= DATA_START_ID:
+            # print(_line, end='')
+            _line_split_list = _line.split()
+            # print(_line_split_list)
+            data_str_list_list.append(_line_split_list)
+            #
+            data_name_split_list = _line_split_list[0].split('_')
+            # print("data_name_split_list = %s" % str(data_name_split_list))
+            data_name_split_list_list.append( data_name_split_list )
         # Update
         _line = _f.readline()
+        _count += 1
 #
 print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
 print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
@@ -67,8 +74,11 @@ for _idx in range(len(data_str_list_list)):
 #-------------------------------------------------------#
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
-fx_camera = 188.55 # 175.0
-fy_camera = fx_camera # 111.0
+f_camera = 188.55 # 175.0
+#
+fx_camera = f_camera
+# fx_camera = (-f_camera) if is_v_mirrored_image else f_camera # Note: mirrored image LM features
+fy_camera = f_camera
 xo_camera = 320/2.0
 yo_camera = 240/2.0
 # np_K_camera_GT = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Grund truth
@@ -158,7 +168,8 @@ for _idx in range(len(data_list)):
 
     np_point_image_dict_reproject = pnp_solver.perspective_projection(np_R_est, np_t_est, is_quantized=False)
     #
-    print("2D points on image (reproject):")
+    print("2D points on image (re-projection):")
+    # print("2D points on image (is_v_mirrored_image=%s):" % str(is_v_mirrored_image))
     print("-"*35)
     for _k in np_point_image_dict:
         np.set_printoptions(suppress=True, precision=2)
