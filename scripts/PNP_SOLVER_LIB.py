@@ -397,9 +397,11 @@ class PNP_SOLVER_A2_M3(object):
         R = np.concatenate((_R01, R_roll_2), axis=0)
         return R
 
-    def get_Euler_from_rotation_matrix(self, R_in, verbose=True):
+    def get_Euler_from_rotation_matrix(self, R_in, verbose=True, is_degree=False):
         '''
         R --> roll, yaw, pitch
+
+        is_degree - True: the angle unit is degree, False: the angle unit is rad
         '''
         _eps = 10.0**-7
         # if np.linalg.norm([R_in[2,1], R_in[2,2]]) <= _eps: # Note: abs(c2) = np.linalg.norm([R_in[2,1], R_in[2,2]])
@@ -425,6 +427,12 @@ class PNP_SOLVER_A2_M3(object):
                     self.lib_print("Set c2 as (r33/c3)")
                 c2 = R_in[2,2]/c3
             yaw = np.arctan2(R_in[2,0], c2) # theta_2
+        # Convert to degree if needed
+        if is_degree:
+            roll = np.rad2deg(roll)
+            yaw = np.rad2deg(yaw)
+            pitch = np.rad2deg(pitch)
+        #
         return (roll, yaw, pitch)
     #-----------------------------------------------------------#
 
@@ -593,3 +601,32 @@ class PNP_SOLVER_A2_M3(object):
     def fix_R_polar_decomposition(self, R_in):
         return (R_in @ np.linalg.inv(sp_lin.sqrtm(R_in.T @ R_in)))
     #-----------------------------------------------------------#
+
+
+
+def main():
+    # Parameters and data
+    point_3d_dict = dict()
+    # Camera intrinsic matrix
+    f_camera = 188.55 # 175.0
+    fx_camera = f_camera
+    fy_camera = f_camera
+    xo_camera = 320/2.0
+    yo_camera = 240/2.0
+    np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
+    print("np_K_camera_est = \n%s" % str(np_K_camera_est))
+    #
+    pnp_solver = PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, verbose=True)
+
+    # test
+    roll = 10.0
+    yaw = 35.0
+    pitch = -25.0
+    print("(roll, yaw, pitch) = %s" % str((roll, yaw, pitch)))
+    R_1 = pnp_solver.get_rotation_matrix_from_Euler( roll, yaw, pitch, is_degree=True)
+    roll_1, yaw_1, pitch_1 = pnp_solver.get_Euler_from_rotation_matrix(R_1, is_degree=True)
+    print("R_1 = \n %s" % str(R_1))
+    print("(roll_1, yaw_1, pitch_1) = %s" % str((roll_1, yaw_1, pitch_1)))
+
+if __name__ == '__main__':
+    main()
