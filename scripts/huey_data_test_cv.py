@@ -28,7 +28,8 @@ image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander
 is_limiting_line_count = True
 # is_limiting_line_count = False
 # DATA_START_ID = 0
-DATA_START_ID = 658
+# DATA_START_ID = 658
+DATA_START_ID = 379 # (0, 0, 0)
 DATA_COUNT =  3
 # Image display
 is_showing_image = True
@@ -37,6 +38,7 @@ is_showing_image = True
 # Parameters of the data
 #---------------------------#
 is_h_mirrored_image = True
+pattern_scale = 1.0 # 0.85 # Multiply onto the golden pattern
 #---------------------------#
 
 
@@ -97,7 +99,8 @@ for _idx in range(len(data_str_list_list)):
 #-------------------------------------------------------#
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
-f_camera = 188.55 # 175.0
+# f_camera = 188.55 # 175.0
+f_camera = 225.68717584155982
 #
 fx_camera = f_camera
 # fx_camera = (-f_camera) if is_h_mirrored_image else f_camera # Note: mirrored image LM features
@@ -115,32 +118,36 @@ print("np_K_camera_est = \n%s" % str(np_K_camera_est))
 point_3d_dict = dict()
 # Note: Each axis should exist at least 3 different values to make A_all full rank
 # Note: the Landmark definition in the pitcture in reversed
-point_3d_dict["eye_l_96"] = [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_r_97"] = [-0.035, 0.0, 0.0]
-point_3d_dict["mouse_l_76"] = [ 0.025, 0.085, 0.0]
-point_3d_dict["mouse_r_82"] = [ -0.025, 0.085, 0.0]
-point_3d_dict["nose_t_54"] = [ 0.0, 0.046, 0.03]
+point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
+point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
+point_3d_dict["nose_t_54"] = [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
 point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
 point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
 # point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
-# Convert to numpy vector, shape: (3,1)
-np_point_3d_dict = dict()
-print("-"*35)
-print("3D points in local coordinate:")
-for _k in point_3d_dict:
-    np_point_3d_dict[_k] = np.array(point_3d_dict[_k]).reshape((3,1))
-    print("%s:\n%s" % (_k, str(np_point_3d_dict[_k])))
-print("-"*35)
-# print(np_point_3d_dict)
+
+# # Convert to numpy vector, shape: (3,1)
+# # Applying the scale as well
+# np_point_3d_dict = dict()
+# print("-"*35)
+# print("3D points in local coordinate:")
+# print("pattern_scale = %f" % pattern_scale)
+# for _k in point_3d_dict:
+#     np_point_3d_dict[_k] = np.array(point_3d_dict[_k]).reshape((3,1))
+#     np_point_3d_dict[_k] = np_point_3d_dict[_k] * pattern_scale # Multiply the scale
+#     print("%s:\n%s" % (_k, str(np_point_3d_dict[_k])))
+# print("-"*35)
+# # print(np_point_3d_dict)
 #----------------------------------------#
 
 # Create the solver
 #----------------------------------------#
 # verbose = True
 verbose = False
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, verbose=verbose)
+pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, pattern_scale=pattern_scale, verbose=verbose)
 
 
 def convert_pixel_to_homo(pixel_xy, mirrored=True):
@@ -161,7 +168,7 @@ distance_error_list = list()
 distance_ratio_list = list()
 for _idx in range(len(data_list)):
     print("\n-------------- (idx = %d)--------------\n" % _idx)
-
+    print('file file_name: [%s]' % data_list[_idx]['file_name'])
 
 
     LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
@@ -191,7 +198,18 @@ for _idx in range(len(data_list)):
     #-----------------------------#
     print("Result from the solver:\n")
 
+    # Grund truth (R,t)
+    np_R_GT = pnp_solver.get_rotation_matrix_from_Euler( data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'], is_degree=True )
+    # _det = np.linalg.det(np_R_GT)
+    # print("np_R_GT = \n%s" % str(np_R_GT))
+    # print("_det = %f" % _det)
+    distance_GT = data_list[_idx]['distance'] *0.01 # cm --> m
+    np_t_GT_est = (np_t_est/t3_est) * distance_GT
+
+
+    # Reprojections
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False)
+    np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False)
     #
     print("2D points on image (re-projection):")
     # print("2D points on image (is_h_mirrored_image=%s):" % str(is_h_mirrored_image))
@@ -203,7 +221,7 @@ for _idx in range(len(data_list)):
                 " "*(12-len(_k)),
                 str(np_point_image_dict[_k].T),
                 str(np_point_image_dict_reproject[_k].T),
-                str((np_point_image_dict_reproject[_k]-np_point_image_dict[_k]).T)
+                str((np_point_image_dict_reproject[_k]-np_point_image_dict[_k]).T),
             )
         )
         np.set_printoptions(suppress=False, precision=8)
@@ -224,10 +242,14 @@ for _idx in range(len(data_list)):
     print("-"*30 + " Result " + "-"*30)
     print("distance = %f cm" % (t3_est*100.0))
     print("(roll_est, yaw_est, pitch_est) \t\t= %s" % str( np.rad2deg( (roll_est, yaw_est, pitch_est) ) ) )
+    print("np_R_est = \n%s" % str(np_R_est))
+    print("np_t_est = \n%s" % str(np_t_est))
     # Grund truth
     print("-"*28 + " Grund Truth " + "-"*28)
     print("distance = %f cm" % data_list[_idx]['distance'])
     print("(roll_GT, yaw_GT, pitch_GT) \t\t= %s" % str(  [ data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'] ]) )
+    print("np_R_GT = \n%s" % str(np_R_GT))
+    print("np_t_GT_est = \n%s" % str(np_t_GT_est))
     print("-"*30 + " The End " + "-"*30)
     print()
     #----------------------------#
@@ -268,44 +290,20 @@ for _idx in range(len(data_list)):
     #----------------------------------#
 
     # Ploting LMs onto the image
+    _img_LM = copy.deepcopy(_img_preprocessed)
+    # Colors
     _color_RED   = (0, 0, 255)
     _color_GREEN = (0, 255, 0)
     _color_BLUE  = (255, 0, 0)
     # _color_RED   = np.array((0, 0, 255))
     # _color_GREEN = np.array((0, 255, 0))
     # _color_BLUE  = np.array((255, 0, 0))
-    #----------------------------------#
-    # Landmarks
-    _img_LM = copy.deepcopy(_img_preprocessed)
-    # [[u,v,1]].T
-    for _k in np_point_image_dict:
-        _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 3
-        _color = _color_BLUE # BGR
-        # _color = _color_RED # BGR
-        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
-    #----------------------------------#
 
-    # Ploting reprojections onto the image
-    #----------------------------------#
-    # [[u,v,1]].T
-    for _k in np_point_image_dict:
-        _center_pixel = (np_point_image_dict_reproject[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 2
-        _color = _color_RED # BGR
-        # _color = _color_BLUE # BGR
-        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
-    #----------------------------------#
 
     # Ploting axies
     #-----------------------------------#
     # Grund truth axes
-    _R_GT = pnp_solver.get_rotation_matrix_from_Euler( data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'], is_degree=True )
-    _det = np.linalg.det(_R_GT)
-    print("_R_GT = \n%s" % str(_R_GT))
-    print("_det = %f" % _det)
-    #
-    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(_R_GT, np_t_est) # Note: use the estimated t since we don't have the grund truth.
+    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_GT, np_t_GT_est) # Note: use the estimated t since we don't have the grund truth.
     print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
     vector_scale = 0.2
     _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
@@ -332,6 +330,30 @@ for _idx in range(len(data_list)):
     cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, _color_GREEN, _line_width)
     cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, _color_BLUE, _line_width)
     #-----------------------------------#
+
+    # Landmarks
+    #----------------------------------#
+    # [[u,v,1]].T
+    for _k in np_point_image_dict:
+        # Landmarks
+        _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _radius = 3
+        _color = _color_BLUE # BGR
+        # _color = _color_RED # BGR
+        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        # Reprojections of golden pattern onto image using grund truth pose
+        _center_pixel = (np_point_image_dict_reproject_GT_ori_golden_patern[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _radius = 2
+        _color = (127, 127, 0) # BGR
+        # _color = _color_RED # BGR
+        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        # Reprojections of the golden pattern onto the image using estimated pose
+        _center_pixel = (np_point_image_dict_reproject[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _radius = 1
+        _color = _color_RED # BGR
+        # _color = _color_BLUE # BGR
+        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    #----------------------------------#
 
     # Dtermine the final image
     #-------------------------#

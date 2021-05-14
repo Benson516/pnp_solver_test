@@ -6,23 +6,29 @@ import copy
 class PNP_SOLVER_A2_M3(object):
     '''
     '''
-    def __init__(self, np_K_camera_est, point_3d_dict, verbose=False):
+    def __init__(self, np_K_camera_est, point_3d_dict, pattern_scale=1.0, verbose=False):
         '''
         '''
-        self.verbose = verbose
+        self.verbose = True
         self.np_K_camera_est = copy.deepcopy(np_K_camera_est)
 
         # LM in face local frame
+        self.pattern_scale = pattern_scale
         self.point_3d_dict = copy.deepcopy(point_3d_dict)
         # Convert to numpy vector, shape: (3,1)
+        # Applying the scale as well
         self.np_point_3d_dict = dict()
         self.lib_print("-"*35)
         self.lib_print("3D points in local coordinate:")
+        self.lib_print("pattern_scale = %f" % pattern_scale)
         for _k in point_3d_dict:
             self.np_point_3d_dict[_k] = np.array(point_3d_dict[_k]).reshape((3,1))
+            self.np_point_3d_dict[_k] *= pattern_scale # Multiply the scale
             self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_dict[_k])))
         self.lib_print("-"*35)
         # self.lib_print(self.np_point_3d_dict)
+
+        self.verbose = verbose
 
     def lib_print(self, str=''):
         if self.verbose:
