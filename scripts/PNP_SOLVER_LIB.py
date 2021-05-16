@@ -465,9 +465,53 @@ class PNP_SOLVER_A2_M3(object):
     #     R = np.concatenate((_R01, R_roll_2), axis=0)
     #     return R
 
+
+
+    # def get_Euler_from_rotation_matrix(self, R_in, verbose=True, is_degree=False):
+    #     '''
+    #     R --> roll, yaw, pitch
+    #
+    #     is_degree - True: the angle unit is degree, False: the angle unit is rad
+    #     '''
+    #     _eps = 10.0**-7
+    #     # if np.linalg.norm([R_in[2,1], R_in[2,2]]) <= _eps: # Note: abs(c2) = np.linalg.norm([R_in[2,1], R_in[2,2]])
+    #     if np.abs(np.pi/2.0 - np.arcsin(np.abs(R_in[2,0]))) <= _eps: # Faster
+    #         # Singularity, "gimbal locked"
+    #         yaw = np.sign(R_in[2,0]) * (np.pi/2.0) # theta_2
+    #         # Assume pitch = 0.0 (theta_3 = 0.0)
+    #         pitch = 0.0 # theta_3
+    #         roll = np.arctan2(R_in[0,1], R_in[1,1]) # theta_1
+    #     else:
+    #         # Normal case
+    #         roll = np.arctan2(-R_in[1,0], R_in[0,0]) # theta_1
+    #         pitch = np.arctan2(-R_in[2,1], R_in[2,2]) # theta_3
+    #         #
+    #         c1 = np.cos(roll)
+    #         c3 = np.cos(pitch)
+    #         if np.abs(c1) > np.abs(c3):
+    #             if verbose:
+    #                 self.lib_print("Set c2 as (r11/c1)")
+    #             c2 = R_in[0,0]/c1
+    #         else:
+    #             if verbose:
+    #                 self.lib_print("Set c2 as (r33/c3)")
+    #             c2 = R_in[2,2]/c3
+    #         yaw = np.arctan2(R_in[2,0], c2) # theta_2
+    #     # Convert to degree if needed
+    #     if is_degree:
+    #         roll = np.rad2deg(roll)
+    #         yaw = np.rad2deg(yaw)
+    #         pitch = np.rad2deg(pitch)
+    #     # Mirror correction term
+    #     #------------------------------#
+    #     yaw = -yaw
+    #     #------------------------------#
+    #     return (roll, yaw, pitch)
+
     def get_rotation_matrix_from_Euler(self, roll, yaw, pitch, is_degree=False):
         '''
-        roll, yaw, pitch --> R
+        (x) roll, yaw, pitch --> R
+        roll, pitch, yaw --> R
 
         is_degree - True: the angle unit is degree, False: the angle unit is rad
         '''
@@ -498,7 +542,7 @@ class PNP_SOLVER_A2_M3(object):
 
     def get_Euler_from_rotation_matrix(self, R_in, verbose=True, is_degree=False):
         '''
-        R --> roll, yaw, pitch
+        R --> roll, pitch, yaw
 
         is_degree - True: the angle unit is degree, False: the angle unit is rad
         '''
@@ -506,26 +550,30 @@ class PNP_SOLVER_A2_M3(object):
         # if np.linalg.norm([R_in[2,1], R_in[2,2]]) <= _eps: # Note: abs(c2) = np.linalg.norm([R_in[2,1], R_in[2,2]])
         if np.abs(np.pi/2.0 - np.arcsin(np.abs(R_in[2,0]))) <= _eps: # Faster
             # Singularity, "gimbal locked"
-            yaw = np.sign(R_in[2,0]) * (np.pi/2.0) # theta_2
-            # Assume pitch = 0.0 (theta_3 = 0.0)
-            pitch = 0.0 # theta_3
-            roll = np.arctan2(R_in[0,1], R_in[1,1]) # theta_1
+            theta_2 = np.sign(-R_in[2,1]) * (np.pi/2.0) # theta_2
+            # Assume theta_3 = 0.0 (theta_3 = 0.0)
+            theta_3 = 0.0 # theta_3
+            theta_1 = np.arctan2(-R_in[1,0], R_in[0,0]) # theta_1
         else:
             # Normal case
-            roll = np.arctan2(-R_in[1,0], R_in[0,0]) # theta_1
-            pitch = np.arctan2(-R_in[2,1], R_in[2,2]) # theta_3
+            theta_1 = np.arctan2( R_in[0,1], R_in[1,1] ) # theta_1
+            theta_3 = np.arctan2( R_in[2,0], R_in[2,2] ) # theta_3
             #
-            c1 = np.cos(roll)
-            c3 = np.cos(pitch)
+            c1 = np.cos(theta_1)
+            c3 = np.cos(theta_3)
             if np.abs(c1) > np.abs(c3):
                 if verbose:
-                    self.lib_print("Set c2 as (r11/c1)")
-                c2 = R_in[0,0]/c1
+                    self.lib_print("Set c2 as (r22/c1)")
+                c2 = R_in[1,1]/c1
             else:
                 if verbose:
                     self.lib_print("Set c2 as (r33/c3)")
                 c2 = R_in[2,2]/c3
-            yaw = np.arctan2(R_in[2,0], c2) # theta_2
+            theta_2 = np.arctan2(-R_in[2,1], c2) # theta_2
+        #
+        roll = theta_1
+        pitch = theta_2
+        yaw = theta_3
         # Convert to degree if needed
         if is_degree:
             roll = np.rad2deg(roll)
