@@ -267,7 +267,10 @@ def get_Delta_i(theta_i, phi_3_est, id=None):
     _eps = 10**-7
     if np.abs(Delta_i) <= _eps:
         print("Delta[%d] is too close to zero!!" % (id if id is not None else -1) )
-        Delta_i = _eps
+        if Delta_i < 0:
+            Delta_i = -1.0*_eps
+        else: # Note: np.sign(0.0) --> 0.0, which is not preferred.
+            Delta_i = _eps
     return Delta_i
 
 def get_A_i(theta_i, Delta_i):
@@ -318,6 +321,7 @@ def update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, ph
     # Update phi_3_est
     phi_3_est_uni = unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*unit_vec( np.cross(phi_1_est.T, phi_2_est.T).T ))
     norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+    # norm_phi_3_est = (0.5*(norm_phi_1_est**2 + norm_phi_2_est**2))**0.5
     # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
     # norm_phi_3_est = 0.83333333333 # Ground truth
     phi_3_est_new = norm_phi_3_est * phi_3_est_uni
