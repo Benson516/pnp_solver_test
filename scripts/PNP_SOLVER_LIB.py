@@ -35,7 +35,7 @@ class PNP_SOLVER_A2_M3(object):
         self.is_using_pre_transform = False
         # self.is_using_pre_transform = True
         self.pre_trans_R_a_h = np.eye(3)
-        self.pre_trans_t_a_h = np.array([[0.0, 0.0, 1.0]]).T
+        self.pre_trans_t_a_h = np.array([[0.0, 0.0, -1.0]]).T
         # self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
         # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
         if self.is_using_pre_transform:
@@ -116,7 +116,7 @@ class PNP_SOLVER_A2_M3(object):
              self.lib_print("rank_A_all = %d" % rank_A_all)
              A_u, A_s, A_vh = np.linalg.svd(A_all)
              # np.set_printoptions(suppress=True, precision=4)
-             self.lib_print("A_s = \n%s" % str(A_s))
+             self.lib_print("A_s = %s" % str(A_s))
              # np.set_printoptions(suppress=False, precision=8)
              #-------------------------#
 
@@ -129,7 +129,7 @@ class PNP_SOLVER_A2_M3(object):
              # residule
              # _res = (A_all @ phi_est) - B_all
              _res = B_all - (A_all @ phi_est)
-             # self.lib_print("_res = \n%s" % str(_res))
+             self.lib_print("_res = %s.T" % str(_res.T))
              # _res_delta = _res - np_quantization_error_world_space_vec
              # self.lib_print("_res_delta = \n%s" % str(_res_delta))
              res_norm = np.linalg.norm(_res)
