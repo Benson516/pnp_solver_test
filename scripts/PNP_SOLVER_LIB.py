@@ -21,12 +21,18 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("-"*35)
         self.lib_print("3D points in local coordinate:")
         self.lib_print("pattern_scale = %f" % pattern_scale)
-        for _k in point_3d_dict:
-            self.np_point_3d_dict[_k] = np.array(point_3d_dict[_k]).reshape((3,1))
+        for _k in self.point_3d_dict:
+            self.np_point_3d_dict[_k] = np.array(self.point_3d_dict[_k]).reshape((3,1))
             self.np_point_3d_dict[_k] *= pattern_scale # Multiply the scale
             self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_dict[_k])))
         self.lib_print("-"*35)
         # self.lib_print(self.np_point_3d_dict)
+
+        # # test, pre-transfer
+        # #---------------------------#
+        # for _k in self.np_point_3d_dict:
+        #     self.np_point_3d_dict[_k] -= np.array([[0.0, 0.0, 0.2]]).T
+        # #---------------------------#
 
         self.verbose = verbose
 
@@ -170,7 +176,10 @@ class PNP_SOLVER_A2_M3(object):
         _eps = 10**-7
         if np.abs(Delta_i) <= _eps:
             self.lib_print("Delta[%d] is too close to zero!!" % (id if id is not None else -1) )
-            Delta_i = _eps
+            if Delta_i < 0:
+                Delta_i = -1.0*_eps
+            else: # Note: np.sign(0.0) --> 0.0, which is not preferred.
+                Delta_i = _eps
         return Delta_i
 
     def get_A_i(self, theta_i, Delta_i):
@@ -221,6 +230,7 @@ class PNP_SOLVER_A2_M3(object):
         # Update phi_3_est
         phi_3_est_uni = self.unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*self.unit_vec( np.cross(phi_1_est.T, phi_2_est.T).T ))
         norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+        # norm_phi_3_est = (0.5*(norm_phi_1_est**2 + norm_phi_2_est**2))**0.5
         # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
         # norm_phi_3_est = 0.83333333333 # Ground truth
         phi_3_est_new = norm_phi_3_est * phi_3_est_uni
