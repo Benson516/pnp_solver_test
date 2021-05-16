@@ -28,11 +28,21 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("-"*35)
         # self.lib_print(self.np_point_3d_dict)
 
-        # # test, pre-transfer
-        # #---------------------------#
-        # for _k in self.np_point_3d_dict:
-        #     self.np_point_3d_dict[_k] -= np.array([[0.0, 0.0, 0.2]]).T
-        # #---------------------------#
+        # Backup
+        self.np_point_3d_pretransfer_dict = copy.deepcopy(self.np_point_3d_dict)
+
+        # test, pre-transfer
+        #---------------------------#
+        self.is_using_pre_transform = False
+        # self.is_using_pre_transform = True
+        # self.pre_trans_R_a_h = np.eye(3)
+        # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 1.0]]).T
+        self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
+        self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
+        if self.is_using_pre_transform:
+            for _k in self.np_point_3d_pretransfer_dict:
+                self.np_point_3d_pretransfer_dict[_k] = self.transform_3D_point(self.np_point_3d_pretransfer_dict[_k], self.pre_trans_R_a_h, self.pre_trans_t_a_h)
+        #---------------------------#
 
         self.verbose = verbose
 
@@ -76,7 +86,8 @@ class PNP_SOLVER_A2_M3(object):
              k_it += 1
              self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
              # Generate Delta_i(k-1) and A(k-1)
-             Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
+             # Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
+             Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
              #-------------------------#
              # self.lib_print("A_all = \n%s" % str(A_all))
              self.lib_print("A_all.shape = %s" % str(A_all.shape))
@@ -151,6 +162,18 @@ class PNP_SOLVER_A2_M3(object):
         else:
             np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
         # self.lib_print("np_R_est = \n%s" % str(np_R_est))
+
+        # test, pre-transfer
+        #---------------------------#
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = np_R_c_h_est
+            np_t_est = np_t_c_h
+            t3_est = np_t_c_h[2,0]
+        #---------------------------#
+
         # Convert to Euler angle
         Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False)
         self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
@@ -159,6 +182,8 @@ class PNP_SOLVER_A2_M3(object):
         # self.lib_print("t3_est = %f" % t3_est)
         # self.lib_print("np_t_est = \n%s" % str(np_t_est))
         #--------------------------------------------------------#
+
+
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
     #-----------------------------------------------------------#
@@ -452,6 +477,18 @@ class PNP_SOLVER_A2_M3(object):
         return (roll, yaw, pitch)
     #-----------------------------------------------------------#
 
+    def transform_3D_point(self, point_3D, R_in, t_in):
+        '''
+        Note: we don't use homogeneous expression here since the operation here is simple.
+        Input:
+        - point_3D: [[x,y,z]].T, shape=(3,1)
+        - R_in: SO(3), shape=(3,1)
+        - t_in: [[x,y,z]].T, shape=(3,1)
+        Output:
+        - point_3D_trans: [[x,y,z]].T, shape=(3,1)
+        '''
+        return (R_in @ point_3D + t_in)
+
     def perspective_projection(self, np_point_3d, np_K_camera, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=True):
         '''
         input:
@@ -516,6 +553,7 @@ class PNP_SOLVER_A2_M3(object):
 
         # Perspective Projection + quantization
         #--------------------------------------------------#
+        # Not the self.np_point_3d_pretransfer_dict
         for _k in self.np_point_3d_dict:
             _np_point_image, _projection_no_q = self.perspective_projection(self.np_point_3d_dict[_k], self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized)
             np_point_image_dict[_k] = _np_point_image
