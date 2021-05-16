@@ -38,6 +38,7 @@ verbose = True
 # verbose = False
 # Image display
 is_showing_image = True
+# is_showing_image = False
 #---------------------------#
 
 # Parameters of the data
@@ -105,7 +106,7 @@ for _idx in range(len(data_str_list_list)):
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
 # f_camera = 188.55 # 175.0
-f_camera = 225.68717584155982
+f_camera = 225.68717584155982 / 1.15
 #
 fx_camera = f_camera
 # fx_camera = (-f_camera) if is_h_mirrored_image else f_camera # Note: mirrored image LM features
