@@ -29,7 +29,9 @@ is_limiting_line_count = True
 # is_limiting_line_count = False
 # DATA_START_ID = 0
 # DATA_START_ID = 658
-DATA_START_ID = 379 # (0, 0, 0)
+# DATA_START_ID = 379 # (0, 0, 0)
+DATA_START_ID = 926 # (0, -20, 0)
+# DATA_START_ID = 1070 # (0, 40, 0)
 DATA_COUNT =  3
 #
 verbose = True
@@ -123,10 +125,10 @@ point_3d_dict = dict()
 # Note: the Landmark definition in the pitcture in reversed
 point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
 point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
 point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
 point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
 point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
@@ -177,10 +179,10 @@ for _idx in range(len(data_list)):
     # [x,y,1].T, shape: (3,1)
     np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96])
     np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97])
+    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
     np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
     np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
     np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
     np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
     #
     # # Print
@@ -213,8 +215,8 @@ for _idx in range(len(data_list)):
 
 
     # Reprojections
-    # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
-    np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
+    np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
+    # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
     #
     print("2D points on image (re-projection):")

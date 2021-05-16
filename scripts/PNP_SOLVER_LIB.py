@@ -21,6 +21,10 @@ class PNP_SOLVER_A2_M3(object):
         for _k in self.point_3d_dict:
             self.np_point_3d_dict[_k] = np.array(self.point_3d_dict[_k]).reshape((3,1))
             self.np_point_3d_dict[_k] *= pattern_scale # Multiply the scale
+            # # Tilting or other correction
+            # _R_correct = self.get_rotation_matrix_from_Euler(0.0, 0.0, 10.0, is_degree=True) # 15 deg up
+            # _t_correct = np.array([[0.0, 0.0, 0.0]]).T
+            # self.np_point_3d_dict[_k] = self.transform_3D_point(self.np_point_3d_dict[_k], _R_correct, _t_correct)
         # self.lib_print(self.np_point_3d_dict)
 
         # Backup
@@ -432,6 +436,35 @@ class PNP_SOLVER_A2_M3(object):
     #-----------------------------------------------------------#
 
     #-----------------------------------------------------------#
+    # def get_rotation_matrix_from_Euler(self, roll, yaw, pitch, is_degree=False):
+    #     '''
+    #     roll, yaw, pitch --> R
+    #
+    #     is_degree - True: the angle unit is degree, False: the angle unit is rad
+    #     '''
+    #     # Mirror correction term
+    #     #------------------------------#
+    #     yaw = -yaw
+    #     #------------------------------#
+    #     if is_degree:
+    #         roll = np.deg2rad(roll)
+    #         yaw = np.deg2rad(yaw)
+    #         pitch = np.deg2rad(pitch)
+    #     c1 = np.cos(roll)
+    #     s1 = np.sin(roll)
+    #     c2 = np.cos(yaw)
+    #     s2 = np.sin(yaw)
+    #     c3 = np.cos(pitch)
+    #     s3 = np.sin(pitch)
+    #     R_roll_0 = np.array([[ c1*c2, (s1*c3 + c1*s2*s3), (s1*s3 - c1*s2*c3)]])
+    #     R_roll_1 = np.array([[-s1*c2, (c1*c3 - s1*s2*s3), (c1*s3 + s1*s2*c3)]])
+    #     R_roll_2 = np.array([[ s2,    -c2*s3,              c2*c3            ]])
+    #     # self.lib_print("np.cross(R_roll_0, R_roll_1) = %s" % str(np.cross(R_roll_0, R_roll_1)))
+    #     # self.lib_print("R_roll_2 = %s" % str(R_roll_2))
+    #     _R01 = np.concatenate((R_roll_0, R_roll_1), axis=0)
+    #     R = np.concatenate((_R01, R_roll_2), axis=0)
+    #     return R
+
     def get_rotation_matrix_from_Euler(self, roll, yaw, pitch, is_degree=False):
         '''
         roll, yaw, pitch --> R
@@ -452,13 +485,15 @@ class PNP_SOLVER_A2_M3(object):
         s2 = np.sin(yaw)
         c3 = np.cos(pitch)
         s3 = np.sin(pitch)
-        R_roll_0 = np.array([[ c1*c2, (s1*c3 + c1*s2*s3), (s1*s3 - c1*s2*c3)]])
-        R_roll_1 = np.array([[-s1*c2, (c1*c3 - s1*s2*s3), (c1*s3 + s1*s2*c3)]])
-        R_roll_2 = np.array([[ s2,    -c2*s3,              c2*c3            ]])
-        # self.lib_print("np.cross(R_roll_0, R_roll_1) = %s" % str(np.cross(R_roll_0, R_roll_1)))
-        # self.lib_print("R_roll_2 = %s" % str(R_roll_2))
-        _R01 = np.concatenate((R_roll_0, R_roll_1), axis=0)
-        R = np.concatenate((_R01, R_roll_2), axis=0)
+
+        E_roll = np.array([[c1, s1, 0.0], [-s1, c1, 0.0], [0.0, 0.0, 1.0]])
+        E_yaw = np.array([[c2, 0.0, -s2], [0.0, 1.0, 0.0], [s2, 0.0, c2]])
+        E_pitch = np.array([[1.0, 0.0, 0.0], [0.0, c3, s3], [0.0, -s3, c3]])
+        # Test the sequence
+        # R = E_roll @ E_yaw @ E_pitch # version 1, (x)
+        # R = E_pitch @ E_yaw @ E_roll  # (x) --> Known: first roll then pitch
+        R = E_roll @ E_pitch @ E_yaw # --> Might be correct
+        # R = E_yaw @ E_roll @ E_pitch # (x)
         return R
 
     def get_Euler_from_rotation_matrix(self, R_in, verbose=True, is_degree=False):
