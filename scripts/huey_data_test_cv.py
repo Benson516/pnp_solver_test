@@ -31,6 +31,9 @@ is_limiting_line_count = True
 # DATA_START_ID = 658
 DATA_START_ID = 379 # (0, 0, 0)
 DATA_COUNT =  3
+#
+verbose = True
+# verbose = False
 # Image display
 is_showing_image = True
 #---------------------------#
@@ -122,7 +125,7 @@ point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
 point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
 point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
-point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, 0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
 point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
 point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
@@ -145,8 +148,6 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 
 # Create the solver
 #----------------------------------------#
-# verbose = True
-verbose = False
 pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, pattern_scale=pattern_scale, verbose=verbose)
 
 
@@ -264,6 +265,12 @@ for _idx in range(len(data_list)):
     distance_ratio_list.append( (t3_est*100.0 / data_list[_idx]['distance']))
     distance_error_list.append( (t3_est*100.0 - data_list[_idx]['distance']))
     #----------------------------#
+
+
+    # Image Display
+    #====================================================#
+    if not is_showing_image:
+        continue
 
     # Get the file name of the image
     #--------------------------------------------#
