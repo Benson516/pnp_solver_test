@@ -613,6 +613,9 @@ for _label in distance_label_list:
     _statistic_str_out += "[%s]: m_ratio=%f | mean=%f cm | MAE=%f cm" % (_label, _s_data[0], _s_data[1]*100.0, _s_data[2]*100.0)
     _statistic_str_out += "\n"
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + '.txt'
+#
+print(_statistic_str_out)
+#
 with open(statistic_txt_path, "w") as _f:
     _f.write(_statistic_str_out)
     print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
