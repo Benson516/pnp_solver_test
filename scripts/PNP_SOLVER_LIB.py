@@ -277,9 +277,10 @@ class PNP_SOLVER_A2_M3(object):
         '''
         # Update phi_3_est
         phi_3_est_uni = self.unit_vec( (1.0-step_alpha)*phi_3_est + step_alpha*self.unit_vec( np.cross(phi_1_est.T, phi_2_est.T).T ))
-        norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
+        # norm_phi_3_est = 0.5*(norm_phi_1_est + norm_phi_2_est)
         # norm_phi_3_est = (0.5*(norm_phi_1_est**2 + norm_phi_2_est**2))**0.5
         # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
+        norm_phi_3_est = max( norm_phi_1_est, norm_phi_2_est)
         # norm_phi_3_est = 0.83333333333 # Ground truth
         phi_3_est_new = norm_phi_3_est * phi_3_est_uni
         self.lib_print("phi_3_est_new = \n%s" % str(phi_3_est_new))
