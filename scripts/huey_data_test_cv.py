@@ -106,7 +106,7 @@ for _idx in range(len(data_str_list_list)):
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
 # f_camera = 188.55 # 175.0
-f_camera = 225.68717584155982 / 1.15
+f_camera = 225.68717584155982 # / 1.15
 #
 fx_camera = f_camera
 # fx_camera = (-f_camera) if is_h_mirrored_image else f_camera # Note: mirrored image LM features
@@ -410,6 +410,6 @@ np_distance_error_vec = np.vstack(distance_error_list)
 mean_distance_ratio = np.average(np_distance_ratio_vec)
 mean_distance_error = np.average(np_distance_error_vec)
 error_distance_MAE = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
-print("mean_distance_ratio = %f" % mean_distance_ratio)
-print("mean_distance_error = %f" % mean_distance_error)
-print("error_distance_MAE = %f" % error_distance_MAE)
+print("mean_distance_ratio (estimated/actual) = %f" % mean_distance_ratio)
+print("mean_distance_error = %f cm" % mean_distance_error)
+print("error_distance_MAE = %f cm" % error_distance_MAE)

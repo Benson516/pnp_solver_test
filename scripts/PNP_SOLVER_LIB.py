@@ -336,7 +336,8 @@ class PNP_SOLVER_A2_M3(object):
         # value_G = G_s[1] # Accurate?
         # value_G = G_s[2] # Accurate? Note: G_s[2] = np.linalg.norm(np_Gamma_est, ord=-2)
         # value_G = np.average(G_s)
-        value_G = np.linalg.norm(np_Gamma_est, ord=-2)
+        # value_G = np.linalg.norm(np_Gamma_est, ord=-2)
+        value_G = np.linalg.norm(np_Gamma_est, ord=2)
         self.lib_print("value_G = %f" % value_G)
         #
         t3_est = 1.0 / value_G
