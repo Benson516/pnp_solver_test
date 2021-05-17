@@ -43,7 +43,7 @@ is_showing_image = True
 
 # Parameters of the data
 #---------------------------#
-is_h_mirrored_image = True
+is_mirrored_image = True
 pattern_scale = 1.0 # 0.85 # Multiply onto the golden pattern
 #---------------------------#
 
@@ -109,7 +109,7 @@ for _idx in range(len(data_str_list_list)):
 f_camera = 225.68717584155982 # / 1.15
 #
 fx_camera = f_camera
-# fx_camera = (-f_camera) if is_h_mirrored_image else f_camera # Note: mirrored image LM features
+# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
 fy_camera = f_camera
 xo_camera = 320/2.0
 yo_camera = 240/2.0
@@ -221,7 +221,7 @@ for _idx in range(len(data_list)):
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
     #
     print("2D points on image (re-projection):")
-    # print("2D points on image (is_h_mirrored_image=%s):" % str(is_h_mirrored_image))
+    # print("2D points on image (is_mirrored_image=%s):" % str(is_mirrored_image))
     print("-"*35)
     for _k in np_point_image_dict:
         np.set_printoptions(suppress=True, precision=2)
@@ -298,7 +298,7 @@ for _idx in range(len(data_list)):
 
     # Flip the image if needed
     #----------------------------------#
-    if is_h_mirrored_image:
+    if is_mirrored_image:
         _img_preprocessed = cv2.flip(_img, 1)
     else:
         _img_preprocessed = _img
@@ -379,7 +379,7 @@ for _idx in range(len(data_list)):
 
     # Flip the result image if needed
     #----------------------------------#
-    if is_h_mirrored_image:
+    if is_mirrored_image:
         _img_result_flipped = cv2.flip(_img_result, 1)
     else:
         _img_result_flipped = _img_result
