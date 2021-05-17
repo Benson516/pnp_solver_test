@@ -292,29 +292,40 @@ for _idx in range(len(data_list)):
     _result_idx_dict = dict()
     _result_idx_dict['idx'] = data_list[_idx]['idx']
     _result_idx_dict["file_name"] = data_list[_idx]['file_name']
-    # Result
-    _result_idx_dict["np_R_est"] = np_R_est
-    _result_idx_dict["np_t_est"] = np_t_est
-    _result_idx_dict["t3_est"] = t3_est
-    _result_idx_dict["roll_est"] = roll_est
-    _result_idx_dict["pitch_est"] = pitch_est
-    _result_idx_dict["yaw_est"] = yaw_est
-    _result_idx_dict["res_norm"] = res_norm
+    _result_idx_dict["drpy"] = (distance_GT, roll_GT, pitch_GT, yaw_GT)
+    #-------------------------------#
+    # R, t, depth, roll, pitch, yaw, residual
+    #---#
     # GT
-    _result_idx_dict["roll_GT"] = roll_GT
-    _result_idx_dict["pitch_GT"] = pitch_GT
-    _result_idx_dict["yaw_GT"] = yaw_GT
-    _result_idx_dict["np_R_GT"] = np_R_GT
-    _result_idx_dict["np_t_GT_est"] = np_t_GT_est
-    _result_idx_dict["distance_GT"] = distance_GT
+    # Result
     # Error, err = (est - GT)
+    #-------------------------------#
+    # R
+    _result_idx_dict["np_R_GT"] = np_R_GT
+    _result_idx_dict["np_R_est"] = np_R_est
     _result_idx_dict["np_R_err"] = np_R_est - np_R_GT
-    _result_idx_dict["np_t_err"] = t3_est - np_t_GT_est
+    # t
+    _result_idx_dict["np_t_GT_est"] = np_t_GT_est
+    _result_idx_dict["np_t_est"] = np_t_est
+    _result_idx_dict["np_t_err"] = np_t_est - np_t_GT_est
+    # depth
+    _result_idx_dict["distance_GT"] = distance_GT
+    _result_idx_dict["t3_est"] = t3_est
     _result_idx_dict["depth_err"] = t3_est - distance_GT
+    # roll
+    _result_idx_dict["roll_GT"] = roll_GT
+    _result_idx_dict["roll_est"] = roll_est
     _result_idx_dict["roll_err"] = roll_est - roll_GT
+    # pitch
+    _result_idx_dict["pitch_GT"] = pitch_GT
+    _result_idx_dict["pitch_est"] = pitch_est
     _result_idx_dict["pitch_err"] = pitch_est - pitch_GT
+    # yaw
+    _result_idx_dict["yaw_GT"] = yaw_GT
+    _result_idx_dict["yaw_est"] = yaw_est
     _result_idx_dict["yaw_err"] = yaw_est - yaw_GT
-
+    # residual
+    _result_idx_dict["res_norm"] = res_norm
     #
     result_list.append(_result_idx_dict)
     #----------------------------#
@@ -458,29 +469,42 @@ for _idx in range(len(data_list)):
 # # Store the error for statistic
 # #----------------------------#
 # _result_idx_dict = dict()
+# _result_idx_dict['idx'] = data_list[_idx]['idx']
 # _result_idx_dict["file_name"] = data_list[_idx]['file_name']
-# # Result
-# _result_idx_dict["np_R_est"] = np_R_est
-# _result_idx_dict["np_t_est"] = np_t_est
-# _result_idx_dict["t3_est"] = t3_est
-# _result_idx_dict["roll_est"] = roll_est
-# _result_idx_dict["pitch_est"] = pitch_est
-# _result_idx_dict["yaw_est"] = yaw_est
-# _result_idx_dict["res_norm"] = res_norm
+# _result_idx_dict["drpy"] = (distance_GT, roll_GT, pitch_GT, yaw_GT)
+# #-------------------------------#
+# # R, t, depth, roll, pitch, yaw, residual
+# #---#
 # # GT
-# _result_idx_dict["roll_GT"] = roll_GT
-# _result_idx_dict["pitch_GT"] = pitch_GT
-# _result_idx_dict["yaw_GT"] = yaw_GT
-# _result_idx_dict["np_R_GT"] = np_R_GT
-# _result_idx_dict["np_t_GT_est"] = np_t_GT_est
-# _result_idx_dict["distance_GT"] = distance_GT
+# # Result
 # # Error, err = (est - GT)
+# #-------------------------------#
+# # R
+# _result_idx_dict["np_R_GT"] = np_R_GT
+# _result_idx_dict["np_R_est"] = np_R_est
 # _result_idx_dict["np_R_err"] = np_R_est - np_R_GT
-# _result_idx_dict["np_t_err"] = t3_est - np_t_GT_est
+# # t
+# _result_idx_dict["np_t_GT_est"] = np_t_GT_est
+# _result_idx_dict["np_t_est"] = np_t_est
+# _result_idx_dict["np_t_err"] = np_t_est - np_t_GT_est
+# # depth
+# _result_idx_dict["distance_GT"] = distance_GT
+# _result_idx_dict["t3_est"] = t3_est
 # _result_idx_dict["depth_err"] = t3_est - distance_GT
+# # roll
+# _result_idx_dict["roll_GT"] = roll_GT
+# _result_idx_dict["roll_est"] = roll_est
 # _result_idx_dict["roll_err"] = roll_est - roll_GT
-# _result_idx_dict["pitch_GT"] = pitch_est - pitch_GT
+# # pitch
+# _result_idx_dict["pitch_GT"] = pitch_GT
+# _result_idx_dict["pitch_est"] = pitch_est
+# _result_idx_dict["pitch_err"] = pitch_est - pitch_GT
+# # yaw
+# _result_idx_dict["yaw_GT"] = yaw_GT
+# _result_idx_dict["yaw_est"] = yaw_est
 # _result_idx_dict["yaw_err"] = yaw_est - yaw_GT
+# # residual
+# _result_idx_dict["res_norm"] = res_norm
 # #
 # result_list.append(_result_idx_dict)
 # #----------------------------#
@@ -510,10 +534,11 @@ def write_result_to_csv(result_list, csv_path):
     '''
     '''
     with open(csv_path, mode='w') as _csv_f:
-        fieldnames = result_list[0].keys()
-        # fieldnames = ["idx", "file_name", "t3_est", "roll_est", "pitch_est", "yaw_est", "res_norm", "distance_GT", "roll_GT", "pitch_GT", "yaw_GT"]
-        # fieldnames = ["idx", "file_name", "t3_est", "distance_GT", "roll_est", "roll_GT", "pitch_est", "pitch_GT", "yaw_est", "yaw_GT", "res_norm"]
-        # fieldnames = ["idx", "file_name", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
+        # fieldnames = result_list[0].keys()
+        # fieldnames = ["idx", "file_name", "drpy", "t3_est", "roll_est", "pitch_est", "yaw_est", "res_norm", "distance_GT", "roll_GT", "pitch_GT", "yaw_GT"]
+        # fieldnames = ["idx", "file_name", "drpy", "t3_est", "distance_GT", "roll_est", "roll_GT", "pitch_est", "pitch_GT", "yaw_est", "yaw_GT", "res_norm"]
+        # fieldnames = ["idx", "file_name", "drpy", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
+        fieldnames = ["idx", "file_name", "drpy", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
         _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
 
         _csv_w.writeheader()
