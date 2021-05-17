@@ -103,6 +103,13 @@ for _idx in range(len(data_str_list_list)):
     # File info
     data_id_dict['idx'] = data_idx_list[_idx]
     data_id_dict['file_name'] = data_str_list_list[_idx][0]
+    # "Label" of classes, type: string
+    _class_dict = dict()
+    _class_dict['distance'] = data_str_list_list[_idx][1]
+    _class_dict['pitch'] = data_str_list_list[_idx][2]
+    _class_dict['roll'] = data_str_list_list[_idx][3]
+    _class_dict['yaw'] = data_str_list_list[_idx][4]
+    data_id_dict['class'] = _class_dict
     # Grund truth
     data_id_dict['distance'] = float(data_str_list_list[_idx][1])
     data_id_dict['pitch'] = float(data_str_list_list[_idx][2])
@@ -518,7 +525,7 @@ for _idx in range(len(data_list)):
 
 
 
-def get_statistic_of_result(result_list):
+def get_statistic_of_result(result_list, class_name='all', label='all', verbose=True):
     '''
     '''
     t3_est_vec = np.vstack( [ _d["t3_est"] for _d in result_list] )
@@ -529,11 +536,27 @@ def get_statistic_of_result(result_list):
     mean_distance_ratio = np.average(np_distance_ratio_vec)
     mean_distance_error = np.average(np_distance_error_vec)
     error_distance_MAE = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
-    print("mean_distance_ratio (estimated/actual) = %f" % mean_distance_ratio)
-    # print("mean_distance_error = %s cm" % type(mean_distance_error))
-    # print("error_distance_MAE = %s cm" % type(error_distance_MAE))
-    print("mean_distance_error = %f cm" % (mean_distance_error*100.0))
-    print("error_distance_MAE = %f cm" % (error_distance_MAE*100.0))
+    #
+    if verbose:
+        print("\nclass: [%s], label: [%s]" % (class_name, label))
+        print("mean_distance_ratio (estimated/actual) = %f" % mean_distance_ratio)
+        # print("mean_distance_error = %s cm" % type(mean_distance_error))
+        # print("error_distance_MAE = %s cm" % type(error_distance_MAE))
+        print("mean_distance_error = %f cm" % (mean_distance_error*100.0))
+        print("error_distance_MAE = %f cm" % (error_distance_MAE*100.0))
+    return (mean_distance_ratio, mean_distance_error, error_distance_MAE)
+
+
+def get_classified_result(result_list, data_list, class_name='distance'):
+    '''
+    '''
+    class_dict = dict()
+    for _idx in range(len(result_list)):
+        _label = data_list[_idx]['class'][class_name]
+        if not _label in class_dict:
+            class_dict[_label] = list()
+        class_dict[_label].append(result_list[_idx])
+    return class_dict
 
 
 def write_result_to_csv(result_list, csv_path):
@@ -556,6 +579,21 @@ def write_result_to_csv(result_list, csv_path):
 
 # Get simple statistic data
 get_statistic_of_result(result_list)
+
+# Get statistic result in each class
+depth_class_dict = get_classified_result(result_list, data_list, class_name='distance')
+depth_class_statistic_dict = dict()
+for _label in depth_class_dict:
+    depth_class_statistic_dict[_label] = get_statistic_of_result(depth_class_dict[_label], class_name="distance", label=_label, verbose=False)
+
+print('\nStatistic by [distance] class:')
+# def value_of_string(e):
+#   return int(e)
+distance_label_list = list(depth_class_statistic_dict.keys())
+distance_label_list.sort(key=int) # Using the integer value of string to sort the list
+for _label in distance_label_list:
+    _s_data = depth_class_statistic_dict[_label]
+    print("[%s]: m_ratio=%f | mean=%f cm | MAE=%f cm" % (_label, _s_data[0], _s_data[1]*100.0, _s_data[2]*100.0) )
 
 # Write to result CSV file
 csv_path = result_csv_dir_str + result_csv_file_prefix_str + data_file_str[:-4] + '.csv'
