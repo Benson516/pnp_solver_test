@@ -307,6 +307,7 @@ for _idx in range(len(data_list)):
     _result_idx_dict['idx'] = data_list[_idx]['idx']
     _result_idx_dict["file_name"] = data_list[_idx]['file_name']
     _result_idx_dict["drpy"] = (distance_GT, roll_GT, pitch_GT, yaw_GT)
+    _result_idx_dict["class"] = data_list[_idx]['class']
     #-------------------------------#
     # R, t, depth, roll, pitch, yaw, residual
     #---#
@@ -535,6 +536,8 @@ for _idx in range(len(data_list)):
 def get_statistic_of_result(result_list, class_name='all', label='all', verbose=True):
     '''
     '''
+    if len(result_list) == 0:
+        return (1.0, 0.0, 0.0, 0.0, 0.0)
     t3_est_vec = np.vstack( [ _d["t3_est"] for _d in result_list] )
     distance_GT_vec = np.vstack( [ _d["distance_GT"] for _d in result_list] )
     np_distance_ratio_vec = t3_est_vec / distance_GT_vec
@@ -557,15 +560,17 @@ def get_statistic_of_result(result_list, class_name='all', label='all', verbose=
     return (ratio_mean, error_mean, error_stddev, MAE_2_GT, MAE_2_mean)
 
 
-def get_classified_result(result_list, data_list, class_name='distance'):
+def get_classified_result(result_list, class_name='distance', approval_func=None):
     '''
     '''
     class_dict = dict()
     for _idx in range(len(result_list)):
-        _label = data_list[_idx]['class'][class_name]
+        _label = result_list[_idx]['class'][class_name]
         if not _label in class_dict:
             class_dict[_label] = list()
-        class_dict[_label].append(result_list[_idx])
+        # Decide wether to record or not
+        if (approval_func is None) or approval_func( result_list[_idx] ):
+            class_dict[_label].append(result_list[_idx])
     return class_dict
 
 
@@ -600,7 +605,20 @@ write_result_to_csv(result_list, csv_path)
 
 
 # Get statistic result in each class
-depth_class_dict = get_classified_result(result_list, data_list, class_name='distance')
+def approval_func_small_angle(result_list_idx):
+    angle_th = 40
+    if abs(result_list_idx["roll_GT"]) > angle_th:
+        return False
+    if abs(result_list_idx["pitch_GT"]) > angle_th:
+        return False
+    if abs(result_list_idx["yaw_GT"]) > angle_th:
+        return False
+    return True
+def approval_func_large_angle(result_list_idx):
+    return (not approval_func_small_angle(result_list_idx))
+depth_class_dict = get_classified_result(result_list, class_name='distance', approval_func=None)
+# depth_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_small_angle)
+# depth_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_large_angle)
 depth_class_statistic_dict = dict()
 for _label in depth_class_dict:
     depth_class_statistic_dict[_label] = get_statistic_of_result(depth_class_dict[_label], class_name="distance", label=_label, verbose=False)
