@@ -62,14 +62,16 @@ pattern_scale = 1.0 # 0.85 # Multiply onto the golden pattern
 #----------------------------------------------------------#
 data_path_str = data_dir_str + data_file_str
 #
+data_idx_list = list()
 data_str_list_list = list()
 data_name_split_list_list = list()
 with open(data_path_str, 'r') as _f:
     # Read and print the entire file line by line
     _line = _f.readline()
-    _count = 0
-    while (_line != '') and ((not is_limiting_line_count) or (_count < (DATA_START_ID+DATA_COUNT) ) ):  # The EOF char is an empty string
-        if _count >= DATA_START_ID:
+    _idx = 0
+    while (_line != '') and ((not is_limiting_line_count) or (_idx < (DATA_START_ID+DATA_COUNT) ) ):  # The EOF char is an empty string
+        if _idx >= DATA_START_ID:
+            data_idx_list.append(_idx)
             # print(_line, end='')
             _line_split_list = _line.split()
             # print(_line_split_list)
@@ -80,8 +82,9 @@ with open(data_path_str, 'r') as _f:
             data_name_split_list_list.append( data_name_split_list )
         # Update
         _line = _f.readline()
-        _count += 1
+        _idx += 1
 #
+print(data_idx_list[0])
 print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
 print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
 #----------------------------------------------------------#
@@ -91,8 +94,10 @@ print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split
 data_list = list()
 for _idx in range(len(data_str_list_list)):
     data_id_dict = dict()
-    # Grund truth
+    # File info
+    data_id_dict['idx'] = data_idx_list[_idx]
     data_id_dict['file_name'] = data_str_list_list[_idx][0]
+    # Grund truth
     data_id_dict['distance'] = float(data_str_list_list[_idx][1])
     data_id_dict['pitch'] = float(data_str_list_list[_idx][2])
     data_id_dict['roll'] = float(data_str_list_list[_idx][3])
@@ -186,7 +191,7 @@ result_list = list()
 
 # Loop thrugh data
 for _idx in range(len(data_list)):
-    print("\n-------------- (idx = %d)--------------\n" % _idx)
+    print("\n-------------- data_idx = %d (process idx = %d)--------------\n" % (data_list[_idx]['idx'], _idx))
     print('file file_name: [%s]' % data_list[_idx]['file_name'])
 
 
@@ -285,22 +290,31 @@ for _idx in range(len(data_list)):
     # Store the error for statistic
     #----------------------------#
     _result_idx_dict = dict()
+    _result_idx_dict['idx'] = data_list[_idx]['idx']
     _result_idx_dict["file_name"] = data_list[_idx]['file_name']
     # Result
     _result_idx_dict["np_R_est"] = np_R_est
     _result_idx_dict["np_t_est"] = np_t_est
     _result_idx_dict["t3_est"] = t3_est
     _result_idx_dict["roll_est"] = roll_est
-    _result_idx_dict["yaw_est"] = yaw_est
     _result_idx_dict["pitch_est"] = pitch_est
+    _result_idx_dict["yaw_est"] = yaw_est
     _result_idx_dict["res_norm"] = res_norm
     # GT
     _result_idx_dict["roll_GT"] = roll_GT
-    _result_idx_dict["yaw_GT"] = yaw_GT
     _result_idx_dict["pitch_GT"] = pitch_GT
+    _result_idx_dict["yaw_GT"] = yaw_GT
     _result_idx_dict["np_R_GT"] = np_R_GT
     _result_idx_dict["np_t_GT_est"] = np_t_GT_est
     _result_idx_dict["distance_GT"] = distance_GT
+    # Error, err = (est - GT)
+    _result_idx_dict["np_R_err"] = np_R_est - np_R_GT
+    _result_idx_dict["np_t_err"] = t3_est - np_t_GT_est
+    _result_idx_dict["depth_err"] = t3_est - distance_GT
+    _result_idx_dict["roll_err"] = roll_est - roll_GT
+    _result_idx_dict["pitch_err"] = pitch_est - pitch_GT
+    _result_idx_dict["yaw_err"] = yaw_est - yaw_GT
+
     #
     result_list.append(_result_idx_dict)
     #----------------------------#
@@ -440,6 +454,7 @@ for _idx in range(len(data_list)):
 
 #-------------------------------------------------------#
 
+
 # # Store the error for statistic
 # #----------------------------#
 # _result_idx_dict = dict()
@@ -449,16 +464,23 @@ for _idx in range(len(data_list)):
 # _result_idx_dict["np_t_est"] = np_t_est
 # _result_idx_dict["t3_est"] = t3_est
 # _result_idx_dict["roll_est"] = roll_est
-# _result_idx_dict["yaw_est"] = yaw_est
 # _result_idx_dict["pitch_est"] = pitch_est
+# _result_idx_dict["yaw_est"] = yaw_est
 # _result_idx_dict["res_norm"] = res_norm
 # # GT
 # _result_idx_dict["roll_GT"] = roll_GT
-# _result_idx_dict["yaw_GT"] = yaw_GT
 # _result_idx_dict["pitch_GT"] = pitch_GT
+# _result_idx_dict["yaw_GT"] = yaw_GT
 # _result_idx_dict["np_R_GT"] = np_R_GT
 # _result_idx_dict["np_t_GT_est"] = np_t_GT_est
 # _result_idx_dict["distance_GT"] = distance_GT
+# # Error, err = (est - GT)
+# _result_idx_dict["np_R_err"] = np_R_est - np_R_GT
+# _result_idx_dict["np_t_err"] = t3_est - np_t_GT_est
+# _result_idx_dict["depth_err"] = t3_est - distance_GT
+# _result_idx_dict["roll_err"] = roll_est - roll_GT
+# _result_idx_dict["pitch_GT"] = pitch_est - pitch_GT
+# _result_idx_dict["yaw_err"] = yaw_est - yaw_GT
 # #
 # result_list.append(_result_idx_dict)
 # #----------------------------#
@@ -488,10 +510,10 @@ def write_result_to_csv(result_list, csv_path):
     '''
     '''
     with open(csv_path, mode='w') as _csv_f:
-        # fieldnames = result_list[0].keys()
-        # fieldnames = ["file_name", "t3_est", "roll_est", "pitch_est", "yaw_est", "res_norm", "distance_GT", "roll_GT", "pitch_GT", "yaw_GT"]
-        # fieldnames = ["file_name", "t3_est", "distance_GT", "roll_est", "roll_GT", "pitch_est", "pitch_GT", "yaw_est", "yaw_GT", "res_norm"]
-        fieldnames = ["file_name", "distance_GT", "t3_est", "roll_GT", "roll_est", "pitch_GT", "pitch_est", "yaw_GT", "yaw_est", "res_norm"]
+        fieldnames = result_list[0].keys()
+        # fieldnames = ["idx", "file_name", "t3_est", "roll_est", "pitch_est", "yaw_est", "res_norm", "distance_GT", "roll_GT", "pitch_GT", "yaw_GT"]
+        # fieldnames = ["idx", "file_name", "t3_est", "distance_GT", "roll_est", "roll_GT", "pitch_est", "pitch_GT", "yaw_est", "yaw_GT", "res_norm"]
+        # fieldnames = ["idx", "file_name", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
         _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
 
         _csv_w.writeheader()
