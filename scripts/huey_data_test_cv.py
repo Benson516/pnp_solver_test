@@ -12,6 +12,8 @@ import PNP_SOLVER_LIB as PNPS
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
 data_file_str = 'test_Alexander.txt'
 # data_file_str = 'test_Alexey.txt'
+# data_file_str = "test_Holly.txt"
+# data_file_str = "test_Pantea.txt"
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -27,8 +29,8 @@ result_csv_file_prefix_str = "result_csv_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -229,7 +231,6 @@ for _idx in range(len(data_list)):
 
     # Compare result
     #-----------------------------#
-    print("Result from the solver:\n")
 
     # Grund truth (R,t)
     roll_GT = data_list[_idx]['roll']
@@ -248,6 +249,7 @@ for _idx in range(len(data_list)):
     # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
     #
+    print("Result from the solver:\n")
     print("2D points on image (re-projection):")
     # print("2D points on image (is_mirrored_image=%s):" % str(is_mirrored_image))
     print("-"*35)
