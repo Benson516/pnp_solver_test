@@ -32,6 +32,7 @@ is_limiting_line_count = True
 # DATA_START_ID = 379 # (0, 0, 0)
 DATA_START_ID = 926 # (0, -20, 0)
 # DATA_START_ID = 1070 # (0, 40, 0)
+# DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
 DATA_COUNT =  3
 #
 verbose = True
@@ -40,6 +41,12 @@ verbose = True
 is_showing_image = True
 # is_showing_image = False
 #---------------------------#
+
+# Not to flush the screen
+if not is_limiting_line_count:
+    verbose = False
+    is_showing_image = False
+#
 
 # Parameters of the data
 #---------------------------#
@@ -168,8 +175,27 @@ def convert_pixel_to_homo(pixel_xy, mirrored=True):
 
 # Loop through data
 #-------------------------------------------------------#
-distance_error_list = list()
-distance_ratio_list = list()
+
+# Collect the result
+result_dict = dict()
+result_dict["file_name"] = list()
+# Result
+result_dict["np_R_est"] = list()
+result_dict["np_t_est"] = list()
+result_dict["t3_est"] = list()
+result_dict["roll_est"] = list()
+result_dict["yaw_est"] = list()
+result_dict["pitch_est"] = list()
+result_dict["res_norm"] = list()
+# GT
+result_dict["roll_GT"] = list()
+result_dict["yaw_GT"] = list()
+result_dict["pitch_GT"] = list()
+result_dict["np_R_GT"] = list()
+result_dict["np_t_GT_est"] = list()
+result_dict["distance_GT"] = list()
+
+# Loop thrugh data
 for _idx in range(len(data_list)):
     print("\n-------------- (idx = %d)--------------\n" % _idx)
     print('file file_name: [%s]' % data_list[_idx]['file_name'])
@@ -207,7 +233,10 @@ for _idx in range(len(data_list)):
     print("Result from the solver:\n")
 
     # Grund truth (R,t)
-    np_R_GT = pnp_solver.get_rotation_matrix_from_Euler( data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'], is_degree=True )
+    roll_GT = data_list[_idx]['roll']
+    pitch_GT = data_list[_idx]['pitch']
+    yaw_GT = data_list[_idx]['yaw']
+    np_R_GT = pnp_solver.get_rotation_matrix_from_Euler( roll_GT, yaw_GT, pitch_GT, is_degree=True )
     # _det = np.linalg.det(np_R_GT)
     # print("np_R_GT = \n%s" % str(np_R_GT))
     # print("_det = %f" % _det)
@@ -265,8 +294,22 @@ for _idx in range(len(data_list)):
 
     # Store the error for statistic
     #----------------------------#
-    distance_ratio_list.append( (t3_est*100.0 / data_list[_idx]['distance']))
-    distance_error_list.append( (t3_est*100.0 - data_list[_idx]['distance']))
+    result_dict["file_name"].append(data_list[_idx]['file_name'])
+    # Result
+    result_dict["np_R_est"].append(np_R_est)
+    result_dict["np_t_est"].append(np_t_est)
+    result_dict["t3_est"].append(t3_est)
+    result_dict["roll_est"].append(roll_est)
+    result_dict["yaw_est"].append(yaw_est)
+    result_dict["pitch_est"].append(pitch_est)
+    result_dict["res_norm"].append(res_norm)
+    # GT
+    result_dict["roll_GT"].append(roll_GT)
+    result_dict["yaw_GT"].append(yaw_GT)
+    result_dict["pitch_GT"].append(pitch_GT)
+    result_dict["np_R_GT"].append(np_R_GT)
+    result_dict["np_t_GT_est"].append(np_t_GT_est)
+    result_dict["distance_GT"].append(distance_GT)
     #----------------------------#
 
 
@@ -341,7 +384,7 @@ for _idx in range(len(data_list)):
     _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z*vector_scale)).astype('int')
     # Draw lines
     _line_width = 1
-    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, _color_RED, _line_width)
+    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0, 0, 180), _line_width)
     cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, _color_GREEN, _line_width)
     cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, _color_BLUE, _line_width)
     #-----------------------------------#
@@ -404,12 +447,39 @@ for _idx in range(len(data_list)):
 
 #-------------------------------------------------------#
 
-np_distance_ratio_vec = np.vstack(distance_ratio_list)
-np_distance_error_vec = np.vstack(distance_error_list)
+# Store the error for statistic
+#----------------------------#
+result_dict["file_name"].append(data_list[_idx]['file_name'])
+# Result
+result_dict["np_R_est"].append(np_R_est)
+result_dict["np_t_est"].append(np_t_est)
+result_dict["t3_est"].append(t3_est)
+result_dict["roll_est"].append(roll_est)
+result_dict["yaw_est"].append(yaw_est)
+result_dict["pitch_est"].append(pitch_est)
+result_dict["res_norm"].append(res_norm)
+# GT
+result_dict["roll_GT"].append(roll_GT)
+result_dict["yaw_GT"].append(yaw_GT)
+result_dict["pitch_GT"].append(pitch_GT)
+result_dict["np_R_GT"].append(np_R_GT)
+result_dict["np_t_GT_est"].append(np_t_GT_est)
+result_dict["distance_GT"].append(distance_GT)
+#----------------------------#
 
-mean_distance_ratio = np.average(np_distance_ratio_vec)
-mean_distance_error = np.average(np_distance_error_vec)
-error_distance_MAE = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
-print("mean_distance_ratio (estimated/actual) = %f" % mean_distance_ratio)
-print("mean_distance_error = %f cm" % mean_distance_error)
-print("error_distance_MAE = %f cm" % error_distance_MAE)
+def get_statistic_of_result(result_dict):
+
+    np_distance_ratio_vec = np.vstack(result_dict["t3_est"]) / np.vstack(result_dict["distance_GT"])
+    np_distance_error_vec = np.vstack(result_dict["t3_est"]) - np.vstack(result_dict["distance_GT"])
+
+    mean_distance_ratio = np.average(np_distance_ratio_vec)
+    mean_distance_error = np.average(np_distance_error_vec)
+    error_distance_MAE = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
+    print("mean_distance_ratio (estimated/actual) = %f" % mean_distance_ratio)
+    # print("mean_distance_error = %s cm" % type(mean_distance_error))
+    # print("error_distance_MAE = %s cm" % type(error_distance_MAE))
+    print("mean_distance_error = %f cm" % (mean_distance_error*100.0))
+    print("error_distance_MAE = %f cm" % (error_distance_MAE*100.0))
+
+
+get_statistic_of_result(result_dict)
