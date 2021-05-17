@@ -104,70 +104,73 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("---")
         res_norm = 10*3
         while k_it < num_it:
-             k_it += 1
-             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
-             # Generate Delta_i(k-1) and A(k-1)
-             # Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
-             Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
-             #-------------------------#
-             # self.lib_print("A_all = \n%s" % str(A_all))
-             self.lib_print("A_all.shape = %s" % str(A_all.shape))
-             rank_A_all = np.linalg.matrix_rank(A_all)
-             self.lib_print("rank_A_all = %d" % rank_A_all)
-             A_u, A_s, A_vh = np.linalg.svd(A_all)
-             # np.set_printoptions(suppress=True, precision=4)
-             self.lib_print("A_s = %s" % str(A_s))
-             # np.set_printoptions(suppress=False, precision=8)
-             #-------------------------#
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+            # Generate Delta_i(k-1) and A(k-1)
+            # Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
+            Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
+            #-------------------------#
+            # self.lib_print("A_all = \n%s" % str(A_all))
+            self.lib_print("A_all.shape = %s" % str(A_all.shape))
+            rank_A_all = np.linalg.matrix_rank(A_all)
+            self.lib_print("rank_A_all = %d" % rank_A_all)
+            A_u, A_s, A_vh = np.linalg.svd(A_all)
+            # np.set_printoptions(suppress=True, precision=4)
+            self.lib_print("A_s = %s" % str(A_s))
+            # np.set_printoptions(suppress=False, precision=8)
+            #-------------------------#
 
-             # Solve for phi
-             #-------------------------#
-             # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
-             # phi_est = np.linalg.inv(A_all.T @ W_all @ A_all) @ A_all.T @ W_all @ B_all
-             phi_est = np.linalg.pinv(A_all) @ B_all
-             self.lib_print("phi_est = \n%s" % str(phi_est))
-             # residule
-             # _res = (A_all @ phi_est) - B_all
-             _res = B_all - (A_all @ phi_est)
-             self.lib_print("_res = %s.T" % str(_res.T))
-             # _res_delta = _res - np_quantization_error_world_space_vec
-             # self.lib_print("_res_delta = \n%s" % str(_res_delta))
-             res_norm = np.linalg.norm(_res)
-             self.lib_print("norm(_res) = %f" % res_norm)
-             #-------------------------#
+            # Solve for phi
+            #-------------------------#
+            # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
+            # phi_est = np.linalg.inv(A_all.T @ W_all @ A_all) @ A_all.T @ W_all @ B_all
+            phi_est = np.linalg.pinv(A_all) @ B_all
+            self.lib_print("phi_est = \n%s" % str(phi_est))
+            # residule
+            # _res = (A_all @ phi_est) - B_all
+            _res = B_all - (A_all @ phi_est)
+            self.lib_print("_res = %s.T" % str(_res.T))
+            # _res_delta = _res - np_quantization_error_world_space_vec
+            # self.lib_print("_res_delta = \n%s" % str(_res_delta))
+            res_norm = np.linalg.norm(_res)
+            self.lib_print("norm(_res) = %f" % res_norm)
+            #-------------------------#
 
-             #-------------------------#
-             phi_1_est = phi_est[0:3,:]
-             phi_2_est = phi_est[3:6,:]
-             self.lib_print("phi_1_est = \n%s" % str(phi_1_est))
-             self.lib_print("phi_2_est = \n%s" % str(phi_2_est))
-             norm_phi_1_est = np.linalg.norm(phi_1_est)
-             norm_phi_2_est = np.linalg.norm(phi_2_est)
-             self.lib_print("norm_phi_1_est = %f" % norm_phi_1_est)
-             self.lib_print("norm_phi_2_est = %f" % norm_phi_2_est)
-             #
-             self.lib_print("phi_3_est = \n%s" % str(phi_3_est_new))
-             #-------------------------#
+            #-------------------------#
+            phi_1_est = phi_est[0:3,:]
+            phi_2_est = phi_est[3:6,:]
+            self.lib_print("phi_1_est = \n%s" % str(phi_1_est))
+            self.lib_print("phi_2_est = \n%s" % str(phi_2_est))
+            norm_phi_1_est = np.linalg.norm(phi_1_est)
+            norm_phi_2_est = np.linalg.norm(phi_2_est)
+            self.lib_print("norm_phi_1_est = %f" % norm_phi_1_est)
+            self.lib_print("norm_phi_2_est = %f" % norm_phi_2_est)
+            #
+            self.lib_print("phi_3_est = \n%s" % str(phi_3_est_new))
+            #-------------------------#
 
-             if update_phi_3_method == 1:
-                 # First update phi_3_est
-                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha)
-                 # Then, test (not necessary)
-                 #---------------------------------#
-                 # np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
-                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est_new)
-                 # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est_new)
-
-                 #---------------------------------#
-                 # end Test
-             else: # update_phi_3_method == 2
-                 # First reconstructing R, necessary for this method
-                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
-                 # Then, update phi_3_est
-                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
-             # Real update of phi_3_est
-             phi_3_est = copy.deepcopy(phi_3_est_new)
-             self.lib_print("---")
+            if update_phi_3_method == 1:
+                # First update phi_3_est
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha)
+                # Then, test (not necessary)
+                #---------------------------------#
+                if self.verbose:
+                    # np_R_est, np_t_est, t3_est = reconstruct_R_t_m1(phi_est, phi_3_est)
+                    np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est_new)
+                    # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est_new)
+                    # Save the computing power
+                else:
+                    pass # Save the computing power
+                #---------------------------------#
+                # end Test
+            else: # update_phi_3_method == 2
+                # First reconstructing R, necessary for this method
+                np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
+                # Then, update phi_3_est
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
+            # Real update of phi_3_est
+            phi_3_est = copy.deepcopy(phi_3_est_new)
+            self.lib_print("---")
 
         #--------------------------------------#
 
