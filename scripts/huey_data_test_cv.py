@@ -26,6 +26,7 @@ image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander
 # Result CSV file
 result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
+result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
@@ -312,6 +313,7 @@ for _idx in range(len(data_list)):
     # GT
     # Result
     # Error, err = (est - GT)
+    # abs(Error), for scalar values
     #-------------------------------#
     # R
     _result_idx_dict["np_R_GT"] = np_R_GT
@@ -325,20 +327,25 @@ for _idx in range(len(data_list)):
     _result_idx_dict["distance_GT"] = distance_GT
     _result_idx_dict["t3_est"] = t3_est
     _result_idx_dict["depth_err"] = t3_est - distance_GT
+    _result_idx_dict["abs_depth_err"] = abs(t3_est - distance_GT)
     # roll
     _result_idx_dict["roll_GT"] = roll_GT
     _result_idx_dict["roll_est"] = roll_est
     _result_idx_dict["roll_err"] = roll_est - roll_GT
+    _result_idx_dict["abs_roll_err"] = abs(roll_est - roll_GT)
     # pitch
     _result_idx_dict["pitch_GT"] = pitch_GT
     _result_idx_dict["pitch_est"] = pitch_est
     _result_idx_dict["pitch_err"] = pitch_est - pitch_GT
+    _result_idx_dict["abs_pitch_err"] = abs(pitch_est - pitch_GT)
     # yaw
     _result_idx_dict["yaw_GT"] = yaw_GT
     _result_idx_dict["yaw_est"] = yaw_est
     _result_idx_dict["yaw_err"] = yaw_est - yaw_GT
+    _result_idx_dict["abs_yaw_err"] = abs(yaw_est - yaw_GT)
     # residual
     _result_idx_dict["res_norm"] = res_norm
+    _result_idx_dict["res_norm_1000x"] = res_norm * 1000.0
     #
     result_list.append(_result_idx_dict)
     #----------------------------#
@@ -563,11 +570,11 @@ def write_result_to_csv(result_list, csv_path):
     '''
     '''
     with open(csv_path, mode='w') as _csv_f:
-        # fieldnames = result_list[0].keys()
+        fieldnames = result_list[0].keys()
         # fieldnames = ["idx", "file_name", "drpy", "t3_est", "roll_est", "pitch_est", "yaw_est", "res_norm", "distance_GT", "roll_GT", "pitch_GT", "yaw_GT"]
         # fieldnames = ["idx", "file_name", "drpy", "t3_est", "distance_GT", "roll_est", "roll_GT", "pitch_est", "pitch_GT", "yaw_est", "yaw_GT", "res_norm"]
         # fieldnames = ["idx", "file_name", "drpy", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
-        fieldnames = ["idx", "file_name", "drpy", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
+        # fieldnames = ["idx", "file_name", "drpy", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
         _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
 
         _csv_w.writeheader()
@@ -577,8 +584,17 @@ def write_result_to_csv(result_list, csv_path):
         print("\n*** Wrote the results to the csv file:\n\t[%s]\n" % csv_path)
 
 
+
 # Get simple statistic data
 get_statistic_of_result(result_list)
+
+
+# Write to result CSV file
+csv_path = result_csv_dir_str + result_csv_file_prefix_str + data_file_str[:-4] + '.csv'
+write_result_to_csv(result_list, csv_path)
+
+
+
 
 # Get statistic result in each class
 depth_class_dict = get_classified_result(result_list, data_list, class_name='distance')
@@ -586,15 +602,18 @@ depth_class_statistic_dict = dict()
 for _label in depth_class_dict:
     depth_class_statistic_dict[_label] = get_statistic_of_result(depth_class_dict[_label], class_name="distance", label=_label, verbose=False)
 
-print('\nStatistic by [distance] class:')
+#---------------------#
+_statistic_str_out = '\nStatistic by [distance] class:\n'
 # def value_of_string(e):
 #   return int(e)
 distance_label_list = list(depth_class_statistic_dict.keys())
 distance_label_list.sort(key=int) # Using the integer value of string to sort the list
 for _label in distance_label_list:
     _s_data = depth_class_statistic_dict[_label]
-    print("[%s]: m_ratio=%f | mean=%f cm | MAE=%f cm" % (_label, _s_data[0], _s_data[1]*100.0, _s_data[2]*100.0) )
-
-# Write to result CSV file
-csv_path = result_csv_dir_str + result_csv_file_prefix_str + data_file_str[:-4] + '.csv'
-write_result_to_csv(result_list, csv_path)
+    _statistic_str_out += "[%s]: m_ratio=%f | mean=%f cm | MAE=%f cm" % (_label, _s_data[0], _s_data[1]*100.0, _s_data[2]*100.0)
+    _statistic_str_out += "\n"
+statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + '.txt'
+with open(statistic_txt_path, "w") as _f:
+    _f.write(_statistic_str_out)
+    print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
+#---------------------#
