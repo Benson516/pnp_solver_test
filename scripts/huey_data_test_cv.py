@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import time
+import csv
 #
 import cv2
 #
@@ -12,6 +13,7 @@ data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose
 data_file_str = 'test_Alexander.txt'
 # data_file_str = 'test_Alexey.txt'
 #---------------------------#
+# Image of Alexander
 # Original image
 image_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ/'
 # The image used for analysis
@@ -19,8 +21,9 @@ image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/images
 # The same as the original image
 image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ_result/'
 #---------------------------#
-
-
+# Result CSV file
+result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/result_CSVs/'
+result_csv_file_prefix_str = "result_csv_"
 
 # Behavior of this program
 #---------------------------#
@@ -177,23 +180,9 @@ def convert_pixel_to_homo(pixel_xy, mirrored=True):
 #-------------------------------------------------------#
 
 # Collect the result
-result_dict = dict()
-result_dict["file_name"] = list()
-# Result
-result_dict["np_R_est"] = list()
-result_dict["np_t_est"] = list()
-result_dict["t3_est"] = list()
-result_dict["roll_est"] = list()
-result_dict["yaw_est"] = list()
-result_dict["pitch_est"] = list()
-result_dict["res_norm"] = list()
-# GT
-result_dict["roll_GT"] = list()
-result_dict["yaw_GT"] = list()
-result_dict["pitch_GT"] = list()
-result_dict["np_R_GT"] = list()
-result_dict["np_t_GT_est"] = list()
-result_dict["distance_GT"] = list()
+#--------------------------#
+result_list = list()
+#--------------------------#
 
 # Loop thrugh data
 for _idx in range(len(data_list)):
@@ -223,6 +212,7 @@ for _idx in range(len(data_list)):
 
     # Solve
     np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
+    # Note: Euler angles are in degree
     np_R_ca_est = pnp_solver.np_R_c_a_est
     np_t_ca_est = pnp_solver.np_t_c_a_est
     # np_R_ca_est = copy.deepcopy(pnp_solver.np_R_c_a_est)
@@ -279,7 +269,7 @@ for _idx in range(len(data_list)):
     # Result
     print("-"*30 + " Result " + "-"*30)
     print("distance = %f cm" % (t3_est*100.0))
-    print("(roll_est, yaw_est, pitch_est) \t\t= %s" % str( np.rad2deg( (roll_est, yaw_est, pitch_est) ) ) )
+    print("(roll_est, yaw_est, pitch_est) \t\t= %s" % str( [roll_est, yaw_est, pitch_est] ) )
     print("np_R_est = \n%s" % str(np_R_est))
     print("np_t_est = \n%s" % str(np_t_est))
     # Grund truth
@@ -294,22 +284,25 @@ for _idx in range(len(data_list)):
 
     # Store the error for statistic
     #----------------------------#
-    result_dict["file_name"].append(data_list[_idx]['file_name'])
+    _result_idx_dict = dict()
+    _result_idx_dict["file_name"] = data_list[_idx]['file_name']
     # Result
-    result_dict["np_R_est"].append(np_R_est)
-    result_dict["np_t_est"].append(np_t_est)
-    result_dict["t3_est"].append(t3_est)
-    result_dict["roll_est"].append(roll_est)
-    result_dict["yaw_est"].append(yaw_est)
-    result_dict["pitch_est"].append(pitch_est)
-    result_dict["res_norm"].append(res_norm)
+    _result_idx_dict["np_R_est"] = np_R_est
+    _result_idx_dict["np_t_est"] = np_t_est
+    _result_idx_dict["t3_est"] = t3_est
+    _result_idx_dict["roll_est"] = roll_est
+    _result_idx_dict["yaw_est"] = yaw_est
+    _result_idx_dict["pitch_est"] = pitch_est
+    _result_idx_dict["res_norm"] = res_norm
     # GT
-    result_dict["roll_GT"].append(roll_GT)
-    result_dict["yaw_GT"].append(yaw_GT)
-    result_dict["pitch_GT"].append(pitch_GT)
-    result_dict["np_R_GT"].append(np_R_GT)
-    result_dict["np_t_GT_est"].append(np_t_GT_est)
-    result_dict["distance_GT"].append(distance_GT)
+    _result_idx_dict["roll_GT"] = roll_GT
+    _result_idx_dict["yaw_GT"] = yaw_GT
+    _result_idx_dict["pitch_GT"] = pitch_GT
+    _result_idx_dict["np_R_GT"] = np_R_GT
+    _result_idx_dict["np_t_GT_est"] = np_t_GT_est
+    _result_idx_dict["distance_GT"] = distance_GT
+    #
+    result_list.append(_result_idx_dict)
     #----------------------------#
 
 
@@ -447,30 +440,39 @@ for _idx in range(len(data_list)):
 
 #-------------------------------------------------------#
 
-# Store the error for statistic
-#----------------------------#
-result_dict["file_name"].append(data_list[_idx]['file_name'])
-# Result
-result_dict["np_R_est"].append(np_R_est)
-result_dict["np_t_est"].append(np_t_est)
-result_dict["t3_est"].append(t3_est)
-result_dict["roll_est"].append(roll_est)
-result_dict["yaw_est"].append(yaw_est)
-result_dict["pitch_est"].append(pitch_est)
-result_dict["res_norm"].append(res_norm)
-# GT
-result_dict["roll_GT"].append(roll_GT)
-result_dict["yaw_GT"].append(yaw_GT)
-result_dict["pitch_GT"].append(pitch_GT)
-result_dict["np_R_GT"].append(np_R_GT)
-result_dict["np_t_GT_est"].append(np_t_GT_est)
-result_dict["distance_GT"].append(distance_GT)
-#----------------------------#
+# # Store the error for statistic
+# #----------------------------#
+# _result_idx_dict = dict()
+# _result_idx_dict["file_name"] = data_list[_idx]['file_name']
+# # Result
+# _result_idx_dict["np_R_est"] = np_R_est
+# _result_idx_dict["np_t_est"] = np_t_est
+# _result_idx_dict["t3_est"] = t3_est
+# _result_idx_dict["roll_est"] = roll_est
+# _result_idx_dict["yaw_est"] = yaw_est
+# _result_idx_dict["pitch_est"] = pitch_est
+# _result_idx_dict["res_norm"] = res_norm
+# # GT
+# _result_idx_dict["roll_GT"] = roll_GT
+# _result_idx_dict["yaw_GT"] = yaw_GT
+# _result_idx_dict["pitch_GT"] = pitch_GT
+# _result_idx_dict["np_R_GT"] = np_R_GT
+# _result_idx_dict["np_t_GT_est"] = np_t_GT_est
+# _result_idx_dict["distance_GT"] = distance_GT
+# #
+# result_list.append(_result_idx_dict)
+# #----------------------------#
 
-def get_statistic_of_result(result_dict):
 
-    np_distance_ratio_vec = np.vstack(result_dict["t3_est"]) / np.vstack(result_dict["distance_GT"])
-    np_distance_error_vec = np.vstack(result_dict["t3_est"]) - np.vstack(result_dict["distance_GT"])
+
+
+def get_statistic_of_result(result_list):
+    '''
+    '''
+    t3_est_vec = np.vstack( [ _d["t3_est"] for _d in result_list] )
+    distance_GT_vec = np.vstack( [ _d["distance_GT"] for _d in result_list] )
+    np_distance_ratio_vec = t3_est_vec / distance_GT_vec
+    np_distance_error_vec = t3_est_vec - distance_GT_vec
 
     mean_distance_ratio = np.average(np_distance_ratio_vec)
     mean_distance_error = np.average(np_distance_error_vec)
@@ -482,4 +484,26 @@ def get_statistic_of_result(result_dict):
     print("error_distance_MAE = %f cm" % (error_distance_MAE*100.0))
 
 
-get_statistic_of_result(result_dict)
+def write_result_to_csv(result_list, csv_path):
+    '''
+    '''
+    with open(csv_path, mode='w') as _csv_f:
+        # fieldnames = result_list[0].keys()
+        # fieldnames = ["file_name", "t3_est", "roll_est", "pitch_est", "yaw_est", "res_norm", "distance_GT", "roll_GT", "pitch_GT", "yaw_GT"]
+        # fieldnames = ["file_name", "t3_est", "distance_GT", "roll_est", "roll_GT", "pitch_est", "pitch_GT", "yaw_est", "yaw_GT", "res_norm"]
+        fieldnames = ["file_name", "distance_GT", "t3_est", "roll_GT", "roll_est", "pitch_GT", "pitch_est", "yaw_GT", "yaw_est", "res_norm"]
+        _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
+
+        _csv_w.writeheader()
+        _csv_w.writerows(result_list)
+        # for _e_dict in result_list:
+        #     _csv_w.writerow(_e_dict)
+        print("\n*** Wrote the results to the csv file:\n\t[%s]\n" % csv_path)
+
+
+# Get simple statistic data
+get_statistic_of_result(result_list)
+
+# Write to result CSV file
+csv_path = result_csv_dir_str + result_csv_file_prefix_str + data_file_str[:-4] + '.csv'
+write_result_to_csv(result_list, csv_path)

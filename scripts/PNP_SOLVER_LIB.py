@@ -198,15 +198,16 @@ class PNP_SOLVER_A2_M3(object):
         #---------------------------#
 
         # Convert to Euler angle
-        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False)
-        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
         roll_est, yaw_est, pitch_est = Euler_angle_est
         #
         # self.lib_print("t3_est = %f" % t3_est)
         # self.lib_print("np_t_est = \n%s" % str(np_t_est))
         #--------------------------------------------------------#
 
-
+        # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
     #-----------------------------------------------------------#
@@ -324,8 +325,9 @@ class PNP_SOLVER_A2_M3(object):
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
         self.lib_print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
-        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
-        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est ) ) # Note: Euler angles are in degree.
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
         # Get the "value" of G
@@ -373,8 +375,9 @@ class PNP_SOLVER_A2_M3(object):
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
         self.lib_print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
-        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
-        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est ) ) # Note: Euler angles are in degree
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
         # t3_est = 1.0 / G_s[0]
@@ -423,8 +426,9 @@ class PNP_SOLVER_A2_M3(object):
         np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
         self.lib_print("np_R_est = \n%s" % str(np_R_est))
         # Convert to Euler angle
-        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est)
-        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est ) ) # Note: Euler angles are in degree.
         # roll_est, yaw_est, pitch_est = Euler_angle_est
         # Reconstruct t vector
         t3_est = 1.0 / value_G
