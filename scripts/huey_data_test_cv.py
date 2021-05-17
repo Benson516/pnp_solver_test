@@ -27,6 +27,8 @@ result_csv_file_prefix_str = "result_csv_"
 
 # Behavior of this program
 #---------------------------#
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -46,7 +48,9 @@ is_showing_image = True
 #---------------------------#
 
 # Not to flush the screen
-if not is_limiting_line_count:
+if is_run_through_all_data:
+    DATA_START_ID = 0
+    is_limiting_line_count = False
     verbose = False
     is_showing_image = False
 #
