@@ -540,18 +540,21 @@ def get_statistic_of_result(result_list, class_name='all', label='all', verbose=
     np_distance_ratio_vec = t3_est_vec / distance_GT_vec
     np_distance_error_vec = t3_est_vec - distance_GT_vec
 
-    mean_distance_ratio = np.average(np_distance_ratio_vec)
-    mean_distance_error = np.average(np_distance_error_vec)
-    error_distance_MAE = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
+    ratio_mean = np.average(np_distance_ratio_vec)
+    error_mean = np.average(np_distance_error_vec)
+    error_variance = (np.linalg.norm( (np_distance_error_vec - error_mean), ord=2)**2)  / (np_distance_error_vec.shape[0])
+    error_stddev = error_variance**0.5
+    MAE_2_GT = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
+    MAE_2_mean = np.linalg.norm((np_distance_error_vec - error_mean), ord=1)/(np_distance_error_vec.shape[0])
     #
     if verbose:
         print("\nclass: [%s], label: [%s]" % (class_name, label))
-        print("mean_distance_ratio (estimated/actual) = %f" % mean_distance_ratio)
-        # print("mean_distance_error = %s cm" % type(mean_distance_error))
-        # print("error_distance_MAE = %s cm" % type(error_distance_MAE))
-        print("mean_distance_error = %f cm" % (mean_distance_error*100.0))
-        print("error_distance_MAE = %f cm" % (error_distance_MAE*100.0))
-    return (mean_distance_ratio, mean_distance_error, error_distance_MAE)
+        print("ratio_mean (estimated/actual) = %f" % ratio_mean)
+        print("error_mean = %f cm" % (error_mean*100.0))
+        print("error_stddev = %f cm" % (error_stddev*100.0))
+        print("MAE_2_GT = %f cm" % (MAE_2_GT*100.0))
+        print("MAE_2_mean = %f cm" % (MAE_2_mean*100.0))
+    return (ratio_mean, error_mean, error_stddev, MAE_2_GT, MAE_2_mean)
 
 
 def get_classified_result(result_list, data_list, class_name='distance'):
@@ -610,7 +613,7 @@ distance_label_list = list(depth_class_statistic_dict.keys())
 distance_label_list.sort(key=int) # Using the integer value of string to sort the list
 for _label in distance_label_list:
     _s_data = depth_class_statistic_dict[_label]
-    _statistic_str_out += "[%s]: m_ratio=%f | mean=%f cm | MAE=%f cm" % (_label, _s_data[0], _s_data[1]*100.0, _s_data[2]*100.0)
+    _statistic_str_out += "[%s]: m_ratio=%f | mean=%f cm | stddev=%f cm | MAE_2_GT=%f cm | MAE_2_mean=%f cm" % (_label, _s_data[0], _s_data[1]*100.0, _s_data[2]*100.0, _s_data[3]*100.0, _s_data[4]*100.0)
     _statistic_str_out += "\n"
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + '.txt'
 #
