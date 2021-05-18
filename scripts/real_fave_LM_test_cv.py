@@ -57,7 +57,8 @@ if is_run_through_all_data:
 
 # Parameters of the data
 #---------------------------#
-is_mirrored_image = True
+# is_mirrored_image = True
+is_mirrored_image = False
 pattern_scale = 1.0 # 0.85 # Multiply onto the golden pattern
 #---------------------------#
 
@@ -106,6 +107,7 @@ for _idx in range(len(data_str_list_list)):
     # File info
     data_id_dict['idx'] = data_idx_list[_idx]
     data_id_dict['file_name'] = data_str_list_list[_idx][0]
+    data_id_dict['person_name'] = data_name_split_list_list[_idx][0]
     # "Label" of classes, type: string
     _class_dict = dict()
     _class_dict['distance'] = data_name_split_list_list[_idx][1]
@@ -132,7 +134,7 @@ print(data_list[0])
 #-------------------------------------------------------#
 
 
-1/0.0
+
 
 # ============= Start testing ================
 #-------------------------------------------------------#
@@ -157,13 +159,13 @@ print("np_K_camera_est = \n%s" % str(np_K_camera_est))
 point_3d_dict = dict()
 # Note: Each axis should exist at least 3 different values to make A_all full rank
 # Note: the Landmark definition in the pitcture in reversed
-point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
-point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
-point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
-point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+point_3d_dict["eye_l_9"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_r_8"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_c_6"] = [0.0, 0.0, 0.0]
+point_3d_dict["mouse_l_12"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
+point_3d_dict["mouse_r_11"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
+point_3d_dict["nose_t_7"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+point_3d_dict["chin_t_10"] = [0.0, 0.12, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
 # point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
@@ -187,7 +189,9 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, pattern_scale=pattern_scale, verbose=verbose)
 
 
-def convert_pixel_to_homo(pixel_xy, mirrored=True):
+
+
+def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
     '''
     pixel_xy: np array, shape=(2,)
     '''
@@ -216,13 +220,13 @@ for _idx in range(len(data_list)):
     LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
     np_point_image_dict = dict()
     # [x,y,1].T, shape: (3,1)
-    np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96])
-    np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97])
-    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
-    np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
-    np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
-    np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
+    np_point_image_dict["eye_l_9"] = convert_pixel_to_homo(LM_pixel_data_matrix[9])
+    np_point_image_dict["eye_r_8"] = convert_pixel_to_homo(LM_pixel_data_matrix[8])
+    np_point_image_dict["eye_c_6"] = convert_pixel_to_homo(LM_pixel_data_matrix[6])
+    np_point_image_dict["mouse_l_12"] = convert_pixel_to_homo(LM_pixel_data_matrix[12])
+    np_point_image_dict["mouse_r_11"] = convert_pixel_to_homo(LM_pixel_data_matrix[11])
+    np_point_image_dict["nose_t_7"] = convert_pixel_to_homo(LM_pixel_data_matrix[7])
+    np_point_image_dict["chin_t_10"] = convert_pixel_to_homo(LM_pixel_data_matrix[10])
     #
     # # Print
     # print("-"*35)

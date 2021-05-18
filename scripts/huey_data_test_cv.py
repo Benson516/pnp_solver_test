@@ -183,7 +183,7 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, pattern_scale=pattern_scale, verbose=verbose)
 
 
-def convert_pixel_to_homo(pixel_xy, mirrored=True):
+def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
     '''
     pixel_xy: np array, shape=(2,)
     '''
