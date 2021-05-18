@@ -9,11 +9,8 @@ import PNP_SOLVER_LIB as PNPS
 
 #---------------------------#
 # Landmark (LM) dataset
-data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'test_Alexander.txt'
-# data_file_str = 'test_Alexey.txt'
-# data_file_str = "test_Holly.txt"
-# data_file_str = "test_Pantea.txt"
+data_dir_str = '/home/benson516/test_PnP_solver/dataset/Real_face_LM_1/'
+data_file_str = 'FD_result_jpg640.csv'
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -35,10 +32,10 @@ is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
-# DATA_START_ID = 0
+DATA_START_ID = 0
 # DATA_START_ID = 658
 # DATA_START_ID = 379 # (0, 0, 0)
-DATA_START_ID = 926 # (0, -20, 0)
+# DATA_START_ID = 926 # (0, -20, 0)
 # DATA_START_ID = 1070 # (0, 40, 0)
 # DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
 DATA_COUNT =  3
@@ -74,17 +71,21 @@ data_str_list_list = list()
 data_name_split_list_list = list()
 with open(data_path_str, 'r') as _f:
     # Read and print the entire file line by line
+    _line = _f.readline() # Ignore the first line
     _line = _f.readline()
     _idx = 0
     while (_line != '') and ((not is_limiting_line_count) or (_idx < (DATA_START_ID+DATA_COUNT) ) ):  # The EOF char is an empty string
         if _idx >= DATA_START_ID:
             data_idx_list.append(_idx)
             # print(_line, end='')
-            _line_split_list = _line.split()
+            _line_split_list = _line.split(",") # CSV file
             # print(_line_split_list)
             data_str_list_list.append(_line_split_list)
             #
-            data_name_split_list = _line_split_list[0].split('_')
+            _name = _line_split_list[0]
+            if _name.rfind('.jpg') == (len(_name) - 4):
+                _name = _name[:-4]
+            data_name_split_list = _name.split('_')
             # print("data_name_split_list = %s" % str(data_name_split_list))
             data_name_split_list_list.append( data_name_split_list )
         # Update
@@ -93,7 +94,8 @@ with open(data_path_str, 'r') as _f:
 #
 print(data_idx_list[0])
 print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
-print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
+print(data_name_split_list_list[0]) # [data_idx][column in file name split]
+# print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
 #----------------------------------------------------------#
 
 # Convert the original data to structured data_list
@@ -106,29 +108,31 @@ for _idx in range(len(data_str_list_list)):
     data_id_dict['file_name'] = data_str_list_list[_idx][0]
     # "Label" of classes, type: string
     _class_dict = dict()
-    _class_dict['distance'] = data_str_list_list[_idx][1]
-    _class_dict['pitch'] = data_str_list_list[_idx][2]
-    _class_dict['roll'] = data_str_list_list[_idx][3]
-    _class_dict['yaw'] = data_str_list_list[_idx][4]
+    _class_dict['distance'] = data_name_split_list_list[_idx][1]
+    _class_dict['pitch'] = "NA"
+    _class_dict['roll'] = "NA"
+    _class_dict['yaw'] = "NA"
     data_id_dict['class'] = _class_dict
     # Grund truth
-    data_id_dict['distance'] = float(data_str_list_list[_idx][1])
-    data_id_dict['pitch'] = float(data_str_list_list[_idx][2])
-    data_id_dict['roll'] = float(data_str_list_list[_idx][3])
-    data_id_dict['yaw'] = float(data_str_list_list[_idx][4])
+    data_id_dict['distance'] = float(data_name_split_list_list[_idx][1])
+    data_id_dict['pitch'] = 0.0 # Actually, None
+    data_id_dict['roll'] = 0.0 # Actually, None
+    data_id_dict['yaw'] = 0.0 # Actually, None
     # Test inputs
-    data_id_dict['box_xy'] = np.array(data_name_split_list_list[_idx][9:11]).astype(np.float) # np array, shape=(2,)
-    data_id_dict['box_h'] = float(data_name_split_list_list[_idx][11]) # np array, shape=(2,)
-    data_id_dict['LM_local_norm'] = (np.array([data_str_list_list[_idx][5::2], data_str_list_list[_idx][6::2]]).T).astype(np.float) # np array, shape=(2,)
+    data_id_dict['box_xy'] = np.array(data_name_split_list_list[_idx][3:5]).astype(np.float) # np array, shape=(2,)
+    data_id_dict['box_h'] = float(data_name_split_list_list[_idx][5]) #
+    norm_box_h = 112 # pixel
+    data_id_dict['LM_local_norm'] = (np.array([data_str_list_list[_idx][1::2], data_str_list_list[_idx][2::2]]).T).astype(np.float) / float(norm_box_h) # np array, shape=(2,)
     #
     data_id_dict['LM_pixel'] = data_id_dict['LM_local_norm'] * data_id_dict['box_h'] + data_id_dict['box_xy'].reshape((1,2))
     # Sppend to the total data list
     data_list.append(data_id_dict)
 #
-# print(data_list[0])
+print(data_list[0])
 #-------------------------------------------------------#
 
 
+1/0.0
 
 # ============= Start testing ================
 #-------------------------------------------------------#
