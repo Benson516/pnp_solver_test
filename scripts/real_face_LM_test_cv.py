@@ -14,14 +14,14 @@ data_file_str = 'FD_result_jpg640.csv'
 #---------------------------#
 # Image of Alexander
 # Original image
-image_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ/'
+image_dir_str = '/home/benson516/test_PnP_solver/dataset/Real_face_LM_1/images/original/'
 # The image used for analysis
-image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ_result_unflipped/'
+image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Real_face_LM_1/images/result_unflipped/'
 # The same as the original image
-image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ_result/'
+image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Real_face_LM_1/images/result/'
 #---------------------------#
 # Result CSV file
-result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/result_CSVs/'
+result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Real_face_LM_1/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
 
@@ -380,8 +380,13 @@ for _idx in range(len(data_list)):
     _img = cv2.imread(_image_ori_path_str)
     if _img is None:
         print("!! Error occured while loading the image !!\n")
-        time.sleep(3.0)
-        continue
+        # time.sleep(3.0)
+        # continue
+        _scale = 3
+        _width = 320 * _scale
+        _height = 240 * _scale
+        _intensity = 200
+        _img = np.ones( (_height, _width, 3), dtype=np.uint8) * _intensity
     _img_shape = _img.shape
     print("_img.shape = %s" % str(_img_shape))
     LM_2_image_scale = _img_shape[1] / 320.0
