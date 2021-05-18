@@ -32,10 +32,10 @@ is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
-DATA_START_ID = 0
+# DATA_START_ID = 0
 # DATA_START_ID = 658
 # DATA_START_ID = 379 # (0, 0, 0)
-# DATA_START_ID = 926 # (0, -20, 0)
+DATA_START_ID = 926 # (0, -20, 0)
 # DATA_START_ID = 1070 # (0, 40, 0)
 # DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
 DATA_COUNT =  3
@@ -141,7 +141,8 @@ print(data_list[0])
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
 # f_camera = 188.55 # 175.0
-f_camera = 225.68717584155982 # / 1.15
+# f_camera = 225.68717584155982 # / 1.15 0.864246
+f_camera = 225.68717584155982 / 0.864246 # The FOV of the real camera
 #
 fx_camera = f_camera
 # fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
