@@ -551,16 +551,17 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     MAE_2_mean = np.linalg.norm((_np_data_error_vec - error_mean), ord=1)/(_np_data_error_vec.shape[0])
     #
     if verbose:
-        print("\nclass: [%s], class_label: [%s]" % (class_name, class_label))
+        print("class: [%s], class_label: [%s]" % (class_name, class_label))
         print("ratio_mean (estimated/actual) = %f" % ratio_mean)
         print("error_mean = %f %s" % (error_mean*unit_scale, unit))
         print("error_stddev = %f %s" % (error_stddev*unit_scale, unit))
         print("MAE_2_GT = %f %s" % (MAE_2_GT*unit_scale, unit))
         print("MAE_2_mean = %f %s" % (MAE_2_mean*unit_scale, unit))
+        print("\n")
     return (ratio_mean, error_mean, error_stddev, MAE_2_GT, MAE_2_mean)
 
 
-def get_classified_result(result_list, class_name='distance', approval_func=None):
+def get_classified_result(result_list, class_name='distance', include_all=True, approval_func=None):
     '''
     '''
     class_dict = dict()
@@ -571,6 +572,10 @@ def get_classified_result(result_list, class_name='distance', approval_func=None
         # Decide wether to record or not
         if (approval_func is None) or approval_func( result_list[_idx] ):
             class_dict[_label].append(result_list[_idx])
+    #
+    if include_all:
+        # class_dict["all"] = result_list
+        class_dict["all"] = copy.deepcopy(result_list)
     return class_dict
 
 
@@ -592,6 +597,14 @@ def write_result_to_csv(result_list, csv_path):
         print("\n*** Wrote the results to the csv file:\n\t[%s]\n" % csv_path)
 
 
+#-------------------------------------------------------#
+def _class_order_func(e):
+    '''
+    For sorting the key of class
+    Note: "all" class is placed specifically at the top.
+    '''
+    return ( (-1) if (e == "all") else int(e))
+
 def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name="distance", statistic_data_name="depth", unit="m", unit_scale=1.0):
     '''
     '''
@@ -600,7 +613,8 @@ def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=
     # def value_of_string(e):
     #   return int(e)
     _label_list = list(class_statistic_dict.keys())
-    _label_list.sort(key=int) # Using the integer value of string to sort the list
+    # _label_list.sort(key=int) # Using the integer value of string to sort the list
+    _label_list.sort(key=_class_order_func) # Using the integer value of string to sort the list
     for _label in _label_list:
         _s_data = class_statistic_dict[_label]
         _statistic_str_out += "[%s]: m_ratio=%f" % (_label, _s_data[0])
@@ -623,7 +637,16 @@ def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=
 
 
 # Get simple statistic data
-get_statistic_of_result(result_list)
+print("\n")
+# get_statistic_of_result(result_list)
+print("Distance to depth:")
+get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=True)
+print("Distance to yaw:")
+get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0, verbose=True)
+print("Distance to pitch:")
+get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=True)
+print("Distance to yaw:")
+get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=True)
 
 
 # Write to result CSV file
