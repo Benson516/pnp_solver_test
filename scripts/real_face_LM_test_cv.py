@@ -27,8 +27,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -142,7 +142,7 @@ print(data_list[0])
 # Camera intrinsic matrix (Ground truth)
 # f_camera = 188.55 # 175.0
 # f_camera = 225.68717584155982 # / 1.15 0.864246
-f_camera = 225.68717584155982 / 0.864246 # The FOV of the real camera
+f_camera = 269.2140797750142 # = 225.68717584155982 / 0.864246 / 0.97 # The FOV of the real camera
 #
 fx_camera = f_camera
 # fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
