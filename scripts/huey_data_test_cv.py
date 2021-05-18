@@ -533,30 +533,30 @@ for _idx in range(len(data_list)):
 
 
 
-def get_statistic_of_result(result_list, class_name='all', label='all', verbose=True):
+def get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0, verbose=True):
     '''
     '''
     if len(result_list) == 0:
         return (1.0, 0.0, 0.0, 0.0, 0.0)
-    t3_est_vec = np.vstack( [ _d["t3_est"] for _d in result_list] )
-    distance_GT_vec = np.vstack( [ _d["distance_GT"] for _d in result_list] )
-    np_distance_ratio_vec = t3_est_vec / distance_GT_vec
-    np_distance_error_vec = t3_est_vec - distance_GT_vec
+    data_est_vec = np.vstack( [ _d[ data_est_key ] for _d in result_list] )
+    data_GT_vec = np.vstack( [ _d[ data_GT_key ] for _d in result_list] )
+    _np_data_ratio_vec = data_est_vec / data_GT_vec
+    _np_data_error_vec = data_est_vec - data_GT_vec
 
-    ratio_mean = np.average(np_distance_ratio_vec)
-    error_mean = np.average(np_distance_error_vec)
-    error_variance = (np.linalg.norm( (np_distance_error_vec - error_mean), ord=2)**2)  / (np_distance_error_vec.shape[0])
+    ratio_mean = np.average(_np_data_ratio_vec)
+    error_mean = np.average(_np_data_error_vec)
+    error_variance = (np.linalg.norm( (_np_data_error_vec - error_mean), ord=2)**2)  / (_np_data_error_vec.shape[0])
     error_stddev = error_variance**0.5
-    MAE_2_GT = np.linalg.norm(np_distance_error_vec, ord=1)/(np_distance_error_vec.shape[0])
-    MAE_2_mean = np.linalg.norm((np_distance_error_vec - error_mean), ord=1)/(np_distance_error_vec.shape[0])
+    MAE_2_GT = np.linalg.norm(_np_data_error_vec, ord=1)/(_np_data_error_vec.shape[0])
+    MAE_2_mean = np.linalg.norm((_np_data_error_vec - error_mean), ord=1)/(_np_data_error_vec.shape[0])
     #
     if verbose:
-        print("\nclass: [%s], label: [%s]" % (class_name, label))
+        print("\nclass: [%s], class_label: [%s]" % (class_name, class_label))
         print("ratio_mean (estimated/actual) = %f" % ratio_mean)
-        print("error_mean = %f cm" % (error_mean*100.0))
-        print("error_stddev = %f cm" % (error_stddev*100.0))
-        print("MAE_2_GT = %f cm" % (MAE_2_GT*100.0))
-        print("MAE_2_mean = %f cm" % (MAE_2_mean*100.0))
+        print("error_mean = %f %s" % (error_mean*unit_scale, unit))
+        print("error_stddev = %f %s" % (error_stddev*unit_scale, unit))
+        print("MAE_2_GT = %f %s" % (MAE_2_GT*unit_scale, unit))
+        print("MAE_2_mean = %f %s" % (MAE_2_mean*unit_scale, unit))
     return (ratio_mean, error_mean, error_stddev, MAE_2_GT, MAE_2_mean)
 
 
@@ -592,6 +592,35 @@ def write_result_to_csv(result_list, csv_path):
         print("\n*** Wrote the results to the csv file:\n\t[%s]\n" % csv_path)
 
 
+def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name="distance", statistic_data_name="depth", unit="m", unit_scale=1.0):
+    '''
+    '''
+    #---------------------#
+    _statistic_str_out = '\nStatistic of [%s] for each [%s] class:\n' % (statistic_data_name, class_name)
+    # def value_of_string(e):
+    #   return int(e)
+    _label_list = list(class_statistic_dict.keys())
+    _label_list.sort(key=int) # Using the integer value of string to sort the list
+    for _label in _label_list:
+        _s_data = class_statistic_dict[_label]
+        _statistic_str_out += "[%s]: m_ratio=%f" % (_label, _s_data[0])
+        _statistic_str_out += " | mean=%f %s" % (_s_data[1]*unit_scale, unit)
+        _statistic_str_out += " | stddev=%f %s" % (_s_data[2]*unit_scale, unit)
+        _statistic_str_out += " | MAE_2_GT=%f %s" % (_s_data[3]*unit_scale, unit)
+        _statistic_str_out += " | MAE_2_mean=%f %s" % (_s_data[4]*unit_scale, unit)
+        _statistic_str_out += "\n"
+    #
+    print(_statistic_str_out)
+    #
+    with open(statistic_txt_path, "w") as _f:
+        _f.write(_statistic_str_out)
+        print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
+    #---------------------#
+
+
+
+
+
 
 # Get simple statistic data
 get_statistic_of_result(result_list)
@@ -604,7 +633,7 @@ write_result_to_csv(result_list, csv_path)
 
 
 
-# Get statistic result in each class
+# Get statistic result in each class, filter (by approval func) if required
 def approval_func_small_angle(result_list_idx):
     angle_th = 30
     if abs(result_list_idx["roll_GT"]) > angle_th:
@@ -616,28 +645,39 @@ def approval_func_small_angle(result_list_idx):
     return True
 def approval_func_large_angle(result_list_idx):
     return (not approval_func_small_angle(result_list_idx))
-depth_class_dict = get_classified_result(result_list, class_name='distance', approval_func=None)
-# depth_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_small_angle)
-# depth_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_large_angle)
-depth_class_statistic_dict = dict()
-for _label in depth_class_dict:
-    depth_class_statistic_dict[_label] = get_statistic_of_result(depth_class_dict[_label], class_name="distance", label=_label, verbose=False)
+distance_class_dict = get_classified_result(result_list, class_name='distance', approval_func=None)
+# distance_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_small_angle)
+# distance_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_large_angle)
 
-#---------------------#
-_statistic_str_out = '\nStatistic by [distance] class:\n'
-# def value_of_string(e):
-#   return int(e)
-distance_label_list = list(depth_class_statistic_dict.keys())
-distance_label_list.sort(key=int) # Using the integer value of string to sort the list
-for _label in distance_label_list:
-    _s_data = depth_class_statistic_dict[_label]
-    _statistic_str_out += "[%s]: m_ratio=%f | mean=%f cm | stddev=%f cm | MAE_2_GT=%f cm | MAE_2_mean=%f cm" % (_label, _s_data[0], _s_data[1]*100.0, _s_data[2]*100.0, _s_data[3]*100.0, _s_data[4]*100.0)
-    _statistic_str_out += "\n"
-statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + '.txt'
+
+# Get several statistic of each data in the data subset of each class
+#-----------------------------------------------------#
+dist_2_depth_statistic_dict = dict()
+dist_2_roll_statistic_dict = dict()
+dist_2_pitch_statistic_dict = dict()
+dist_2_yaw_statistic_dict = dict()
+for _label in distance_class_dict:
+    dist_2_depth_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=False)
+    dist_2_roll_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0, verbose=False)
+    dist_2_pitch_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=False)
+    dist_2_yaw_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=False)
+#-----------------------------------------------------#
+
+
+class_name = "distance" # Just the name as the info. to the reader
+#------------------------------#
+statistic_data_name = "depth" # Just the name as the info. to the reader
+statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
+write_statistic_to_txt(dist_2_depth_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit="cm", unit_scale=100.0)
 #
-print(_statistic_str_out)
+statistic_data_name = "roll" # Just the name as the info. to the reader
+statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
+write_statistic_to_txt(dist_2_roll_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit="deg.", unit_scale=1.0)
 #
-with open(statistic_txt_path, "w") as _f:
-    _f.write(_statistic_str_out)
-    print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
-#---------------------#
+statistic_data_name = "pitch" # Just the name as the info. to the reader
+statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
+write_statistic_to_txt(dist_2_pitch_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit="deg.", unit_scale=1.0)
+#
+statistic_data_name = "yaw" # Just the name as the info. to the reader
+statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
+write_statistic_to_txt(dist_2_yaw_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit="deg.", unit_scale=1.0)
