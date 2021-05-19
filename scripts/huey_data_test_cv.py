@@ -806,3 +806,167 @@ statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str +
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
 write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
 write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name)
+
+
+
+
+
+
+
+
+
+
+def get_all_class_seperated_result(result_list):
+    '''
+    Hirachy: drpy
+    [distance][roll][pitch][yaw]
+    '''
+    class_dict = dict()
+    _d_label_set = set()
+    _r_label_set = set()
+    _p_label_set = set()
+    _y_label_set = set()
+    for _idx in range(len(result_list)):
+        # Loop thrugh all data
+        _d_label = result_list[_idx]['class']["distance"]
+        _r_label = result_list[_idx]['class']["roll"]
+        _p_label = result_list[_idx]['class']["pitch"]
+        _y_label = result_list[_idx]['class']["yaw"]
+        # d
+        _d_dict = class_dict
+        if not _d_label in _d_dict:
+            _d_dict[_d_label] = dict()
+        # r
+        _r_dict = _d_dict[_d_label]
+        if not _r_label in _r_dict:
+            _r_dict[_r_label] = dict()
+        # p
+        _p_dict = _r_dict[_r_label]
+        if not _p_label in _p_dict:
+            _p_dict[_p_label] = dict()
+        # y
+        _y_dict = _p_dict[_p_label]
+        if not _y_label in _y_dict:
+            _y_dict[_y_label] = list()
+
+        # Update label set
+        _d_label_set.add(_d_label)
+        _r_label_set.add(_r_label)
+        _p_label_set.add(_p_label)
+        _y_label_set.add(_y_label)
+        # Append to the class list
+        class_dict[_d_label][_r_label][_p_label][_y_label].append(result_list[_idx])
+
+        # # Decide wether to record or not
+        # if (approval_func is None) or approval_func( result_list[_idx] ):
+        #     class_dict[_label].append(result_list[_idx])
+
+    # Prepare the class label list
+    d_label_list = list(_d_label_set)
+    r_label_list = list(_r_label_set)
+    p_label_list = list(_p_label_set)
+    y_label_list = list(_y_label_set)
+    d_label_list.sort(key=_class_order_func)
+    r_label_list.sort(key=_class_order_func)
+    p_label_list.sort(key=_class_order_func)
+    y_label_list.sort(key=_class_order_func)
+    #
+    return (class_dict, d_label_list, r_label_list, p_label_list, y_label_list)
+
+#
+drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = get_all_class_seperated_result(result_list)
+# print(drpy_class_dict)
+# Get (distance) statistic of each data in the data subset of each class
+#-----------------------------------------------------#
+drpy_2_depth_statistic_dict = dict()
+for _d in drpy_class_dict:
+    for _r in drpy_class_dict[_d]:
+        for _p in drpy_class_dict[_d][_r]:
+            for _y in drpy_class_dict[_d][_r][_p]:
+                _result_list = drpy_class_dict[_d][_r][_p][_y]
+                # print(_result_list)
+                _s_data = get_statistic_of_result(_result_list, class_name="distance", class_label=_label, data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=False)
+                # print(_s_data)
+                # d
+                _d_dict = drpy_2_depth_statistic_dict
+                if not _d in _d_dict:
+                    _d_dict[_d] = dict()
+                # r
+                _r_dict = _d_dict[_d]
+                if not _r in _r_dict:
+                    _r_dict[_r] = dict()
+                # p
+                _p_dict = _r_dict[_r]
+                if not _p in _p_dict:
+                    _p_dict[_p] = dict()
+                # # y
+                # _y_dict = _p_dict[_p]
+                # if not _y in _y_dict:
+                #     _y_dict[_y] = list()
+                drpy_2_depth_statistic_dict[_d][_r][_p][_y] = _s_data
+#-----------------------------------------------------#
+
+
+def write_drpy_2_depth_statistic_CSV(drpy_2_statistic_dict, csv_path, matric_label="mean(cm)"):
+    '''
+    '''
+    # _matric_label = "mean" + "(cm)"
+    # _matric_label = "MAE_2_GT" + "(cm)"
+    _matric_label = matric_label
+    #
+    row_dict_list = list()
+    _d_p_list = list()
+    # Roll, verticall
+    for _r in r_label_list: # For vertical table (outer row)
+        for _y in y_label_list: # In each table (inner row)
+            _row_dict = dict()
+            _r_y_label = "r=%s, y=%s" % (_r, _y)
+
+            _bar_count = 0
+            for _d in d_label_list: # For horizontal table (outer column)
+                _d_p_label = "d=%s" % (_d)
+                if not _d_p_label in _d_p_list:
+                    _d_p_list.append( _d_p_label )
+                _row_dict[_d_p_label] = _r_y_label # 1st column of a table
+                #
+                for _p in p_label_list: # In each table (inner column)
+                    _bar_count += 1
+                    _d_p_label = "d=%s, p=%s" % (_d, _p)
+                    #
+                    if not _d_p_label in _d_p_list:
+                        _d_p_list.append( _d_p_label )
+                    #
+                    # print("(d,r,p,y) = %s" % str((_d, _r, _p, _y)))
+                    # _a = drpy_2_statistic_dict[_d][_r][_p][_y]
+                    # print(_a)
+                    try:
+                        _row_dict[_d_p_label] = drpy_2_statistic_dict[_d][_r][_p][_y][_matric_label] # other columns
+                    except:
+                        _row_dict[_d_p_label] = "-"
+                # Finish a table horizontally
+                _d_p_label = "|%d" % _bar_count
+                if not _d_p_label in _d_p_list:
+                    _d_p_list.append( _d_p_label )
+                _row_dict[_d_p_label] = ""
+            # Finish a table virtically
+            row_dict_list.append(_row_dict)
+        #
+        row_dict_list.append(dict()) # Empty line
+    #
+    fieldnames = _d_p_list
+
+    with open(statistic_csv_path, mode='w') as _csv_f:
+        _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
+        #
+        _csv_w.writeheader()
+        _csv_w.writerows(row_dict_list)
+        # for _e_dict in row_dict_list:
+        #     _csv_w.writerow(_e_dict)
+        print("\n*** Wrote the drpy statistic results to the csv file:\n\t[%s]\n" % ( csv_path))
+
+
+# Generate the drpy data
+matric_label = "mean" + "(cm)"
+# matric_label = "MAE_2_GT" + "(cm)"
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", "depth") ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_depth_statistic_dict, statistic_csv_path)
