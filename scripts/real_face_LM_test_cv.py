@@ -27,8 +27,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -572,7 +572,16 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
         print("MAE_2_GT = %f %s" % (MAE_2_GT*unit_scale, unit))
         print("MAE_2_mean = %f %s" % (MAE_2_mean*unit_scale, unit))
         print("\n")
-    return (ratio_mean, error_mean, error_stddev, MAE_2_GT, MAE_2_mean)
+    # return (ratio_mean, error_mean, error_stddev, MAE_2_GT, MAE_2_mean)
+
+    # Capsulate the statistic results as a dict, which contains all the matric names.
+    statis_dict = dict()
+    statis_dict['m_ratio'] = ratio_mean
+    statis_dict['mean(%s)' % unit] = error_mean * unit_scale
+    statis_dict['stddev(%s)' % unit] = error_stddev * unit_scale
+    statis_dict['MAE_2_GT(%s)' % unit] = MAE_2_GT * unit_scale
+    statis_dict['MAE_2_mean(%s)' % unit] = MAE_2_mean * unit_scale
+    return statis_dict
 
 
 def get_classified_result(result_list, class_name='distance', include_all=True, approval_func=None):
@@ -619,7 +628,7 @@ def _class_order_func(e):
     '''
     return ( (-1) if (e == "all") else int(e))
 
-def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name="distance", statistic_data_name="depth", unit="m", unit_scale=1.0):
+def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name="distance", statistic_data_name="depth"):
     '''
     '''
     #---------------------#
@@ -630,12 +639,21 @@ def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=
     # _label_list.sort(key=int) # Using the integer value of string to sort the list
     _label_list.sort(key=_class_order_func) # Using the integer value of string to sort the list
     for _label in _label_list:
-        _s_data = class_statistic_dict[_label]
-        _statistic_str_out += "[%s]: m_ratio=%f" % (_label, _s_data[0])
-        _statistic_str_out += " | mean=%f %s" % (_s_data[1]*unit_scale, unit)
-        _statistic_str_out += " | stddev=%f %s" % (_s_data[2]*unit_scale, unit)
-        _statistic_str_out += " | MAE_2_GT=%f %s" % (_s_data[3]*unit_scale, unit)
-        _statistic_str_out += " | MAE_2_mean=%f %s" % (_s_data[4]*unit_scale, unit)
+        _s_data_dict = class_statistic_dict[_label] # New version, changed to dict
+        _statistic_str_out += "[%s]: " % _label
+        #
+        for _idx, _matric_l in enumerate(_s_data_dict):
+            if _idx > 0:
+                _statistic_str_out += " | "
+            # Write data
+            _statistic_str_out += "%s=%f" % (_matric_l, _s_data_dict[_matric_l]) # Note: _matric_l already include the unit and scale
+            # else: # Apply init_scale and print unit
+            #     _statistic_str_out += "%s=%f %s" % (_matric_l, _s_data_dict[_matric_l]*unit_scale, unit)
+        # _statistic_str_out += "m_ratio=%f" % (_s_data_dict[0])
+        # _statistic_str_out += " | mean=%f %s" % (_s_data_dict[1]*unit_scale, unit)
+        # _statistic_str_out += " | stddev=%f %s" % (_s_data_dict[2]*unit_scale, unit)
+        # _statistic_str_out += " | MAE_2_GT=%f %s" % (_s_data_dict[3]*unit_scale, unit)
+        # _statistic_str_out += " | MAE_2_mean=%f %s" % (_s_data_dict[4]*unit_scale, unit)
         _statistic_str_out += "\n"
     #
     print(_statistic_str_out)
@@ -645,7 +663,7 @@ def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=
         print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
     #---------------------#
 
-def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name="distance", statistic_data_name="depth", unit="m", unit_scale=1.0, is_horizontal=False):
+def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name="distance", statistic_data_name="depth", is_horizontal=True):
     '''
     Horizontal:
             class -->
@@ -666,7 +684,7 @@ def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=
     # _label_list.sort(key=int) # Using the integer value of string to sort the list
     _label_list.sort(key=_class_order_func) # Using the integer value of string to sort the list
     # Matric labels
-    _matric_list = ['m_ratio', 'mean', 'stddev', 'MAE_2_GT', 'MAE_2_mean']
+    _matric_list = list(class_statistic_dict[ _label_list[0] ].keys())
     #--------------------------------#
 
     if is_horizontal:
@@ -674,14 +692,14 @@ def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=
         #--------------------------------#
         fieldnames = ['_'] + _label_list
         row_dict_list = list()
-        for _m_id in range(len(_matric_list)): # Index
+        for _matric_l in _matric_list: # Key
             _row_dict = dict()
             # 1st column
-            _row_dict['_'] = _matric_list[_m_id]
+            _row_dict['_'] = _matric_l
             # 2nd column and so on
             for _label in _label_list: # Key
-                _s_data = class_statistic_dict[_label] # _s_data is a list of statistic values
-                _row_dict[_label] = _s_data[_m_id] # _m_id matric
+                _s_data_dict = class_statistic_dict[_label] # _s_data_dict is a dict of statistic values
+                _row_dict[_label] = _s_data_dict[_matric_l] # _matric_l matric
             #
             row_dict_list.append(_row_dict)
         #--------------------------------#
@@ -695,9 +713,9 @@ def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=
             # 1st column
             _row_dict['_'] = _label
             # 2nd column and so on
-            for _m_id in range(len(_matric_list)): # Index
-                _s_data = class_statistic_dict[_label] # _s_data is a list of statistic values
-                _row_dict[ _matric_list[_m_id] ] = _s_data[_m_id] # _m_id matric
+            for _matric_l in _matric_list: # Index
+                _s_data_dict = class_statistic_dict[_label] # _s_data_dict is a dict of statistic values
+                _row_dict[ _matric_l ] = _s_data_dict[_matric_l] # _matric_l matric
             #
             row_dict_list.append(_row_dict)
         #--------------------------------#
@@ -772,36 +790,28 @@ class_name = "distance" # Just the name as the info. to the reader
 #------------------------------#
 statistic_data_name = "depth" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_depth_statistic_dict
-unit = 'cm'
-unit_scale = 100.0
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
+write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name)
 #
 statistic_data_name = "roll" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_roll_statistic_dict
-unit = 'deg'
-unit_scale = 1.0
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
+write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name)
 #
 statistic_data_name = "pitch" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_pitch_statistic_dict
-unit = 'deg'
-unit_scale = 1.0
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
+write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name)
 #
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_yaw_statistic_dict
-unit = 'deg'
-unit_scale = 1.0
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, unit=unit, unit_scale=unit_scale)
+write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name)
