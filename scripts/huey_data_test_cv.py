@@ -30,8 +30,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_run_through_all_data = True
-# is_run_through_all_data = False
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -872,44 +872,72 @@ def get_all_class_seperated_result(result_list):
     y_label_list.sort(key=_class_order_func)
     #
     return (class_dict, d_label_list, r_label_list, p_label_list, y_label_list)
-
 #
+
+def get_drpy_statistic( drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0):
+    '''
+    '''
+    # Get (distance) statistic of each data in the data subset of each class
+    #-----------------------------------------------------#
+    drpy_2_data_statistic_dict = dict()
+    for _d in drpy_class_dict:
+        for _r in drpy_class_dict[_d]:
+            for _p in drpy_class_dict[_d][_r]:
+                for _y in drpy_class_dict[_d][_r][_p]:
+                    _result_list = drpy_class_dict[_d][_r][_p][_y]
+                    # print(_result_list)
+                    _s_data = get_statistic_of_result(_result_list, class_name=class_name, class_label='', data_est_key=data_est_key, data_GT_key=data_GT_key, unit=unit, unit_scale=unit_scale, verbose=False)
+                    # print(_s_data)
+                    # d
+                    _d_dict = drpy_2_data_statistic_dict
+                    if not _d in _d_dict:
+                        _d_dict[_d] = dict()
+                    # r
+                    _r_dict = _d_dict[_d]
+                    if not _r in _r_dict:
+                        _r_dict[_r] = dict()
+                    # p
+                    _p_dict = _r_dict[_r]
+                    if not _p in _p_dict:
+                        _p_dict[_p] = dict()
+                    # # y
+                    # _y_dict = _p_dict[_p]
+                    # if not _y in _y_dict:
+                    #     _y_dict[_y] = list()
+                    drpy_2_data_statistic_dict[_d][_r][_p][_y] = _s_data
+    #-----------------------------------------------------#
+    return drpy_2_data_statistic_dict
+
+
+
+#-----------------------------#
 drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = get_all_class_seperated_result(result_list)
 # print(drpy_class_dict)
+#-----------------------------#
+
 # Get (distance) statistic of each data in the data subset of each class
-#-----------------------------------------------------#
-drpy_2_depth_statistic_dict = dict()
-for _d in drpy_class_dict:
-    for _r in drpy_class_dict[_d]:
-        for _p in drpy_class_dict[_d][_r]:
-            for _y in drpy_class_dict[_d][_r][_p]:
-                _result_list = drpy_class_dict[_d][_r][_p][_y]
-                # print(_result_list)
-                _s_data = get_statistic_of_result(_result_list, class_name="distance", class_label=_label, data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=False)
-                # print(_s_data)
-                # d
-                _d_dict = drpy_2_depth_statistic_dict
-                if not _d in _d_dict:
-                    _d_dict[_d] = dict()
-                # r
-                _r_dict = _d_dict[_d]
-                if not _r in _r_dict:
-                    _r_dict[_r] = dict()
-                # p
-                _p_dict = _r_dict[_r]
-                if not _p in _p_dict:
-                    _p_dict[_p] = dict()
-                # # y
-                # _y_dict = _p_dict[_p]
-                # if not _y in _y_dict:
-                #     _y_dict[_y] = list()
-                drpy_2_depth_statistic_dict[_d][_r][_p][_y] = _s_data
-#-----------------------------------------------------#
+#-----------------------------#
+drpy_2_depth_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0)
+# drpy_2_roll_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="roll", data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0)
+# drpy_2_pitch_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="pitch", data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0)
+# drpy_2_yaw_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="yaw", data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0)
+#-----------------------------#
 
 
-def write_drpy_2_depth_statistic_CSV(drpy_2_statistic_dict, csv_path, matric_label="mean(cm)"):
+
+def write_drpy_2_depth_statistic_CSV(drpy_2_statistic_dict, csv_path, d_label_list=None, r_label_list=None, p_label_list=None, y_label_list=None, matric_label="mean(cm)"):
     '''
     '''
+    # # Collect the key list
+    # if d_label_list is None:
+    #     d_label_list = list( drpy_2_statistic_dict.keys() )
+    # if r_label_list is None:
+    #     r_label_list = list( drpy_2_statistic_dict[ d_label_list[0] ].keys() )
+    # if p_label_list is None:
+    #     p_label_list = list( drpy_2_statistic_dict[ d_label_list[0] ][ r_label_list[0] ].keys() )
+    # if y_label_list is None:
+    #     y_label_list = list( drpy_2_statistic_dict[ d_label_list[0] ][ r_label_list[0] ][ p_label_list[0] ].keys() )
+    #
     # _matric_label = "mean" + "(cm)"
     # _matric_label = "MAE_2_GT" + "(cm)"
     _matric_label = matric_label
@@ -966,7 +994,10 @@ def write_drpy_2_depth_statistic_CSV(drpy_2_statistic_dict, csv_path, matric_lab
 
 
 # Generate the drpy data
-matric_label = "mean" + "(cm)"
+# matric_name = "mean"
+matric_name = "MAE_2_GT"
+unit = "cm"
+matric_label = "%s(%s)" % (matric_name, unit)
 # matric_label = "MAE_2_GT" + "(cm)"
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", "depth") ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_depth_statistic_dict, statistic_csv_path)
+write_drpy_2_depth_statistic_CSV(drpy_2_depth_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
