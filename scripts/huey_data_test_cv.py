@@ -17,14 +17,14 @@ data_file_str = 'test_Alexander.txt'
 #---------------------------#
 # Image of Alexander
 # Original image
-image_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ/'
+image_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ/'
 # The image used for analysis
-image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ_result_unflipped/'
+image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result_unflipped/'
 # The same as the original image
-image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/images/alexander_SZ_result/'
+image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result/'
 #---------------------------#
 # Result CSV file
-result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/result_CSVs/'
+result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
 
@@ -48,6 +48,10 @@ verbose = True
 # Image display
 is_showing_image = True
 # is_showing_image = False
+#
+# Statistic CSV file
+# is_statistic_csv_horizontal = True # class --> (right)
+is_statistic_csv_horizontal = False # class (|, down)
 #---------------------------#
 
 # Not to flush the screen

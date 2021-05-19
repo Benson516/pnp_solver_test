@@ -45,6 +45,10 @@ verbose = True
 # Image display
 is_showing_image = True
 # is_showing_image = False
+#
+# Statistic CSV file
+# is_statistic_csv_horizontal = True # class --> (right)
+is_statistic_csv_horizontal = False # class (|, down)
 #---------------------------#
 
 # Not to flush the screen
@@ -663,7 +667,7 @@ def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=
         print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
     #---------------------#
 
-def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name="distance", statistic_data_name="depth", is_horizontal=True):
+def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name="distance", statistic_data_name="depth", is_horizontal=is_statistic_csv_horizontal):
     '''
     Horizontal:
             class -->
