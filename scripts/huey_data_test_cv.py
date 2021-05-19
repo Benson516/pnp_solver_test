@@ -30,8 +30,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -918,9 +918,9 @@ drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = get_al
 # Get (distance) statistic of each data in the data subset of each class
 #-----------------------------#
 drpy_2_depth_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0)
-# drpy_2_roll_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="roll", data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0)
-# drpy_2_pitch_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="pitch", data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0)
-# drpy_2_yaw_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="yaw", data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0)
+drpy_2_roll_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="roll", data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0)
+drpy_2_pitch_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="pitch", data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0)
+drpy_2_yaw_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="yaw", data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0)
 #-----------------------------#
 
 
@@ -994,10 +994,33 @@ def write_drpy_2_depth_statistic_CSV(drpy_2_statistic_dict, csv_path, d_label_li
 
 
 # Generate the drpy data
-# matric_name = "mean"
-matric_name = "MAE_2_GT"
+matric_name = "mean"
+# matric_name = "MAE_2_GT"
+
+statistic_data_name = "depth" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_depth_statistic_dict
 unit = "cm"
 matric_label = "%s(%s)" % (matric_name, unit)
-# matric_label = "MAE_2_GT" + "(cm)"
-statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", "depth") ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_depth_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+statistic_data_name = "roll" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_roll_statistic_dict
+unit = "deg."
+matric_label = "%s(%s)" % (matric_name, unit)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+statistic_data_name = "pitch" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_pitch_statistic_dict
+unit = "deg."
+matric_label = "%s(%s)" % (matric_name, unit)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+statistic_data_name = "yaw" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_yaw_statistic_dict
+unit = "deg."
+matric_label = "%s(%s)" % (matric_name, unit)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
