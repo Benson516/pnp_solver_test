@@ -531,6 +531,10 @@ class PNP_SOLVER_A2_M3(object):
         # See which one is closer to the leat-squared solution, _alpha_se or (-_alpha_se)
         _alpha_lsq = np_Gamma_est[0:2, 2]
         _se = np.sign(_alpha_se[:,0].dot(_alpha_lsq))
+        # if (_alpha_se[:,0].dot(_alpha_lsq)) < 0.0:
+        #     _se = -1.0
+        # else:
+        #     _se = 1.0
         #
         _alpha = _se * _alpha_se
         _beta = _se * _beta_se

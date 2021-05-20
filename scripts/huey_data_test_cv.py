@@ -7,6 +7,7 @@ import cv2
 #
 import PNP_SOLVER_LIB as PNPS
 
+
 #---------------------------#
 # Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
@@ -206,6 +207,8 @@ def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
 #--------------------------#
 result_list = list()
 #--------------------------#
+
+s_stamp = time.time()
 
 # Loop thrugh data
 for _idx in range(len(data_list)):
@@ -492,6 +495,11 @@ for _idx in range(len(data_list)):
 
 #-------------------------------------------------------#
 
+delta_time = time.time() - s_stamp
+print()
+print("Time elapsed for %d data = %f" % (len(data_list), delta_time))
+print("Average processing time for single data = %f" % (delta_time / len(data_list)) )
+print()
 
 # # Store the error for statistic
 # #----------------------------#
