@@ -38,13 +38,13 @@ is_limiting_line_count = True
 # is_limiting_line_count = False
 # DATA_START_ID = 0
 # DATA_START_ID = 658
-# DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pose estimation by current method (m1)
+DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pose estimation by current method (m1)
 # DATA_START_ID = 926 # (0, -20, 0)
 # DATA_START_ID = 1070 # (0, 40, 0)
-DATA_START_ID = 922
+# DATA_START_ID = 922
 # DATA_START_ID = 969
 # DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
-DATA_COUNT =  1 # 3
+DATA_COUNT = 3
 #
 verbose = True
 # verbose = False
@@ -194,6 +194,10 @@ point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
 point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
 point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+# point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+# point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+# point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+# point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
 # point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
@@ -274,6 +278,10 @@ for _idx in range(len(data_list)):
     np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
     np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
     np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
+    # np_point_image_dict["brow_cl_35"] = convert_pixel_to_homo(LM_pixel_data_matrix[35])
+    # np_point_image_dict["brow_il_37"] = convert_pixel_to_homo(LM_pixel_data_matrix[37])
+    # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42])
+    # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44])
     #
     np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
                                                                 LM_pixel_data_matrix[97],
@@ -330,7 +338,8 @@ for _idx in range(len(data_list)):
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
     # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
-    # Calculate the pixel error of the LMs and the reprojections of golden pattern
+    #
+    # Calculate the pixel error of the LMs and the ground-truth projection of golden pattern
     np_LM_GT_error_dict = dict()
     np_LM_GT_error_norm_dict = dict()
     LM_GT_error_total = 0.0
@@ -343,8 +352,40 @@ for _idx in range(len(data_list)):
         if np_LM_GT_error_norm_dict[_k] > LM_GT_error_max:
             LM_GT_error_max = np_LM_GT_error_norm_dict[_k]
             LM_GT_error_max_key = _k
-    LM_GT_error_total_average = LM_GT_error_total / len(np_point_image_dict)
-    print("(LM_GT_error_total_average, LM_GT_error_max, LM_GT_error_max_key) = (%f, %f, %s)" % (LM_GT_error_total_average, LM_GT_error_max, LM_GT_error_max_key))
+    LM_GT_error_average = LM_GT_error_total / len(np_point_image_dict)
+    print("(LM_GT_error_average, LM_GT_error_max, LM_GT_error_max_key) = (%f, %f, %s)" % (LM_GT_error_average, LM_GT_error_max, LM_GT_error_max_key))
+
+    # Calculate the pixel error of the LMs and the reprojections of golden pattern
+    predict_LM_error_dict = dict()
+    np_predict_LM_error_norm_dict = dict()
+    predict_LM_error_total = 0.0
+    predict_LM_error_max = 0.0
+    predict_LM_error_max_key = ""
+    for _k in np_point_image_dict:
+        predict_LM_error_dict[_k] = np_point_image_dict_reproject[_k] - np_point_image_dict[_k]
+        np_predict_LM_error_norm_dict[_k] = np.linalg.norm( predict_LM_error_dict[_k] )
+        predict_LM_error_total += np_predict_LM_error_norm_dict[_k]
+        if np_predict_LM_error_norm_dict[_k] > predict_LM_error_max:
+            predict_LM_error_max = np_predict_LM_error_norm_dict[_k]
+            predict_LM_error_max_key = _k
+    predict_LM_error_average = predict_LM_error_total / len(np_point_image_dict)
+    print("(predict_LM_error_average, predict_LM_error_max, predict_LM_error_max_key) = (%f, %f, %s)" % (predict_LM_error_average, predict_LM_error_max, predict_LM_error_max_key))
+
+    # Calculate the pixel error of the LMs and the reprojections of golden pattern
+    predict_GT_error_dict = dict()
+    np_predict_GT_error_norm_dict = dict()
+    predict_GT_error_total = 0.0
+    predict_GT_error_max = 0.0
+    predict_GT_error_max_key = ""
+    for _k in np_point_image_dict:
+        predict_GT_error_dict[_k] = np_point_image_dict_reproject[_k] - np_point_image_dict_reproject_GT_ori_golden_patern[_k]
+        np_predict_GT_error_norm_dict[_k] = np.linalg.norm( predict_GT_error_dict[_k] )
+        predict_GT_error_total += np_predict_GT_error_norm_dict[_k]
+        if np_predict_GT_error_norm_dict[_k] > predict_GT_error_max:
+            predict_GT_error_max = np_predict_GT_error_norm_dict[_k]
+            predict_GT_error_max_key = _k
+    predict_GT_error_average = predict_GT_error_total / len(np_point_image_dict)
+    print("(predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key) = (%f, %f, %s)" % (predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key))
     #
     print("Result from the solver:\n")
     print("2D points on image (re-projection):")
@@ -439,9 +480,17 @@ for _idx in range(len(data_list)):
     _result_idx_dict["res_norm"] = res_norm
     _result_idx_dict["res_norm_1000x"] = res_norm * 1000.0
     # LM-GT error
-    _result_idx_dict["LM_GT_error_total_average"] = LM_GT_error_total_average * distance_GT
-    _result_idx_dict["LM_GT_error_max"] = LM_GT_error_max * distance_GT
+    _result_idx_dict["LM_GT_error_average_normalize"] = LM_GT_error_average * distance_GT
+    _result_idx_dict["LM_GT_error_max_normalize"] = LM_GT_error_max * distance_GT
     _result_idx_dict["LM_GT_error_max_key"] = LM_GT_error_max_key
+    # predict-LM error
+    _result_idx_dict["predict_LM_error_average_normalize"] = predict_LM_error_average * distance_GT
+    _result_idx_dict["predict_LM_error_max_normalize"] = predict_LM_error_max * distance_GT
+    _result_idx_dict["predict_LM_error_max_key"] = predict_LM_error_max_key
+    # predict-GT error
+    _result_idx_dict["predict_GT_error_average_normalize"] = predict_GT_error_average * distance_GT
+    _result_idx_dict["predict_GT_error_max_normalize"] = predict_GT_error_max * distance_GT
+    _result_idx_dict["predict_GT_error_max_key"] = predict_GT_error_max_key
     #
     result_list.append(_result_idx_dict)
     #----------------------------#
