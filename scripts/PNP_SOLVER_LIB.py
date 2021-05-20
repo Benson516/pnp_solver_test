@@ -35,7 +35,7 @@ class PNP_SOLVER_A2_M3(object):
         self.is_using_pre_transform = False
         # self.is_using_pre_transform = True
         self.pre_trans_R_a_h = np.eye(3)
-        self.pre_trans_t_a_h = np.array([[0.0, 0.0, -1.0]]).T
+        self.pre_trans_t_a_h = np.array([[0.0, 0.0, -0.5]]).T
         # self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
         # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
         if self.is_using_pre_transform:
@@ -268,6 +268,11 @@ class PNP_SOLVER_A2_M3(object):
             Delta_i = self.get_Delta_i(np_point_3d_dict_in[_k], phi_3_est, id=_id)
             Delta_i_list.append( Delta_i )
             A_i_list.append( self.get_A_i(np_point_3d_dict_in[_k], Delta_i) )
+        # test, add the perpendicular condition
+        #---------------------------------#
+        A_i_list.append( np.hstack([phi_3_est.T, np.zeros((1,3)), np.zeros((1,2))]))
+        A_i_list.append( np.hstack([np.zeros((1,3)), phi_3_est.T, np.zeros((1,2))]))
+        #---------------------------------#
         Delta_all = np.vstack(Delta_i_list)
         A_all = np.vstack(A_i_list)
         return (Delta_all, A_all)
@@ -281,6 +286,10 @@ class PNP_SOLVER_A2_M3(object):
         for _k in np_point_image_dict_in:
             nu_i = _K_inv @ np_point_image_dict_in[_k] # shape = (3,1)
             B_i_list.append( nu_i[0:2,:] )
+        # test, add the perpendicular condition
+        #---------------------------------#
+        B_i_list.append( np.zeros((2,1)))
+        #---------------------------------#
         B_all = np.vstack(B_i_list)
         return B_all
 
