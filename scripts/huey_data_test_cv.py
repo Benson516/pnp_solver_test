@@ -167,6 +167,7 @@ def solving_center_point(p1,p2,p3,p4):
 # Camera intrinsic matrix (Ground truth)
 # f_camera = 188.55 # 175.0
 f_camera = 225.68717584155982 # / 1.15
+# f_camera = 225.68717584155982  / 1.2
 #
 fx_camera = f_camera
 # fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
@@ -190,7 +191,7 @@ point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
 point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
 point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-# point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
 # point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
 # point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
@@ -270,7 +271,7 @@ for _idx in range(len(data_list)):
     np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
     np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
     np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    # np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
+    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
     #
     np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
                                                                 LM_pixel_data_matrix[97],

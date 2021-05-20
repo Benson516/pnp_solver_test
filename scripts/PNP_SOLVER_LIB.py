@@ -130,11 +130,15 @@ class PNP_SOLVER_A2_M3(object):
             # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
             #
             # # W_all_diag = np.ones((B_all.shape[0],))
-            # _res_old_unit = self.unit_vec(res_old)
+            # # _res_old_unit = self.unit_vec(res_old)
             # # W_all_diag = 1.0/(0.001 +  np.squeeze(_res_old_unit)**2)
             # # W_all_diag = 0.5 * W_all_diag_old + 0.5 / (0.001 +  np.squeeze(_res_old_unit)**2)
-            # _res_MAE = np.average(np.abs(_res_old_unit))
-            # W_all_diag = 1.0/(0.001 +  np.squeeze(np.abs(_res_old_unit) - _res_MAE)**2)
+            # _res_old_abs = np.abs(res_old)
+            # _res_MAE = np.average( np.abs(res_old) )
+            # _res_dev = np.squeeze(np.abs(_res_old_abs - _res_MAE)) / _res_MAE
+            # self.lib_print("_res_dev = \n%s" % str(_res_dev))
+            # W_all_diag = 1.0/(0.1 +  _res_dev)
+            # # W_all_diag = 100.0*np.exp(-1.0*_res_dev**2)
             # #
             # W_all_diag_old = copy.deepcopy(W_all_diag)
             # self.lib_print("W_all_diag = \n%s" % str(W_all_diag))
@@ -288,8 +292,13 @@ class PNP_SOLVER_A2_M3(object):
             A_i_list.append( self.get_A_i(np_point_3d_dict_in[_k], Delta_i) )
         # # test, add the perpendicular condition
         # #---------------------------------#
-        # A_i_list.append( np.hstack([phi_3_est.T, np.zeros((1,3)), np.zeros((1,2))]))
-        # A_i_list.append( np.hstack([np.zeros((1,3)), phi_3_est.T, np.zeros((1,2))]))
+        # _phi_3_norm_2 = np.linalg.norm(phi_3_est)**2
+        # phi_3_est_1 = phi_3_est / _phi_3_norm_2 * 1000.0
+        # A_i_list.append( np.hstack([phi_3_est_1.T, np.zeros((1,3)), np.zeros((1,2))]))
+        # A_i_list.append( np.hstack([np.zeros((1,3)), phi_3_est_1.T, np.zeros((1,2))]))
+        # # _zs_T = np.array([[0.0, 0.0, 1.0]]) * 10**-3
+        # # A_i_list.append( np.hstack([ _zs_T, np.zeros((1,3)), np.zeros((1,2))]) )
+        # # A_i_list.append( np.hstack([ np.zeros((1,3)), _zs_T, np.zeros((1,2))]) )
         # #---------------------------------#
         Delta_all = np.vstack(Delta_i_list)
         A_all = np.vstack(A_i_list)
@@ -307,6 +316,7 @@ class PNP_SOLVER_A2_M3(object):
         # # test, add the perpendicular condition
         # #---------------------------------#
         # B_i_list.append( np.zeros((2,1)))
+        # # B_i_list.append( np.zeros((2,1)))
         # #---------------------------------#
         B_all = np.vstack(B_i_list)
         return B_all
