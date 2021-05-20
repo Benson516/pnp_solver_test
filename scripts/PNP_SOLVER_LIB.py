@@ -103,7 +103,11 @@ class PNP_SOLVER_A2_M3(object):
         # Iteration
         k_it = 0
         self.lib_print("---")
+        #
+        W_all_diag_old = np.ones((B_all.shape[0],))
+        res_old = np.ones(B_all.shape)
         res_norm = 10*3
+        #
         while k_it < num_it:
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
@@ -124,12 +128,26 @@ class PNP_SOLVER_A2_M3(object):
             # Solve for phi
             #-------------------------#
             # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
+            #
+            # # W_all_diag = np.ones((B_all.shape[0],))
+            # _res_old_unit = self.unit_vec(res_old)
+            # # W_all_diag = 1.0/(0.001 +  np.squeeze(_res_old_unit)**2)
+            # # W_all_diag = 0.5 * W_all_diag_old + 0.5 / (0.001 +  np.squeeze(_res_old_unit)**2)
+            # _res_MAE = np.average(np.abs(_res_old_unit))
+            # W_all_diag = 1.0/(0.001 +  np.squeeze(np.abs(_res_old_unit) - _res_MAE)**2)
+            # #
+            # W_all_diag_old = copy.deepcopy(W_all_diag)
+            # self.lib_print("W_all_diag = \n%s" % str(W_all_diag))
+            # W_all = np.diag(W_all_diag)
+            # # self.lib_print("W_all = \n%s" % str(W_all))
             # phi_est = np.linalg.inv(A_all.T @ W_all @ A_all) @ A_all.T @ W_all @ B_all
+            #
             phi_est = np.linalg.pinv(A_all) @ B_all
             self.lib_print("phi_est = \n%s" % str(phi_est))
             # residule
             # _res = (A_all @ phi_est) - B_all
             _res = B_all - (A_all @ phi_est)
+            res_old = copy.deepcopy(_res)
             self.lib_print("_res = %s.T" % str(_res.T))
             # _res_delta = _res - np_quantization_error_world_space_vec
             # self.lib_print("_res_delta = \n%s" % str(_res_delta))
@@ -168,12 +186,12 @@ class PNP_SOLVER_A2_M3(object):
                 # First reconstructing R, necessary for this method
                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
                 # Then, update phi_3_est
-                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est, phi_3_est, step_alpha)
             else: # update_phi_3_method == 0
                 # First reconstructing R
                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
                 # Then, update phi_3_est
-                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est, phi_3_est, step_alpha)
             # Real update of phi_3_est
             phi_3_est = copy.deepcopy(phi_3_est_new)
             self.lib_print("---")
@@ -308,7 +326,7 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("norm_phi_3_est = %f" % norm_phi_3_est)
         return (phi_3_est_new, norm_phi_3_est)
 
-    def update_phi_3_est_m2(self, np_R_est, t3_est):
+    def update_phi_3_est_m2(self, np_R_est, t3_est, phi_3_est, step_alpha=1.0):
         '''
         '''
         # Update phi_3_est
@@ -317,6 +335,10 @@ class PNP_SOLVER_A2_M3(object):
         # norm_phi_3_est = min( norm_phi_1_est, norm_phi_2_est)
         norm_phi_3_est = 1.0/t3_est
         phi_3_est_new = norm_phi_3_est * phi_3_est_uni
+        # if step_alpha != 1.0:
+        #     # Asymptotically update
+        #     phi_3_est_new = phi_3_est + step_alpha * (phi_3_est_new - phi_3_est)
+        #
         self.lib_print("phi_3_est_new = \n%s" % str(phi_3_est_new))
         self.lib_print("norm_phi_3_est = %f" % norm_phi_3_est)
         return (phi_3_est_new, norm_phi_3_est)
