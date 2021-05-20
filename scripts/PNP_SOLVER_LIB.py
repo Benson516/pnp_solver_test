@@ -549,15 +549,27 @@ class PNP_SOLVER_A2_M3(object):
         # # self.lib_print("_det_G_hyp2 = %f" % _det_G_hyp2 )
         # # np_Gamma_reconstruct = _G_hyp1
         # np_Gamma_reconstruct = _G_hyp2
+        # self.lib_print("np_Gamma_reconstruct = \n%s" % str(np_Gamma_reconstruct))
 
         # Reconstruct the Gamma
         _G_row_0 = np.hstack( (_K, _alpha) )
         _G_row_1 = np.hstack( (_beta.T, [[_c]]) )
         np_Gamma_reconstruct = np.vstack( (_G_row_0, _G_row_1) )
-        #
         self.lib_print("np_Gamma_reconstruct = \n%s" % str(np_Gamma_reconstruct))
-        np_R_est = np_Gamma_reconstruct / _gamma
-        self.lib_print("np_R_est = \n%s" % str(np_R_est))
+        #
+        # G_u, G_s, G_vh = np.linalg.svd(np_Gamma_reconstruct)
+        # self.lib_print("G_s = \n%s" % str(G_s))
+        # G_D = np.linalg.det(G_u @ G_vh)
+        # # self.lib_print("G_D = %f" % G_D)
+        # np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh # SVD reconstruct
+        # self.lib_print("(svd) np_R_est = \n%s" % str(np_R_est))
+
+        # Note: Since we solved the G,T G = gamma^2 equation, the reconstructed G is in good shape
+        #       Reconstructing it again by SVD actually results in the same matrix.
+        np_R_est = np_Gamma_reconstruct / _gamma # Method 1
+        self.lib_print("[G/gamma] np_R_est = \n%s" % str(np_R_est))
+
+        #
         # Convert to Euler angle
         Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, is_degree=True)
         # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
