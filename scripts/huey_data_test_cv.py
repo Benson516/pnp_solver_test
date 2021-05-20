@@ -31,18 +31,20 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_run_through_all_data = True
-# is_run_through_all_data = False
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
 # DATA_START_ID = 0
 # DATA_START_ID = 658
-DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pose estimation by current method (m1)
+# DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pose estimation by current method (m1)
 # DATA_START_ID = 926 # (0, -20, 0)
 # DATA_START_ID = 1070 # (0, 40, 0)
+DATA_START_ID = 922
+# DATA_START_ID = 969
 # DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
-DATA_COUNT =  3
+DATA_COUNT =  1 # 3
 #
 verbose = True
 # verbose = False
@@ -328,6 +330,21 @@ for _idx in range(len(data_list)):
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
     # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
+    # Calculate the pixel error of the LMs and the reprojections of golden pattern
+    np_LM_GT_error_dict = dict()
+    np_LM_GT_error_norm_dict = dict()
+    LM_GT_error_total = 0.0
+    LM_GT_error_max = 0.0
+    LM_GT_error_max_key = ""
+    for _k in np_point_image_dict:
+        np_LM_GT_error_dict[_k] = np_point_image_dict[_k] - np_point_image_dict_reproject_GT_ori_golden_patern[_k]
+        np_LM_GT_error_norm_dict[_k] = np.linalg.norm( np_LM_GT_error_dict[_k] )
+        LM_GT_error_total += np_LM_GT_error_norm_dict[_k]
+        if np_LM_GT_error_norm_dict[_k] > LM_GT_error_max:
+            LM_GT_error_max = np_LM_GT_error_norm_dict[_k]
+            LM_GT_error_max_key = _k
+    LM_GT_error_total_average = LM_GT_error_total / len(np_point_image_dict)
+    print("(LM_GT_error_total_average, LM_GT_error_max, LM_GT_error_max_key) = (%f, %f, %s)" % (LM_GT_error_total_average, LM_GT_error_max, LM_GT_error_max_key))
     #
     print("Result from the solver:\n")
     print("2D points on image (re-projection):")
@@ -421,6 +438,10 @@ for _idx in range(len(data_list)):
     # residual
     _result_idx_dict["res_norm"] = res_norm
     _result_idx_dict["res_norm_1000x"] = res_norm * 1000.0
+    # LM-GT error
+    _result_idx_dict["LM_GT_error_total_average"] = LM_GT_error_total_average * distance_GT
+    _result_idx_dict["LM_GT_error_max"] = LM_GT_error_max * distance_GT
+    _result_idx_dict["LM_GT_error_max_key"] = LM_GT_error_max_key
     #
     result_list.append(_result_idx_dict)
     #----------------------------#
