@@ -30,15 +30,15 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_run_through_all_data = True
-# is_run_through_all_data = False
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
 # DATA_START_ID = 0
 # DATA_START_ID = 658
-# DATA_START_ID = 379 # (0, 0, 0)
-DATA_START_ID = 926 # (0, -20, 0)
+DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pose estimation by current method (m1)
+# DATA_START_ID = 926 # (0, -20, 0)
 # DATA_START_ID = 1070 # (0, 40, 0)
 # DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
 DATA_COUNT =  3
