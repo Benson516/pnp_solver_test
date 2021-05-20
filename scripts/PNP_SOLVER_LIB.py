@@ -503,6 +503,22 @@ class PNP_SOLVER_A2_M3(object):
         # Gamma_list = [phi_1_est.T, phi_2_est.T, np.zeros((1,3))]
         np_Gamma_est = np.vstack(Gamma_list)
         self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+        # Balance
+        # _gc0 = np_Gamma_est[:,0].reshape((3,1))
+        # _gc1 = np_Gamma_est[:,1].reshape((3,1))
+        # _gc2 = np_Gamma_est[:,2].reshape((3,1))
+        # _ngc0 = np.linalg.norm(_gc0)
+        # _ngc1 = np.linalg.norm(_gc1)
+        # _ngc2 = np.linalg.norm(_gc2)
+        # _ngca = np.average([_ngc0, _ngc1, _ngc2])
+        # # _gc0_n = _gc0 * _ngca/_ngc0
+        # # _gc1_n = _gc1 * _ngca/_ngc1
+        # # _gc2_n = _gc2 * _ngca/_ngc2
+        # _gc0_n = _gc0 + (_ngca-_ngc0)/_ngca * _gc2
+        # _gc1_n = _gc1 + (_ngca-_ngc1)/_ngca * _gc2
+        # _gc2_n = _gc2
+        # np_Gamma_est = np.hstack( [_gc0_n, _gc1_n, _gc2_n] )
+        # self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
 
         '''
         Current version: Fixed on left-top block of G ( <-- the "capital Gamma" matrix)
