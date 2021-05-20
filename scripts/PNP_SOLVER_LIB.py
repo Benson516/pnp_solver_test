@@ -97,8 +97,9 @@ class PNP_SOLVER_A2_M3(object):
         # W_all = np.diag(W_all_diag)
         # self.lib_print("W_all_diag = \n%s" % str(W_all_diag))
         #
-        update_phi_3_method = 1
+        # update_phi_3_method = 1
         # update_phi_3_method = 2
+        update_phi_3_method = 0
         # Iteration
         k_it = 0
         self.lib_print("---")
@@ -163,9 +164,14 @@ class PNP_SOLVER_A2_M3(object):
                     pass # Save the computing power
                 #---------------------------------#
                 # end Test
-            else: # update_phi_3_method == 2
+            elif update_phi_3_method == 2: # update_phi_3_method == 2
                 # First reconstructing R, necessary for this method
                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
+                # Then, update phi_3_est
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
+            else: # update_phi_3_method == 0
+                # First reconstructing R
+                np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
                 # Then, update phi_3_est
                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est)
             # Real update of phi_3_est
@@ -183,8 +189,10 @@ class PNP_SOLVER_A2_M3(object):
         if update_phi_3_method == 1:
             np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est)
             # np_R_est, np_t_est, t3_est = reconstruct_R_t_m3(phi_est, phi_3_est)
-        else:
+        elif update_phi_3_method == 2:
             np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m2(phi_est, phi_3_est)
+        else:
+            np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
         # self.lib_print("np_R_est = \n%s" % str(np_R_est))
 
         # test, pre-transfer
@@ -442,6 +450,137 @@ class PNP_SOLVER_A2_M3(object):
         #---------------------------------#
         # end Test
         return (np_R_est, np_t_est, t3_est)
+
+    def reconstruct_R_t_block_reconstruction(self, phi_est, phi_3_est):
+    # def reconstruct_R_t_block_reconstruction(self, phi_est):
+        '''
+        Reconstruct the G = gamma*R using only the 2x2 block of the element in G
+        while solving the scale: gamma at the same time.
+
+        G = | K         beta |
+            | alpha.T   c    |
+          = gamma * R
+        '''
+        self.lib_print()
+
+
+        # Note: In current version, we still construct the full Gamma matrix for investigation purpose.
+        #       This action is actually redundant, and the phi_3_est is not required in the following reconstruction process.
+        phi_1_est = phi_est[0:3,:]
+        phi_2_est = phi_est[3:6,:]
+        Gamma_list = [phi_1_est.T, phi_2_est.T, phi_3_est.T]
+        # Gamma_list = [phi_1_est.T, phi_2_est.T, np.zeros((1,3))]
+        np_Gamma_est = np.vstack(Gamma_list)
+        self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+
+        '''
+        Current version: Fixed on left-top block of G ( <-- the "capital Gamma" matrix)
+        TODO:
+        - Find a method to choose the most significant 4 elements.
+        - Use row/column permutation to construct a matrix with left-top block is known.
+        - After solving the G matrix, permute back to form the final matrix.
+        '''
+        _K = np_Gamma_est[0:2,0:2] # left-top block, the known
+        # _K = np.vstack( (phi_1_est[0:2,:].T, phi_2_est[0:2,:].T) ) # left-top block, the known
+        _KTK = _K.T @ _K
+        self.lib_print("_KTK = \n%s" % str(_KTK))
+        _k1 = _KTK[0,0]
+        _k2 = _KTK[0,1]
+        _k3 = _KTK[1,1]
+
+        # Solve the _gamma
+        #--------------------------------#
+        _D = (_k1 - _k3)**2 + 4*_k2**2
+        self.lib_print("_D = %f" % _D)
+        _gamma_2 = 0.5*( (_k1 + _k3) + np.sqrt(_D) )
+        _gamma = np.sqrt(_gamma_2) # This, in our case, is positive.
+        self.lib_print("(_gamma_2, _gamma) = %s" % str((_gamma_2, _gamma)) )
+        #--------------------------------#
+
+        # Reconstruct the _beta_se vector
+        #--------------------------------#
+        _e_2 = _k2**2 / (_gamma_2 - _k3)
+        _e_se = np.sqrt(_e_2) # !! What is teh sign?
+        self.lib_print("(_e_2, _e_se) = %s" % str((_e_2, _e_se)) )
+        _d_se = -(_k2/_e_se)
+        self.lib_print("_d_se = %f" % _d_se )
+        _beta_se = np.array([[_e_se, _d_se]]).T
+        self.lib_print("_beta_se = \n%s" % str(_beta_se))
+        #--------------------------------#
+
+        # Solve the c and _alpha_se
+        #--------------------------------#
+        _delta_se = np.linalg.inv(_K.T) @ _beta_se
+        self.lib_print("_delta_se = \n%s" % str(_delta_se))
+        # _c_2 = _gamma_2 / (_delta_se.T @ _delta_se + 1.0)
+        # _c_sc = np.sqrt(_c_2) # !! What is teh sign?
+        # self.lib_print("(_c_2, _c_sc) = %s" % str((_c_2, _c_sc)) )
+        _c = np.linalg.det(_K) / _gamma # Note: no sign issue here!!
+        self.lib_print("_c = %f" % _c )
+        _alpha_se = -(_c * _delta_se)
+        self.lib_print("_alpha_se = \n%s" % str(_alpha_se))
+        #--------------------------------#
+
+        # Determin the sign of _e (se) from the original phi_est
+        #--------------------------------#
+        if ( np.sign(_alpha_se[0]) == np.sign(np_Gamma_est[0,2]) ):
+            _se = 1.0
+        else:
+            _se = -1.0
+        #
+        _alpha = _se * _alpha_se
+        _beta = _se * _beta_se
+        self.lib_print("_se = %f" % _se )
+        self.lib_print("_alpha = \n%s" % str(_alpha))
+        self.lib_print("_beta = \n%s" % str(_beta))
+        #--------------------------------#
+
+        # Reconstruct the G and R, using _K, _alpha_se, _beta_se, _c, _gamma
+        #--------------------------------#
+        # _G_row_0_hyp1 = np.hstack( (_K, _alpha_se) )
+        # _G_row_1_hyp1 = np.hstack( (_beta_se.T, [[_c]]) )
+        # _G_hyp1 = np.vstack( (_G_row_0_hyp1, _G_row_1_hyp1) )
+        # # _det_G_hyp1 = np.linalg.det(_G_hyp1)
+        # # self.lib_print("_det_G_hyp1 = %f" % _det_G_hyp1 )
+        # _G_row_0_hyp2 = np.hstack( (_K, -_alpha_se) )
+        # _G_row_1_hyp2 = np.hstack( (-_beta_se.T, [[_c]]) )
+        # _G_hyp2 = np.vstack( (_G_row_0_hyp2, _G_row_1_hyp2) )
+        # # _det_G_hyp2 = np.linalg.det(_G_hyp2)
+        # # self.lib_print("_det_G_hyp2 = %f" % _det_G_hyp2 )
+        # # np_Gamma_reconstruct = _G_hyp1
+        # np_Gamma_reconstruct = _G_hyp2
+
+        # Reconstruct the Gamma
+        _G_row_0 = np.hstack( (_K, _alpha) )
+        _G_row_1 = np.hstack( (_beta.T, [[_c]]) )
+        np_Gamma_reconstruct = np.vstack( (_G_row_0, _G_row_1) )
+        #
+        self.lib_print("np_Gamma_reconstruct = \n%s" % str(np_Gamma_reconstruct))
+        np_R_est = np_Gamma_reconstruct / _gamma
+        self.lib_print("np_R_est = \n%s" % str(np_R_est))
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est ) ) # Note: Euler angles are in degree.
+        # roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------#
+
+        # The value_G is exactly equal to the _gamma
+        value_G = _gamma
+        self.lib_print("value_G = %f" % value_G)
+        #
+
+        # Reconstruct t vector
+        t3_est = 1.0 / value_G
+        # t3_est = 1.0 / np.average(G_s)
+        self.lib_print("t3_est = %f" % t3_est)
+        np_t_est = np.vstack((phi_est[6:8,:], 1.0)) * t3_est
+        self.lib_print("np_t_est = \n%s" % str(np_t_est))
+        #---------------------------------#
+        # end Test
+        return (np_R_est, np_t_est, t3_est)
+
+
     #-----------------------------------------------------------#
 
     #-----------------------------------------------------------#

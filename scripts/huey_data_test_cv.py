@@ -299,6 +299,8 @@ for _idx in range(len(data_list)):
     print("-"*28 + " Grund Truth " + "-"*28)
     print("distance = %f cm" % data_list[_idx]['distance'])
     print("(roll_GT, yaw_GT, pitch_GT) \t\t= %s" % str(  [ data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'] ]) )
+    if verbose:
+        print("np_Gamma_GT = \n%s" % str( np_R_GT / np_t_GT_est[2,0] ))
     print("np_R_GT = \n%s" % str(np_R_GT))
     print("np_t_GT_est = \n%s" % str(np_t_GT_est))
     print("-"*30 + " The End " + "-"*30)
