@@ -43,7 +43,16 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # DATA_START_ID = 1070 # (0, 40, 0)
 # DATA_START_ID = 922
 # DATA_START_ID = 969
+# DATA_START_ID = 235
 # DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
+#
+# specific_drpy = dict()
+# specific_drpy["distance"] = '140'
+# specific_drpy["roll"] = "-45"
+# specific_drpy["pitch"] = "-30"
+# specific_drpy["yaw"] = "40"
+specific_drpy = None
+#
 DATA_COUNT = 3
 #
 verbose = True
@@ -63,6 +72,11 @@ if is_run_through_all_data:
     is_limiting_line_count = False
     verbose = False
     is_showing_image = False
+elif specific_drpy is not None:
+    DATA_START_ID = 0
+    is_limiting_line_count = False
+    # verbose = False # Inherent the above setting
+    # is_showing_image = False # Inherent the above setting
 #
 
 # Parameters of the data
@@ -103,6 +117,8 @@ print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
 print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
 #----------------------------------------------------------#
 
+
+
 # Convert the original data to structured data_list
 #-------------------------------------------------------#
 data_list = list()
@@ -129,6 +145,13 @@ for _idx in range(len(data_str_list_list)):
     data_id_dict['LM_local_norm'] = (np.array([data_str_list_list[_idx][5::2], data_str_list_list[_idx][6::2]]).T).astype(np.float) # np array, shape=(2,)
     #
     data_id_dict['LM_pixel'] = data_id_dict['LM_local_norm'] * data_id_dict['box_h'] + data_id_dict['box_xy'].reshape((1,2))
+
+    # Get only the specified data
+    #----------------------------------#
+    if (specific_drpy is not None) and (specific_drpy != _class_dict):
+        continue
+    #----------------------------------#
+
     # Sppend to the total data list
     data_list.append(data_id_dict)
 #
