@@ -83,6 +83,7 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("B_all = \n%s" % str(B_all))
         self.lib_print("B_all.shape = %s" % str(B_all.shape))
 
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
         # Solve by iteration
         #--------------------------------------#
         # Initial guess, not neccessaryly unit vector!!
@@ -111,6 +112,10 @@ class PNP_SOLVER_A2_M3(object):
         while k_it < num_it:
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            # # Real update of phi_3_est
+            # phi_3_est = copy.deepcopy(phi_3_est_new)
+
             # Generate Delta_i(k-1) and A(k-1)
             # Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
             Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
@@ -127,17 +132,21 @@ class PNP_SOLVER_A2_M3(object):
 
             # Solve for phi
             #-------------------------#
-            # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
+            # # phi_est = np.linalg.inv(A_all.T @ A_all) @ A_all.T @ B_all
             #
             # # W_all_diag = np.ones((B_all.shape[0],))
-            # # _res_old_unit = self.unit_vec(res_old)
-            # # W_all_diag = 1.0/(0.001 +  np.squeeze(_res_old_unit)**2)
+            # #
+            # _res_old_unit = self.unit_vec(res_old)
+            # W_all_diag = 1.0/(0.0000001 +  np.squeeze(_res_old_unit)**4)
+            # #
             # # W_all_diag = 0.5 * W_all_diag_old + 0.5 / (0.001 +  np.squeeze(_res_old_unit)**2)
-            # _res_old_abs = np.abs(res_old)
-            # _res_MAE = np.average( np.abs(res_old) )
-            # _res_dev = np.squeeze(np.abs(_res_old_abs - _res_MAE)) / _res_MAE
-            # self.lib_print("_res_dev = \n%s" % str(_res_dev))
-            # W_all_diag = 1.0/(0.1 +  _res_dev)
+            # #
+            # # _res_old_abs = np.abs(res_old)
+            # # _res_MAE = np.average( np.abs(res_old) )
+            # # _res_dev = np.squeeze(np.abs(_res_old_abs - _res_MAE)) / _res_MAE
+            # # self.lib_print("_res_dev = \n%s" % str(_res_dev))
+            # # W_all_diag = 1.0/(0.001 +  _res_dev)
+            # #
             # # W_all_diag = 100.0*np.exp(-1.0*_res_dev**2)
             # #
             # W_all_diag_old = copy.deepcopy(W_all_diag)
@@ -146,17 +155,32 @@ class PNP_SOLVER_A2_M3(object):
             # # self.lib_print("W_all = \n%s" % str(W_all))
             # phi_est = np.linalg.inv(A_all.T @ W_all @ A_all) @ A_all.T @ W_all @ B_all
             #
+
+            # Psudo inverse
             phi_est = np.linalg.pinv(A_all) @ B_all
+
+            # # Seperated solve
+            # #----------------------------------#
+            # _A_x = A_all[0::2, [0,1,2,6]]
+            # _A_y = A_all[1::2, [3,4,5,7]]
+            # _B_x = B_all[0::2, :]
+            # _B_y = B_all[1::2, :]
+            # _phi_est_x = np.linalg.pinv(_A_x) @ _B_x
+            # _phi_est_y = np.linalg.pinv(_A_y) @ _B_y
+            # phi_est = np.vstack([_phi_est_x[0:3,:], _phi_est_y[0:3,:], _phi_est_x[3:4,:], _phi_est_y[3:4,:] ])
+            # #----------------------------------#
+
             self.lib_print("phi_est = \n%s" % str(phi_est))
-            # residule
-            # _res = (A_all @ phi_est) - B_all
-            _res = B_all - (A_all @ phi_est)
-            res_old = copy.deepcopy(_res)
-            self.lib_print("_res = %s.T" % str(_res.T))
-            # _res_delta = _res - np_quantization_error_world_space_vec
-            # self.lib_print("_res_delta = \n%s" % str(_res_delta))
-            res_norm = np.linalg.norm(_res)
-            self.lib_print("norm(_res) = %f" % res_norm)
+            # # residule
+            # # _res = (A_all @ phi_est) - B_all
+            # _res = B_all - (A_all @ phi_est)
+            # res_old = copy.deepcopy(_res)
+            # # self.lib_print("(A_all @ phi_est) = %s.T" % str((A_all @ phi_est).T))
+            # self.lib_print("_res = %s.T" % str(_res.T))
+            # # _res_delta = _res - np_quantization_error_world_space_vec
+            # # self.lib_print("_res_delta = \n%s" % str(_res_delta))
+            # res_norm = np.linalg.norm(_res)
+            # self.lib_print("norm(_res) = %f" % res_norm)
             #-------------------------#
 
             #-------------------------#
@@ -196,6 +220,22 @@ class PNP_SOLVER_A2_M3(object):
                 np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
                 # Then, update phi_3_est
                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est, phi_3_est, step_alpha)
+
+            # Real residule (residule after reconstruction)
+            #---------------------------------------------#
+            phi_est_new = np.vstack([ np_R_est[0:1,:].T, np_R_est[1:2,:].T, np_t_est[0:2,:] ] ) / t3_est
+            self.lib_print("phi_est_new = %s.T" % str(phi_est_new.T))
+            _res = B_all - (A_all @ phi_est_new)
+            res_old = copy.deepcopy(_res)
+            # self.lib_print("(A_all @ phi_est) = %s.T" % str((A_all @ phi_est).T))
+            self.lib_print("_res = %s.T" % str(_res.T))
+            # _res_delta = _res - np_quantization_error_world_space_vec
+            # self.lib_print("_res_delta = \n%s" % str(_res_delta))
+            res_norm = np.linalg.norm(_res)
+            self.lib_print("norm(_res) = %f" % res_norm)
+            #---------------------------------------------#
+
+
             # Real update of phi_3_est
             phi_3_est = copy.deepcopy(phi_3_est_new)
             self.lib_print("---")
