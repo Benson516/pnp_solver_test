@@ -31,8 +31,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_run_through_all_data = True
-# is_run_through_all_data = False
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -366,16 +366,19 @@ for _idx in range(len(data_list)):
     # # Solve
     # # flags = cv2.SOLVEPNP_ITERATIVE
     # flags = cv2.SOLVEPNP_EPNP
-    # success, rotation_vector, t_est_CV = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=flags )
+    # inliers = None
+    # # success, rotation_vector, t_est_CV = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=flags )
+    # success, rotation_vector, t_est_CV, inliers = cv2.solvePnPRansac(model_points, image_points, camera_matrix, dist_coeffs, flags=flags, reprojectionError=0.8 )
     # R_est_CV, _ = cv2.Rodrigues(rotation_vector)
     # roll_est_CV, yaw_est_CV, pitch_est_CV = pnp_solver.get_Euler_from_rotation_matrix(R_est_CV, verbose=False, is_degree=True)
     # print()
     # print("success = %s" % str(success))
-    # print("R_est_CV = %s" % str(R_est_CV))
+    # print("R_est_CV = \n%s" % str(R_est_CV))
     # print("(roll_est_CV, yaw_est_CV, pitch_est_CV) \t\t= %s" % str( (roll_est_CV, yaw_est_CV, pitch_est_CV) )  ) # Already in degree
-    # print("t_est_CV = %s" % str(t_est_CV))
+    # print("t_est_CV = \n%s" % str(t_est_CV))
+    # print("inliers = %s" % str(inliers))
     # print()
-    # # Overwrite result
+    # # Overwrite the results
     # np_R_est, np_t_est, t3_est = R_est_CV, t_est_CV, t_est_CV[2,0]
     # roll_est, yaw_est, pitch_est = roll_est_CV, yaw_est_CV, pitch_est_CV
     # res_norm = 0.0 # Not being returned
