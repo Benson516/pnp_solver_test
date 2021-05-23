@@ -31,8 +31,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -355,6 +355,32 @@ for _idx in range(len(data_list)):
 
     # Solve
     np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
+
+    # # OpenCV method
+    # #----------------------------------------------------#
+    # _key_list = list(np_point_image_dict.keys())
+    # model_points = np.array([ point_3d_dict[_k] for _k in _key_list] )
+    # image_points = np.array([ np_point_image_dict[_k][0:2,0] for _k in _key_list])
+    # camera_matrix = np_K_camera_est
+    # dist_coeffs = None #  np.zeros((4,1)) # Assuming no lens distortion
+    # # Solve
+    # # flags = cv2.SOLVEPNP_ITERATIVE
+    # flags = cv2.SOLVEPNP_EPNP
+    # success, rotation_vector, t_est_CV = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=flags )
+    # R_est_CV, _ = cv2.Rodrigues(rotation_vector)
+    # roll_est_CV, yaw_est_CV, pitch_est_CV = pnp_solver.get_Euler_from_rotation_matrix(R_est_CV, verbose=False, is_degree=True)
+    # print()
+    # print("success = %s" % str(success))
+    # print("R_est_CV = %s" % str(R_est_CV))
+    # print("(roll_est_CV, yaw_est_CV, pitch_est_CV) \t\t= %s" % str( (roll_est_CV, yaw_est_CV, pitch_est_CV) )  ) # Already in degree
+    # print("t_est_CV = %s" % str(t_est_CV))
+    # print()
+    # # Overwrite result
+    # np_R_est, np_t_est, t3_est = R_est_CV, t_est_CV, t_est_CV[2,0]
+    # roll_est, yaw_est, pitch_est = roll_est_CV, yaw_est_CV, pitch_est_CV
+    # res_norm = 0.0 # Not being returned
+    # #----------------------------------------------------#
+
     # Note: Euler angles are in degree
     np_R_ca_est = pnp_solver.np_R_c_a_est
     np_t_ca_est = pnp_solver.np_t_c_a_est
