@@ -887,7 +887,8 @@ class PNP_SOLVER_A2_M3(object):
         _np_point_3d = np_point_3d.reshape((3,1))
         _ray = np_K_camera @ (np_R @ _np_point_3d + np_t)
         # normalize
-        projection_no_q = _ray/_ray[2,0]
+        # projection_no_q = _ray/_ray[2,0]
+        projection_no_q = _ray/abs(_ray[2,0]) # Incase that the point is behind the camera
         # Quantize
         if is_quantized:
             np_point_image = np.around(projection_no_q) # with quantization
