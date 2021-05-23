@@ -108,6 +108,8 @@ class PNP_SOLVER_A2_M3(object):
         W_all_diag_old = np.ones((B_all.shape[0],))
         res_old = np.ones(B_all.shape)
         res_norm = 10*3
+        # # Estimate the nose's height (scale)
+        # _s3_est = 1.0
         #
         while k_it < num_it:
             k_it += 1
@@ -197,6 +199,19 @@ class PNP_SOLVER_A2_M3(object):
             #
             self.lib_print("phi_3_est = \n%s" % str(phi_3_est_new))
             #-------------------------#
+
+
+
+            # '''
+            # Fix the nose:
+            # phi_1_x^2 + phi_1_y^2 + (s3*phi_1_z)^2 = phi_2_x^2 + phi_2_y^2 + (s3*phi_2_z)^2
+            # =>
+            # s3^2 = ( (phi_1_x^2 + phi_1_y^2) - (phi_2_x^2 + phi_2_y^2) ) / (phi_2_z^2 - phi_1_z^2)
+            # '''
+            # #-------------------------#
+            # _s3_est_2 = (np.linalg.norm(phi_1_est[0:2,0]) - np.linalg.norm(phi_2_est[0:2,0])) / (phi_2_est[2,0] - phi_1_est[2,0])
+            # print("_s3_est_2 = %f" % _s3_est_2)
+            # #-------------------------#
 
             if update_phi_3_method == 1:
                 # First update phi_3_est
