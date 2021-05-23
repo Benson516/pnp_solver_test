@@ -353,9 +353,14 @@ class PNP_SOLVER_A2_M3(object):
         # phi_3_est_1 = phi_3_est / _phi_3_norm_2 * 1000.0
         # A_i_list.append( np.hstack([phi_3_est_1.T, np.zeros((1,3)), np.zeros((1,2))]))
         # A_i_list.append( np.hstack([np.zeros((1,3)), phi_3_est_1.T, np.zeros((1,2))]))
-        # # _zs_T = np.array([[0.0, 0.0, 1.0]]) * 10**-3
-        # # A_i_list.append( np.hstack([ _zs_T, np.zeros((1,3)), np.zeros((1,2))]) )
-        # # A_i_list.append( np.hstack([ np.zeros((1,3)), _zs_T, np.zeros((1,2))]) )
+        # _zs_T = np.array([[0.0, 0.0, 1.0]]) * 10**-3
+        # A_i_list.append( np.hstack([ _zs_T, np.zeros((1,3)), np.zeros((1,2))]) )
+        # A_i_list.append( np.hstack([ np.zeros((1,3)), _zs_T, np.zeros((1,2))]) )
+        # _scale = 10**-2
+        # _xs_T = np.array([[1.0, 0.0, 0.0]]) * _scale
+        # _ys_T = np.array([[0.0, 1.0, 0.0]]) * _scale
+        # A_i_list.append( np.hstack([ _xs_T, np.zeros((1,3)), np.zeros((1,2))]) )
+        # A_i_list.append( np.hstack([ np.zeros((1,3)), _ys_T, np.zeros((1,2))]) )
         # #---------------------------------#
         Delta_all = np.vstack(Delta_i_list)
         A_all = np.vstack(A_i_list)
@@ -374,6 +379,8 @@ class PNP_SOLVER_A2_M3(object):
         # #---------------------------------#
         # B_i_list.append( np.zeros((2,1)))
         # # B_i_list.append( np.zeros((2,1)))
+        # _scale = 10**0
+        # B_i_list.append( np.ones((2,1)) * _scale )
         # #---------------------------------#
         B_all = np.vstack(B_i_list)
         return B_all
