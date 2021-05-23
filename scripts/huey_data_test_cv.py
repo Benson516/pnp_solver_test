@@ -31,8 +31,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_run_through_all_data = True
-# is_run_through_all_data = False
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -78,6 +78,7 @@ if is_run_through_all_data:
     is_limiting_line_count = False
     verbose = False
     is_showing_image = False
+    specific_drpy = None
 elif specific_drpy is not None:
     DATA_START_ID = 0
     is_limiting_line_count = False
@@ -662,6 +663,29 @@ for _idx in range(len(data_list)):
         _color = _color_RED # BGR
         # _color = _color_BLUE # BGR
         cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    #----------------------------------#
+
+    # Text
+    #----------------------------------#
+    font = cv2.FONT_HERSHEY_COMPLEX_SMALL # = 5
+    fontScale = 1.5
+    thickness = 2
+    # _text = "Hello world! 012345"
+    _est_text = "drpy_est = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["t3_est"]*100.0,
+                                            _result_idx_dict["roll_est"],
+                                            _result_idx_dict["pitch_est"],
+                                            _result_idx_dict["yaw_est"])
+    _GT_text = "drpy_GT = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["distance_GT"]*100.0,
+                                            _result_idx_dict["roll_GT"],
+                                            _result_idx_dict["pitch_GT"],
+                                            _result_idx_dict["yaw_GT"])
+    _err_text = "drpy_est = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["depth_err"]*100.0,
+                                            _result_idx_dict["roll_err"],
+                                            _result_idx_dict["pitch_err"],
+                                            _result_idx_dict["yaw_err"])
+    cv2.putText(_img_LM, _est_text, (0, 50), font, fontScale, (200, 128, 0), thickness, cv2.LINE_AA)
+    cv2.putText(_img_LM, _GT_text, (0, 80), font, fontScale, (0, 100, 180), thickness, cv2.LINE_AA)
+    cv2.putText(_img_LM, _err_text, (0, 110), font, fontScale, (0, 0, 150), thickness, cv2.LINE_AA)
     #----------------------------------#
 
     # Dtermine the final image

@@ -125,9 +125,11 @@ class PNP_SOLVER_A2_M3(object):
             rank_A_all = np.linalg.matrix_rank(A_all)
             self.lib_print("rank_A_all = %d" % rank_A_all)
             A_u, A_s, A_vh = np.linalg.svd(A_all)
-            # np.set_printoptions(suppress=True, precision=4)
+            np.set_printoptions(suppress=True, precision=4)
             self.lib_print("A_s = %s" % str(A_s))
-            # np.set_printoptions(suppress=False, precision=8)
+            # Note: the first row of the vh reveal the most significant element in phi_est (more precise in it estimation), and so on
+            self.lib_print("A_vh = %s" % str(A_vh))
+            np.set_printoptions(suppress=False, precision=8)
             #-------------------------#
 
             # Solve for phi
