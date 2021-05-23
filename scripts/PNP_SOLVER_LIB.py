@@ -598,11 +598,18 @@ class PNP_SOLVER_A2_M3(object):
 
         # Reconstruct the _beta_se vector
         #--------------------------------#
-        _e_2 = _k2**2 / (_gamma_2 - _k3)
-        _e_se = np.sqrt(_e_2) # !! What is teh sign?
+        # _e_2 = _k2**2 / (_gamma_2 - _k3)
+        # _e_se = np.sqrt(_e_2) # !! What is teh sign?
+        # _d_se = -(_k2/_e_se)
+        # # _d_2 = _d_se**2
+        #
+        # New solution for avoiding the sigularity
+        _e_2 = _gamma_2 - _k1
+        _e_se = np.sqrt(_e_2) # !! What is the sign?
+        _d_2 = _gamma_2 - _k3
+        _d_se = -np.sign(_k2)*np.sqrt(_d_2) # !! What is the sign?
         self.lib_print("(_e_2, _e_se) = %s" % str((_e_2, _e_se)) )
-        _d_se = -(_k2/_e_se)
-        self.lib_print("_d_se = %f" % _d_se )
+        self.lib_print("(_d_2, _d_se) = %s" % str((_d_2, _d_se)) )
         _beta_se = np.array([[_e_se, _d_se]]).T
         self.lib_print("_beta_se = \n%s" % str(_beta_se))
         #--------------------------------#
@@ -637,7 +644,7 @@ class PNP_SOLVER_A2_M3(object):
         #
         _alpha = _se * _alpha_se
         _beta = _se * _beta_se
-        self.lib_print("_se = %f" % _se )
+        self.lib_print(">>>>>>>>>>>>>>> _se = %f" % _se )
         self.lib_print("_alpha = \n%s" % str(_alpha))
         self.lib_print("_beta = \n%s" % str(_beta))
         #--------------------------------#

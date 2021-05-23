@@ -51,6 +51,7 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy["roll"] = "-45"
 # specific_drpy["pitch"] = "-30"
 # specific_drpy["yaw"] = "40"
+# specific_drpy = {"distance":"40", "roll":"-25", "pitch":"0", "yaw":"0"}
 specific_drpy = None
 #
 DATA_COUNT = 3
