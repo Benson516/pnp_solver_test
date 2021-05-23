@@ -31,8 +31,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -60,6 +60,11 @@ verbose = True
 # Image display
 is_showing_image = True
 # is_showing_image = False
+#
+# Fail cases investigation
+is_storing_fail_case_image = True
+# is_storing_fail_case_image = False
+fail_count_treshold = 3 # 2 # Note: max=4. If there are equal to or more than fail_count_treshold fail items, store the image
 #
 # Statistic CSV file
 is_statistic_csv_horizontal = True # class --> (right)
@@ -275,12 +280,24 @@ def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
     else:
         return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
 
+
+def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
+    '''
+    output
+    [depth-passed, roll-passed, pitch-passed, yaw-passed], how many criterion passed
+    '''
+    drpy_pass_list = [ (np.abs( drpy_est_list[_i] - drpy_GT_list[_i] ) < drpy_error_bound_list[_i]) for _i in range(len(drpy_est_list))]
+    pass_count = len([ _e for _e in drpy_pass_list if _e])
+    return (drpy_pass_list, pass_count)
+
+
 # Loop through data
 #-------------------------------------------------------#
 
 # Collect the result
 #--------------------------#
 result_list = list()
+failed_sample_filename_list = list()
 #--------------------------#
 
 s_stamp = time.time()
@@ -456,6 +473,23 @@ for _idx in range(len(data_list)):
     print()
     #----------------------------#
 
+    # Claulate the errors
+    #----------------------------#
+    drpy_pass_list, pass_count = check_if_the_sample_passed(
+                            (t3_est*100.0, roll_est, pitch_est, yaw_est),
+                            (data_list[_idx]['distance'], data_list[_idx]['roll'], data_list[_idx]['pitch'], data_list[_idx]['yaw']),
+                            (10.0, 10.0, 10.0, 10.0) )
+    print("pass_count = %d  |  drpy_pass_list = %s" % (pass_count, str(drpy_pass_list)))
+
+    # Determin if we want to further investigate this sample
+    fail_count = len(drpy_pass_list) - pass_count
+    is_storing_case_image = False
+    if fail_count >= fail_count_treshold:
+        failed_sample_filename_list.append(data_list[_idx]['file_name'])
+        is_storing_case_image = is_storing_fail_case_image
+    #----------------------------#
+
+
     # Store the error for statistic
     #----------------------------#
     _result_idx_dict = dict()
@@ -463,6 +497,14 @@ for _idx in range(len(data_list)):
     _result_idx_dict["file_name"] = data_list[_idx]['file_name']
     _result_idx_dict["drpy"] = (distance_GT, roll_GT, pitch_GT, yaw_GT)
     _result_idx_dict["class"] = data_list[_idx]['class']
+    # Result summary
+    #-------------------------------#
+    _result_idx_dict["fail_count"] = fail_count
+    _result_idx_dict["pass_count"] = pass_count
+    _result_idx_dict["is_depth_passed"] = drpy_pass_list[0]
+    _result_idx_dict["is_roll_passed"] = drpy_pass_list[1]
+    _result_idx_dict["is_pitch_passed"] = drpy_pass_list[2]
+    _result_idx_dict["is_yaw_passed"] = drpy_pass_list[3]
     #-------------------------------#
     # R, t, depth, roll, pitch, yaw, residual
     #---#
@@ -502,6 +544,8 @@ for _idx in range(len(data_list)):
     # residual
     _result_idx_dict["res_norm"] = res_norm
     _result_idx_dict["res_norm_1000x"] = res_norm * 1000.0
+    _result_idx_dict["res_norm_10000x_n_est"] = res_norm * 1000.0 * t3_est # Note: normalized by estimatd value
+    _result_idx_dict["res_norm_10000x_n_GT"] = res_norm * 1000.0 * distance_GT # Note: normalized by estimatd value
     # LM-GT error
     _result_idx_dict["LM_GT_error_average_normalize"] = LM_GT_error_average * distance_GT
     _result_idx_dict["LM_GT_error_max_normalize"] = LM_GT_error_max * distance_GT
@@ -521,7 +565,7 @@ for _idx in range(len(data_list)):
 
     # Image Display
     #====================================================#
-    if not is_showing_image:
+    if not (is_showing_image or is_storing_case_image):
         continue
 
     # Get the file name of the image
@@ -659,18 +703,33 @@ print("Time elapsed for %d data = %f" % (len(data_list), delta_time))
 print("Average processing time for single data = %f" % (delta_time / len(data_list)) )
 print()
 
+print("len(failed_sample_filename_list) = %d" % len(failed_sample_filename_list))
+
+failed_sample_filename_list_file_path = image_result_unflipped_dir_str + "fail_case_list.txt"
+with open(failed_sample_filename_list_file_path, "w") as _f:
+    _f.writelines(failed_sample_filename_list)
+
 # # Store the error for statistic
 # #----------------------------#
 # _result_idx_dict = dict()
 # _result_idx_dict['idx'] = data_list[_idx]['idx']
 # _result_idx_dict["file_name"] = data_list[_idx]['file_name']
 # _result_idx_dict["drpy"] = (distance_GT, roll_GT, pitch_GT, yaw_GT)
+# _result_idx_dict["class"] = data_list[_idx]['class']
+# # Result summary
+# #-------------------------------#
+# _result_idx_dict["passed_count"] = pass_count
+# _result_idx_dict["is_depth_passed"] = drpy_pass_list[0]
+# _result_idx_dict["is_roll_passed"] = drpy_pass_list[1]
+# _result_idx_dict["is_pitch_passed"] = drpy_pass_list[2]
+# _result_idx_dict["is_yaw_passed"] = drpy_pass_list[3]
 # #-------------------------------#
 # # R, t, depth, roll, pitch, yaw, residual
 # #---#
 # # GT
 # # Result
 # # Error, err = (est - GT)
+# # abs(Error), for scalar values
 # #-------------------------------#
 # # R
 # _result_idx_dict["np_R_GT"] = np_R_GT
@@ -684,20 +743,39 @@ print()
 # _result_idx_dict["distance_GT"] = distance_GT
 # _result_idx_dict["t3_est"] = t3_est
 # _result_idx_dict["depth_err"] = t3_est - distance_GT
+# _result_idx_dict["abs_depth_err"] = abs(t3_est - distance_GT)
 # # roll
 # _result_idx_dict["roll_GT"] = roll_GT
 # _result_idx_dict["roll_est"] = roll_est
 # _result_idx_dict["roll_err"] = roll_est - roll_GT
+# _result_idx_dict["abs_roll_err"] = abs(roll_est - roll_GT)
 # # pitch
 # _result_idx_dict["pitch_GT"] = pitch_GT
 # _result_idx_dict["pitch_est"] = pitch_est
 # _result_idx_dict["pitch_err"] = pitch_est - pitch_GT
+# _result_idx_dict["abs_pitch_err"] = abs(pitch_est - pitch_GT)
 # # yaw
 # _result_idx_dict["yaw_GT"] = yaw_GT
 # _result_idx_dict["yaw_est"] = yaw_est
 # _result_idx_dict["yaw_err"] = yaw_est - yaw_GT
+# _result_idx_dict["abs_yaw_err"] = abs(yaw_est - yaw_GT)
 # # residual
 # _result_idx_dict["res_norm"] = res_norm
+# _result_idx_dict["res_norm_1000x"] = res_norm * 1000.0
+# _result_idx_dict["res_norm_10000x_n_est"] = res_norm * 1000.0 * t3_est # Note: normalized by estimatd value
+# _result_idx_dict["res_norm_10000x_n_GT"] = res_norm * 1000.0 * distance_GT # Note: normalized by estimatd value
+# # LM-GT error
+# _result_idx_dict["LM_GT_error_average_normalize"] = LM_GT_error_average * distance_GT
+# _result_idx_dict["LM_GT_error_max_normalize"] = LM_GT_error_max * distance_GT
+# _result_idx_dict["LM_GT_error_max_key"] = LM_GT_error_max_key
+# # predict-LM error
+# _result_idx_dict["predict_LM_error_average_normalize"] = predict_LM_error_average * distance_GT
+# _result_idx_dict["predict_LM_error_max_normalize"] = predict_LM_error_max * distance_GT
+# _result_idx_dict["predict_LM_error_max_key"] = predict_LM_error_max_key
+# # predict-GT error
+# _result_idx_dict["predict_GT_error_average_normalize"] = predict_GT_error_average * distance_GT
+# _result_idx_dict["predict_GT_error_max_normalize"] = predict_GT_error_max * distance_GT
+# _result_idx_dict["predict_GT_error_max_key"] = predict_GT_error_max_key
 # #
 # result_list.append(_result_idx_dict)
 # #----------------------------#
