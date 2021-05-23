@@ -64,7 +64,8 @@ is_showing_image = True
 # Fail cases investigation
 is_storing_fail_case_image = True
 # is_storing_fail_case_image = False
-fail_count_treshold = 3 # 2 # Note: max=4. If there are equal to or more than fail_count_treshold fail items, store the image
+# Note: pass_count >= pass_count_treshold --> passed!!
+pass_count_treshold = 3 # 2 # Note: max=4. If there are less than (not included) pass_count_treshold pass items, store the image
 #
 # Statistic CSV file
 is_statistic_csv_horizontal = True # class --> (right)
@@ -484,7 +485,7 @@ for _idx in range(len(data_list)):
     # Determin if we want to further investigate this sample
     fail_count = len(drpy_pass_list) - pass_count
     is_storing_case_image = False
-    if fail_count >= fail_count_treshold:
+    if pass_count < pass_count_treshold: # Note: pass_count >= pass_count_treshold --> passed!!
         failed_sample_filename_list.append(data_list[_idx]['file_name'])
         is_storing_case_image = is_storing_fail_case_image
     #----------------------------#
@@ -707,7 +708,7 @@ print("len(failed_sample_filename_list) = %d" % len(failed_sample_filename_list)
 
 failed_sample_filename_list_file_path = image_result_unflipped_dir_str + "fail_case_list.txt"
 with open(failed_sample_filename_list_file_path, "w") as _f:
-    _f.writelines(failed_sample_filename_list)
+    _f.writelines('\n'.join(failed_sample_filename_list) )
 
 # # Store the error for statistic
 # #----------------------------#
