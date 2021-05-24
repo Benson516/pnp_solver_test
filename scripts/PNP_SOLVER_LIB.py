@@ -111,11 +111,28 @@ class PNP_SOLVER_A2_M3(object):
     def solve_pnp(self, np_point_image_dict):
         '''
         '''
-        np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = self.solve_pnp_single_pattern(np_point_image_dict)
-        # Note: Euler angles are in degree
-        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+        min_res_norm_n_est = None
+        idx_best = None
+        result_best = None
 
-    def solve_pnp_single_pattern(self, np_point_image_dict):
+        for _idx in range(len(self.np_point_3d_pretransfer_dict_list)):
+            _point_3d_dict = self.np_point_3d_pretransfer_dict_list[_idx]
+            # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+            _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
+            _res_norm_n_est = _result[-1] * _result[2] # Normalize the residual with distance estimation
+            self.lib_print("---\nPattern [%d]: _res_norm_n_est = %f\n---\n" % (_idx, _res_norm_n_est))
+            if (min_res_norm_n_est is None) or (_res_norm_n_est < min_res_norm_n_est):
+                min_res_norm_n_est = _res_norm_n_est
+                idx_best = _idx
+                result_best = _result
+        self.lib_print("-"*70)
+        self.lib_print("--> Best fitted pattern is [%d] with res_norm_n_est = %f" % (idx_best, min_res_norm_n_est))
+        self.lib_print("-"*70 + "\n")
+        # Note: Euler angles are in degree
+        return result_best
+        # return [*result_best, idx_best, min_res_norm_n_est]
+
+    def solve_pnp_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -162,7 +179,7 @@ class PNP_SOLVER_A2_M3(object):
 
             # Generate Delta_i(k-1) and A(k-1)
             # Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
-            Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
+            Delta_all, A_all = self.get_Delta_A_all( np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
             #-------------------------#
             # self.lib_print("A_all = \n%s" % str(A_all))
             self.lib_print("A_all.shape = %s" % str(A_all.shape))
