@@ -6,13 +6,19 @@ import copy
 class PNP_SOLVER_A2_M3(object):
     '''
     '''
-    def __init__(self, np_K_camera_est, point_3d_dict, pattern_scale=1.0, verbose=False):
+    def __init__(self, np_K_camera_est, point_3d_dict_list, pattern_scale_list=None, verbose=False):
         '''
         '''
         self.verbose = True
         self.np_K_camera_est = copy.deepcopy(np_K_camera_est)
-        self.pattern_scale = pattern_scale
-        self.point_3d_dict = copy.deepcopy(point_3d_dict)
+        self.pattern_scale_list = pattern_scale_list
+        self.point_3d_dict_list = copy.deepcopy(point_3d_dict_list)
+
+        if self.pattern_scale_list is None:
+            self.pattern_scale_list = [1.0 for _i in range(len(self.point_3d_dict_list))]
+        elif len(self.pattern_scale_list) < len(self.point_3d_dict_list):
+            # Padding the rest to zero
+            self.pattern_scale_list += [1.0 for _i in range(len(self.point_3d_dict_list) - len(self.pattern_scale_list))]
 
 
         # test, pre-transfer
@@ -28,11 +34,19 @@ class PNP_SOLVER_A2_M3(object):
         self.np_R_c_a_est = np.eye(3)
         self.np_t_c_a_est = np.zeros((3,1))
         #---------------------------#
+        self.np_point_3d_dict_list = list()
+        self.np_point_3d_pretransfer_dict_list = list()
+        for _i in range(len(self.point_3d_dict_list)):
+            _point_3d_dict = self.point_3d_dict_list[_i]
+            _pattern_scale = self.pattern_scale_list[_i]
+            _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(_point_3d_dict, _pattern_scale, self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
+            self.np_point_3d_dict_list.append(_np_point_3d_dict)
+            self.np_point_3d_pretransfer_dict_list.append(_np_point_3d_pretransfer_dict)
 
-        _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(point_3d_dict, pattern_scale, self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
         # Setup the global variables
-        self.np_point_3d_dict = _np_point_3d_dict
-        self.np_point_3d_pretransfer_dict = _np_point_3d_pretransfer_dict
+        self.current_golden_pattern_id = 0
+        self.np_point_3d_dict = self.np_point_3d_dict_list[ self.current_golden_pattern_id ]
+        self.np_point_3d_pretransfer_dict = self.np_point_3d_pretransfer_dict_list[ self.current_golden_pattern_id ]
 
         # Setup the desire verbose status
         self.verbose = verbose
@@ -1102,7 +1116,7 @@ def main():
     np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
     print("np_K_camera_est = \n%s" % str(np_K_camera_est))
     #
-    pnp_solver = PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, verbose=True)
+    pnp_solver = PNP_SOLVER_A2_M3(np_K_camera_est, [point_3d_dict], verbose=True)
 
     # test
     # roll = 10.0

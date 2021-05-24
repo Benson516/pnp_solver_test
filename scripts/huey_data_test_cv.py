@@ -268,7 +268,7 @@ point_3d_dict["face_c"] = solving_center_point(
 
 # Create the solver
 #----------------------------------------#
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, pattern_scale=pattern_scale, verbose=verbose)
+pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, [point_3d_dict], pattern_scale_list=[pattern_scale], verbose=verbose)
 
 
 def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
