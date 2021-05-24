@@ -34,51 +34,6 @@ class PNP_SOLVER_A2_M3(object):
         self.np_point_3d_dict = _np_point_3d_dict
         self.np_point_3d_pretransfer_dict = _np_point_3d_pretransfer_dict
 
-        # # LM in face local frame
-        # #---------------------------#
-        # # Convert to numpy vector, shape: (3,1)
-        # # Applying the scale as well
-        # self.np_point_3d_dict = dict()
-        # for _k in self.point_3d_dict:
-        #     self.np_point_3d_dict[_k] = np.array(self.point_3d_dict[_k]).reshape((3,1))
-        #     self.np_point_3d_dict[_k] *= pattern_scale # Multiply the scale
-        #     # # Tilting or other correction
-        #     # _R_correct = self.get_rotation_matrix_from_Euler(0.0, 0.0, 10.0, is_degree=True) # 15 deg up
-        #     # _t_correct = np.array([[0.0, 0.0, 0.0]]).T
-        #     # self.np_point_3d_dict[_k] = self.transform_3D_point(self.np_point_3d_dict[_k], _R_correct, _t_correct)
-        # # self.lib_print(self.np_point_3d_dict)
-        # #---------------------------#
-        #
-        # # Pre-transfer
-        # #---------------------------#
-        # self.np_point_3d_pretransfer_dict = copy.deepcopy(self.np_point_3d_dict)
-        # if self.is_using_pre_transform:
-        #     for _k in self.np_point_3d_pretransfer_dict:
-        #         self.np_point_3d_pretransfer_dict[_k] = self.transform_3D_point(self.np_point_3d_pretransfer_dict[_k], self.pre_trans_R_a_h, self.pre_trans_t_a_h)
-        # #---------------------------#
-        #
-        #
-        # # Logging
-        # #---------------------------#
-        # self.lib_print("-"*35)
-        # self.lib_print("3D points in local coordinate:")
-        # self.lib_print("pattern_scale = %f" % pattern_scale)
-        # for _k in self.np_point_3d_dict:
-        #     # self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_dict[_k])))
-        #     # self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_pretransfer_dict[_k])))
-        #     np.set_printoptions(suppress=True, precision=2)
-        #     print("%s:%sp_3D=%s.T | p_3D_pretrans=%s.T" %
-        #         (   _k,
-        #             " "*(12-len(_k)),
-        #             str(self.np_point_3d_dict[_k].T),
-        #             str(self.np_point_3d_pretransfer_dict[_k].T)
-        #         )
-        #     )
-        #     np.set_printoptions(suppress=False, precision=8)
-        # self.lib_print("-"*35)
-        # #---------------------------#
-
-
         # Setup the desire verbose status
         self.verbose = verbose
 
