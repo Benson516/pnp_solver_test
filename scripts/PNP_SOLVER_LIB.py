@@ -50,7 +50,7 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("-"*35)
         self.lib_print("3D points in local coordinate:")
         self.lib_print("pattern_scale = %f" % pattern_scale)
-        for _k in self.point_3d_dict:
+        for _k in self.np_point_3d_dict:
             # self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_dict[_k])))
             # self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_pretransfer_dict[_k])))
             np.set_printoptions(suppress=True, precision=2)
