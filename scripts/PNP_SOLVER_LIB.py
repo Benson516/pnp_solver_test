@@ -447,19 +447,17 @@ class PNP_SOLVER_A2_M3(object):
             #-------------------------#
 
 
-            # Update square-rooted weight vectors
-            #----------------------------------#
-            w_sqrt_x_vec = self.get_weight_from_residual(res_old_x, name="x")
-            w_sqrt_y_vec = self.get_weight_from_residual(res_old_y, name="y")
-            #----------------------------------#
-
-
             # Separately solve for phi
             #----------------------------------#
-            # phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
-            # phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
-            phi_x_est = self.solve_phi_half_weighted(A_x, B_x, w_sqrt_x_vec, name='x')
-            phi_y_est = self.solve_phi_half_weighted(A_y, B_y, w_sqrt_y_vec, name='y')
+            phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
+            phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
+            #
+            # Update square-rooted weight vectors
+            # w_sqrt_x_vec = self.get_weight_from_residual(res_old_x, name="x")
+            # w_sqrt_y_vec = self.get_weight_from_residual(res_old_y, name="y")
+            # phi_x_est = self.solve_phi_half_weighted(A_x, B_x, w_sqrt_x_vec, name='x')
+            # phi_y_est = self.solve_phi_half_weighted(A_y, B_y, w_sqrt_y_vec, name='y')
+            #
             phi_est = self.get_phi_est_from_halves(phi_x_est, phi_y_est)
             #----------------------------------#
 
