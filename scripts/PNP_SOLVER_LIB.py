@@ -719,6 +719,20 @@ class PNP_SOLVER_A2_M3(object):
         np.set_printoptions(suppress=False, precision=8)
         return w_sqrt_half_vec
 
+    # def get_weight_from_residual(self, res, name="half"):
+    #     '''
+    #     '''
+    #     res_unit = self.unit_vec(res)
+    #     res_unit_abs = np.abs(res_unit)
+    #     res_unit_abs_mean = np.average(res_unit_abs)
+    #     res_unit_dev = np.abs(res_unit_abs - res_unit_abs_mean)
+    #     w_sqrt_half_vec = 1.0 / (0.001 + res_unit_dev**2)
+    #     np.set_printoptions(suppress=True, precision=4)
+    #     self.lib_print("[%s] w_sqrt_vec = %s.T" % (name, str(w_sqrt_half_vec.T)) )
+    #     np.set_printoptions(suppress=False, precision=8)
+    #     return w_sqrt_half_vec
+
+
     def solve_phi_half_weighted(self, A_half, B_half, w_sqrt_half_vec=None, name='half'):
         '''
         w_sqrt_half_vec: the vector of square roots of the weights
