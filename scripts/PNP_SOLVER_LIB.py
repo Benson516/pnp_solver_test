@@ -715,7 +715,7 @@ class PNP_SOLVER_A2_M3(object):
         res_unit = self.unit_vec(res)
         w_sqrt_half_vec = 1.0 / (0.001 + res_unit**2)
         np.set_printoptions(suppress=True, precision=4)
-        self.lib_print("[%s] w_sqrt_vec = %s.T" % (name, str(w_sqrt_half_vec.T)) )
+        self.lib_print("w_sqrt_vec [%s] = %s.T" % (name, str(w_sqrt_half_vec.T)) )
         np.set_printoptions(suppress=False, precision=8)
         return w_sqrt_half_vec
 
@@ -728,7 +728,7 @@ class PNP_SOLVER_A2_M3(object):
     #     res_unit_dev = np.abs(res_unit_abs - res_unit_abs_mean)
     #     w_sqrt_half_vec = 1.0 / (0.001 + res_unit_dev**2)
     #     np.set_printoptions(suppress=True, precision=4)
-    #     self.lib_print("[%s] w_sqrt_vec = %s.T" % (name, str(w_sqrt_half_vec.T)) )
+    #     self.lib_print("w_sqrt_vec [%s] = %s.T" % (name, str(w_sqrt_half_vec.T)) )
     #     np.set_printoptions(suppress=False, precision=8)
     #     return w_sqrt_half_vec
 
