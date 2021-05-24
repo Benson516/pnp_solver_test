@@ -11,10 +11,28 @@ class PNP_SOLVER_A2_M3(object):
         '''
         self.verbose = True
         self.np_K_camera_est = copy.deepcopy(np_K_camera_est)
-
-        # LM in face local frame
         self.pattern_scale = pattern_scale
         self.point_3d_dict = copy.deepcopy(point_3d_dict)
+
+
+        # test, pre-transfer
+        #---------------------------#
+        self.is_using_pre_transform = False
+        # self.is_using_pre_transform = True
+        self.pre_trans_R_a_h = np.eye(3)
+        self.pre_trans_t_a_h = np.array([[0.0, 0.0, -0.5]]).T
+        # self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
+        # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
+
+        # For storing the estimated result of R_ca and t_ca
+        self.np_R_c_a_est = np.eye(3)
+        self.np_t_c_a_est = np.zeros((3,1))
+        #---------------------------#
+
+
+
+        # LM in face local frame
+        #---------------------------#
         # Convert to numpy vector, shape: (3,1)
         # Applying the scale as well
         self.np_point_3d_dict = dict()
@@ -26,27 +44,19 @@ class PNP_SOLVER_A2_M3(object):
             # _t_correct = np.array([[0.0, 0.0, 0.0]]).T
             # self.np_point_3d_dict[_k] = self.transform_3D_point(self.np_point_3d_dict[_k], _R_correct, _t_correct)
         # self.lib_print(self.np_point_3d_dict)
-
-        # Backup
-        self.np_point_3d_pretransfer_dict = copy.deepcopy(self.np_point_3d_dict)
-
-        # test, pre-transfer
         #---------------------------#
-        self.is_using_pre_transform = False
-        # self.is_using_pre_transform = True
-        self.pre_trans_R_a_h = np.eye(3)
-        self.pre_trans_t_a_h = np.array([[0.0, 0.0, -0.5]]).T
-        # self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
-        # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
+
+        # Pre-transfer
+        #---------------------------#
+        self.np_point_3d_pretransfer_dict = copy.deepcopy(self.np_point_3d_dict)
         if self.is_using_pre_transform:
             for _k in self.np_point_3d_pretransfer_dict:
                 self.np_point_3d_pretransfer_dict[_k] = self.transform_3D_point(self.np_point_3d_pretransfer_dict[_k], self.pre_trans_R_a_h, self.pre_trans_t_a_h)
-        # For storing the estimated result of R_ca and t_ca
-        self.np_R_c_a_est = np.eye(3)
-        self.np_t_c_a_est = np.zeros((3,1))
         #---------------------------#
 
 
+        # Logging
+        #---------------------------#
         self.lib_print("-"*35)
         self.lib_print("3D points in local coordinate:")
         self.lib_print("pattern_scale = %f" % pattern_scale)
@@ -63,9 +73,18 @@ class PNP_SOLVER_A2_M3(object):
             )
             np.set_printoptions(suppress=False, precision=8)
         self.lib_print("-"*35)
-        #
+        #---------------------------#
 
+
+        # Setup the desire verbose status
         self.verbose = verbose
+
+
+    def get_np_point_3d_dict(point_3d_dict, pattern_scale):
+        '''
+        '''
+        pass
+
 
     def lib_print(self, str=''):
         if self.verbose:
