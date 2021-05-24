@@ -53,7 +53,7 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy["yaw"] = "40"
 # specific_drpy = {"distance":"40", "roll":"-25", "pitch":"0", "yaw":"0"}
 # specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"0"}
-# specific_drpy = {"distance":"100", "roll":"-45", "pitch":"-15", "yaw":"0"}
+# specific_drpy = {"distance":"100", "roll":"-45", "pitch":"-15", "yaw":"0"} # The "flipping" case
 specific_drpy = None
 #
 DATA_COUNT = 3
@@ -237,12 +237,12 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
 # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
 #
-# point_3d_dict["face_c"] = solving_center_point(
-#                         point_3d_dict["eye_r_97"],
-#                         point_3d_dict["eye_l_96"],
-#                         point_3d_dict["mouse_l_76"],
-#                         point_3d_dict["mouse_r_82"]
-#                         )
+point_3d_dict["face_c"] = solving_center_point(
+                        point_3d_dict["eye_r_97"],
+                        point_3d_dict["eye_l_96"],
+                        point_3d_dict["mouse_l_76"],
+                        point_3d_dict["mouse_r_82"]
+                        )
 # Append to the list
 point_3d_dict_list.append(point_3d_dict)
 pattern_scale_list.append(pattern_scale)
@@ -264,12 +264,12 @@ pattern_scale_list.append(pattern_scale)
 # # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
 # # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
 # #
-# # point_3d_dict["face_c"] = solving_center_point(
-# #                         point_3d_dict["eye_r_97"],
-# #                         point_3d_dict["eye_l_96"],
-# #                         point_3d_dict["mouse_l_76"],
-# #                         point_3d_dict["mouse_r_82"]
-# #                         )
+# point_3d_dict["face_c"] = solving_center_point(
+#                         point_3d_dict["eye_r_97"],
+#                         point_3d_dict["eye_l_96"],
+#                         point_3d_dict["mouse_l_76"],
+#                         point_3d_dict["mouse_r_82"]
+#                         )
 # # Append to the list
 # point_3d_dict_list.append(point_3d_dict)
 # pattern_scale_list.append(pattern_scale)
@@ -351,13 +351,13 @@ for _idx in range(len(data_list)):
     # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42])
     # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44])
     #
-    # np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
-    #                                                             LM_pixel_data_matrix[97],
-    #                                                             LM_pixel_data_matrix[96],
-    #                                                             LM_pixel_data_matrix[76],
-    #                                                             LM_pixel_data_matrix[82])
-    #                                                         )
-    #
+    np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
+                                                                LM_pixel_data_matrix[97],
+                                                                LM_pixel_data_matrix[96],
+                                                                LM_pixel_data_matrix[76],
+                                                                LM_pixel_data_matrix[82])
+                                                            )
+
     # # Print
     # print("-"*35)
     # print("2D points on image:")
