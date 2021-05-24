@@ -127,7 +127,8 @@ class PNP_SOLVER_A2_M3(object):
         for _idx in range(len(self.np_point_3d_pretransfer_dict_list)):
             _point_3d_dict = self.np_point_3d_pretransfer_dict_list[_idx]
             # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
-            _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -379,6 +380,170 @@ class PNP_SOLVER_A2_M3(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
+    def solve_pnp_seperate_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+        '''
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        '''
+        # Form the problem for solving
+        B_x, B_y = self.get_B_xy(np_point_image_dict, self.np_K_camera_est)
+        self.lib_print("B_x = \n%s" % str(B_x))
+        self.lib_print("B_y = \n%s" % str(B_y))
+        self.lib_print("B_x.shape = %s" % str(B_x.shape))
+        self.lib_print("B_y.shape = %s" % str(B_y.shape))
+        #
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
+
+        # Solve by iteration
+        #--------------------------------------#
+        # Initial guess, not neccessaryly unit vector!!
+        # phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
+        phi_3_est = np.array([0.0, 0.0, 1.0]).reshape((3,1))
+        phi_3_est_new = copy.deepcopy(phi_3_est)
+        step_alpha = 1.0 # 0.5
+        num_it = 3
+        #
+        # update_phi_3_method = 1
+        update_phi_3_method = 0
+        # Iteration
+        k_it = 0
+        self.lib_print("---")
+        #
+        res_old_x = np.ones(B_x.shape)
+        res_old_y = np.ones(B_y.shape)
+        res_norm_x = 10*3
+        res_norm_y = 10*3
+        #
+        while k_it < num_it:
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            # # Real update of phi_3_est
+            # phi_3_est = copy.deepcopy(phi_3_est_new)
+
+            # Generate Delta_i(k-1) and A(k-1)
+            # Delta_all, A_x, A_y = self.get_Delta_all_A_xy( self.np_point_3d_dict, np_point_image_dict, phi_3_est)
+            Delta_all, A_x, A_y = self.get_Delta_all_A_xy( np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
+            #-------------------------#
+            # self.lib_print("A_all = \n%s" % str(A_all))
+            self.lib_print("A_x.shape = %s" % str(A_x.shape))
+            self.lib_print("A_y.shape = %s" % str(A_y.shape))
+            rank_A_x = np.linalg.matrix_rank(A_x)
+            rank_A_y = np.linalg.matrix_rank(A_y)
+            self.lib_print("rank_A_x = %d" % rank_A_x)
+            self.lib_print("rank_A_y = %d" % rank_A_y)
+            A_x_u, A_x_s, A_x_vh = np.linalg.svd(A_x)
+            A_y_u, A_y_s, A_y_vh = np.linalg.svd(A_y)
+            np.set_printoptions(suppress=True, precision=4)
+            self.lib_print("A_x_s = %s" % str(A_x_s))
+            self.lib_print("A_x_vh = %s" % str(A_x_vh)) # Note: the first row of the vh reveal the most significant element in phi_est (more precise in it estimation), and so on
+            self.lib_print("A_y_s = %s" % str(A_y_s))
+            self.lib_print("A_y_vh = %s" % str(A_y_vh)) # Note: the first row of the vh reveal the most significant element in phi_est (more precise in it estimation), and so on
+            np.set_printoptions(suppress=False, precision=8)
+            #-------------------------#
+
+
+            # Separately solve for phi
+            #----------------------------------#
+            phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
+            phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
+            phi_est = self.get_phi_est_from_halves(phi_x_est, phi_y_est)
+            #----------------------------------#
+
+            self.lib_print("phi_est = \n%s" % str(phi_est))
+            #-------------------------#
+
+            #-------------------------#
+            phi_1_est = phi_est[0:3,:]
+            phi_2_est = phi_est[3:6,:]
+            self.lib_print("phi_1_est = \n%s" % str(phi_1_est))
+            self.lib_print("phi_2_est = \n%s" % str(phi_2_est))
+            norm_phi_1_est = np.linalg.norm(phi_1_est)
+            norm_phi_2_est = np.linalg.norm(phi_2_est)
+            self.lib_print("norm_phi_1_est = %f" % norm_phi_1_est)
+            self.lib_print("norm_phi_2_est = %f" % norm_phi_2_est)
+            #
+            self.lib_print("phi_3_est = \n%s" % str(phi_3_est_new))
+            #-------------------------#
+
+
+            #-------------------------#
+            if update_phi_3_method == 1:
+                # First update phi_3_est
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha)
+                # Then, test (not necessary)
+                #---------------------------------#
+                if self.verbose:
+                    np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est_new)
+                else:
+                    pass # Save the computing power
+                #---------------------------------#
+                # end Test
+            else: # update_phi_3_method == 0
+                # First reconstructing R
+                np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
+                # Then, update phi_3_est
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est, phi_3_est, step_alpha)
+
+            # Real residule (residule after reconstruction)
+            #---------------------------------------------#
+            phi_est_new = np.vstack([ np_R_est[0:1,:].T, np_R_est[1:2,:].T, np_t_est[0:2,:] ] ) / t3_est
+            phi_x_est, phi_y_est = self.get_phi_half_from_whole(phi_est_new)
+            self.lib_print("phi_x_est = %s.T" % str(phi_x_est.T))
+            self.lib_print("phi_y_est = %s.T" % str(phi_y_est.T))
+            res_x, res_norm_x = self.cal_res(A_x, B_x, phi_x_est, name='x')
+            res_y, res_norm_y = self.cal_res(A_y, B_y, phi_y_est, name='y')
+            # Update
+            res_old_x = copy.deepcopy(res_x)
+            res_old_y = copy.deepcopy(res_y)
+            #---------------------------------------------#
+
+            # Real update of phi_3_est
+            phi_3_est = copy.deepcopy(phi_3_est_new)
+            self.lib_print("---")
+
+        #--------------------------------------#
+
+        self.lib_print()
+        self.lib_print("phi_est = \n%s" % str(phi_est))
+        self.lib_print("phi_3_est = \n%s" % str(phi_3_est))
+        self.lib_print()
+        # Reconstruct (R, t)
+        #--------------------------------------------------------#
+        if update_phi_3_method == 1:
+            np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est)
+        else:
+            np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
+        # self.lib_print("np_R_est = \n%s" % str(np_R_est))
+
+        # test, pre-transfer
+        #---------------------------#
+        self.np_R_c_a_est = copy.deepcopy(np_R_est)
+        self.np_t_c_a_est = copy.deepcopy(np_t_est)
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = copy.deepcopy(np_R_c_h_est)
+            np_t_est = copy.deepcopy(np_t_c_h)
+            t3_est = np_t_est[2,0]
+        #---------------------------#
+
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
+        roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------------------------------#
+
+        # Get the whole residual
+        #-----------------------------#
+        res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        #-----------------------------#
+
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
     #-----------------------------------------------------------#
 
     # Components of the solution
@@ -464,6 +629,80 @@ class PNP_SOLVER_A2_M3(object):
         # # #---------------------------------#
         B_all = np.vstack(B_i_list)
         return B_all
+
+    # Separate x and y
+    #-------------------------------------------#
+    def get_A_i_half(self, theta_i, Delta_i):
+        '''
+        theta_i=[[x,y,z]].T, shape=(3,1)
+        Delta_i=(theta_i.T @ phi_3 + 1.0), scalar
+        '''
+        _theta_i_T = theta_i.reshape((1,3)) # Incase it's 1-D array, use reshape instead of theta_i.T
+        #
+        _theta_i_T_div_Delta_i = _theta_i_T / Delta_i
+        A_i_half = np.hstack( [_theta_i_T_div_Delta_i, 1.0/Delta_i ] )
+        return A_i_half
+
+    def get_Delta_all_A_xy(self, np_point_3d_dict_in, np_point_image_dict_in, phi_3_est):
+        '''
+        '''
+        # To be more realistic, use the image point to search
+        A_i_half_list = list()
+        Delta_i_list = list()
+        for _id, _k in enumerate(np_point_image_dict_in):
+            Delta_i = self.get_Delta_i(np_point_3d_dict_in[_k], phi_3_est, id=_id)
+            Delta_i_list.append( Delta_i )
+            A_i_half_list.append( self.get_A_i_half(np_point_3d_dict_in[_k], Delta_i) )
+        Delta_all = np.vstack(Delta_i_list)
+        A_xy = np.vstack(A_i_half_list)
+        # Assign the A_x and A_y
+        A_x = A_xy
+        A_y = A_xy
+        return (Delta_all, A_x, A_y)
+
+    def get_B_xy(self, np_point_image_dict_in, K_in):
+        '''
+        '''
+        _K_inv = np.linalg.inv(K_in)
+        # To be more realistic, use the image point to search
+        B_i_list = list()
+        for _k in np_point_image_dict_in:
+            nu_i = _K_inv @ np_point_image_dict_in[_k] # shape = (3,1)
+            B_i_list.append( nu_i[0:2,:] )
+        B_all = np.vstack(B_i_list)
+        # Separate the B
+        B_x = B_all[0::2]
+        B_y = B_all[1::2]
+        return (B_x, B_y)
+
+    def get_phi_est_from_halves(self, phi_x, phi_y):
+        '''
+        '''
+        phi_est = phi_est = np.vstack([phi_x[0:3,:], phi_y[0:3,:], phi_x[3:4,:], phi_y[3:4,:] ])
+        return phi_est
+
+    def get_phi_half_from_whole(self, phi_est):
+        '''
+        '''
+        phi_x = phi_est[0::2]
+        phi_y = phi_est[1::2]
+        return (phi_x, phi_y)
+
+    def solve_phi_half(self, A_half, B_half, name='half'):
+        '''
+        '''
+        phi_half = np.linalg.pinv(A_half) @ B_half
+        self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
+        return phi_half
+
+    def cal_res(self, A_half, B_half, phi_half, name='half'):
+        '''
+        '''
+        res = B_half - A_half @ phi_half
+        res_norm = np.linalg.norm(res)
+        self.lib_print("[%s] res_norm = %f\t|\tres = %s.T" % (name, res_norm, str(res.T)))
+        return (res, res_norm)
+    #-------------------------------------------#
 
     def update_phi_3_est_m1(self, phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha=1.0):
         '''
