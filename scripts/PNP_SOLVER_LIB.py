@@ -399,6 +399,7 @@ class PNP_SOLVER_A2_M3(object):
         # Initial guess, not neccessaryly unit vector!!
         # phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
         phi_3_est = np.array([0.0, 0.0, 1.0]).reshape((3,1))
+        # phi_3_est = np.array([0.0, 0.0, 0.0]).reshape((3,1))
         phi_3_est_new = copy.deepcopy(phi_3_est)
         step_alpha = 1.0 # 0.5
         num_it = 3
@@ -451,13 +452,13 @@ class PNP_SOLVER_A2_M3(object):
             #----------------------------------#
             phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
             phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
-            #
-            # Update square-rooted weight vectors
+
+            # # Update square-rooted weight vectors
             # w_sqrt_x_vec = self.get_weight_from_residual(res_old_x, name="x")
             # w_sqrt_y_vec = self.get_weight_from_residual(res_old_y, name="y")
             # phi_x_est = self.solve_phi_half_weighted(A_x, B_x, w_sqrt_x_vec, name='x')
             # phi_y_est = self.solve_phi_half_weighted(A_y, B_y, w_sqrt_y_vec, name='y')
-            #
+
             phi_est = self.get_phi_est_from_halves(phi_x_est, phi_y_est)
             #----------------------------------#
 
@@ -744,6 +745,16 @@ class PNP_SOLVER_A2_M3(object):
     #     res_unit_abs_mean = np.average(res_unit_abs)
     #     res_unit_dev = np.abs(res_unit_abs - res_unit_abs_mean)
     #     w_sqrt_half_vec = 1.0 / (0.001 + res_unit_dev**2)
+    #     np.set_printoptions(suppress=True, precision=4)
+    #     self.lib_print("w_sqrt_vec [%s] = %s.T" % (name, str(w_sqrt_half_vec.T)) )
+    #     np.set_printoptions(suppress=False, precision=8)
+    #     return w_sqrt_half_vec
+
+    # def get_weight_from_residual(self, res, name="half"):
+    #     '''
+    #     '''
+    #     res_unit = self.unit_vec(res)
+    #     w_sqrt_half_vec = res_unit**2
     #     np.set_printoptions(suppress=True, precision=4)
     #     self.lib_print("w_sqrt_vec [%s] = %s.T" % (name, str(w_sqrt_half_vec.T)) )
     #     np.set_printoptions(suppress=False, precision=8)
@@ -1057,12 +1068,18 @@ class PNP_SOLVER_A2_M3(object):
 
         # See which one is closer to the leat-squared solution, _alpha_se or (-_alpha_se)
         _alpha_lsq = np_Gamma_est[0:2, 2]
-        _se = np.sign(_alpha_se[:,0].dot(_alpha_lsq))
+        _similarity = _alpha_se[:,0].dot(_alpha_lsq)
+        # _similarity_angle = np.arccos(self.unit_vec(_alpha_se[:,0]).dot(self.unit_vec(_alpha_lsq))) * 180.0 / np.pi # The angle
+        self.lib_print("_similarity = %f" % _similarity)
+        _se = np.sign(_similarity)
         # if (_alpha_se[:,0].dot(_alpha_lsq)) < 0.0:
         #     _se = -1.0
         # else:
         #     _se = 1.0
-        #
+        # _beta_lsq_gamma = np.cross(np_Gamma_est[0, :], np_Gamma_est[1, :])[0:2]
+        # self.lib_print("_beta_lsq_gamma.T = %s.T" % str(_beta_lsq_gamma))
+        # _se = np.sign(_beta_se[:,0].dot(_beta_lsq_gamma))
+
         _alpha = _se * _alpha_se
         _beta = _se * _beta_se
         self.lib_print(">>>>>>>>>>>>>>> _se = %f" % _se )
