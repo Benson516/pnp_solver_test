@@ -110,6 +110,13 @@ class PNP_SOLVER_A2_M3(object):
     #-----------------------------------------------------------#
     def solve_pnp(self, np_point_image_dict):
         '''
+        '''
+        np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = self.solve_pnp_single_pattern(np_point_image_dict)
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
+    def solve_pnp_single_pattern(self, np_point_image_dict):
+        '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
         '''
