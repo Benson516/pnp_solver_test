@@ -349,18 +349,19 @@ class PNP_SOLVER_A2_M3(object):
             A_i_list.append( self.get_A_i(np_point_3d_dict_in[_k], Delta_i) )
         # # test, add the perpendicular condition
         # #---------------------------------#
-        # _phi_3_norm_2 = np.linalg.norm(phi_3_est)**2
-        # phi_3_est_1 = phi_3_est / _phi_3_norm_2 * 1000.0
-        # A_i_list.append( np.hstack([phi_3_est_1.T, np.zeros((1,3)), np.zeros((1,2))]))
-        # A_i_list.append( np.hstack([np.zeros((1,3)), phi_3_est_1.T, np.zeros((1,2))]))
-        # _zs_T = np.array([[0.0, 0.0, 1.0]]) * 10**-3
-        # A_i_list.append( np.hstack([ _zs_T, np.zeros((1,3)), np.zeros((1,2))]) )
-        # A_i_list.append( np.hstack([ np.zeros((1,3)), _zs_T, np.zeros((1,2))]) )
-        # _scale = 10**-2
+        # # _phi_3_norm_2 = np.linalg.norm(phi_3_est)**2
+        # # phi_3_est_1 = phi_3_est / _phi_3_norm_2 * 1000.0
+        # # A_i_list.append( np.hstack([phi_3_est_1.T, np.zeros((1,3)), np.zeros((1,2))]))
+        # # A_i_list.append( np.hstack([np.zeros((1,3)), phi_3_est_1.T, np.zeros((1,2))]))
+        # # _zs_T = np.array([[0.0, 0.0, 1.0]]) * 10**-3
+        # # A_i_list.append( np.hstack([ _zs_T, np.zeros((1,3)), np.zeros((1,2))]) )
+        # # A_i_list.append( np.hstack([ np.zeros((1,3)), _zs_T, np.zeros((1,2))]) )
+        # _scale = 5.0 * 10**-2
+        # _dist = 1.0 / np.linalg.norm(phi_3_est)
         # _xs_T = np.array([[1.0, 0.0, 0.0]]) * _scale
         # _ys_T = np.array([[0.0, 1.0, 0.0]]) * _scale
-        # A_i_list.append( np.hstack([ _xs_T, np.zeros((1,3)), np.zeros((1,2))]) )
-        # A_i_list.append( np.hstack([ np.zeros((1,3)), _ys_T, np.zeros((1,2))]) )
+        # A_i_list.append( np.hstack([ _xs_T * _dist, np.zeros((1,3)), np.zeros((1,2))]) )
+        # A_i_list.append( np.hstack([ np.zeros((1,3)), _ys_T * _dist, np.zeros((1,2))]) )
         # #---------------------------------#
         Delta_all = np.vstack(Delta_i_list)
         A_all = np.vstack(A_i_list)
@@ -375,13 +376,13 @@ class PNP_SOLVER_A2_M3(object):
         for _k in np_point_image_dict_in:
             nu_i = _K_inv @ np_point_image_dict_in[_k] # shape = (3,1)
             B_i_list.append( nu_i[0:2,:] )
-        # # test, add the perpendicular condition
-        # #---------------------------------#
-        # B_i_list.append( np.zeros((2,1)))
+        # # # test, add the perpendicular condition
+        # # #---------------------------------#
         # # B_i_list.append( np.zeros((2,1)))
-        # _scale = 10**0
+        # # B_i_list.append( np.zeros((2,1)))
+        # _scale = 5.0 * 10**-2
         # B_i_list.append( np.ones((2,1)) * _scale )
-        # #---------------------------------#
+        # # #---------------------------------#
         B_all = np.vstack(B_i_list)
         return B_all
 
