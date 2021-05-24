@@ -11,9 +11,9 @@ import PNP_SOLVER_LIB as PNPS
 #---------------------------#
 # Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'test_Alexander.txt'
+# data_file_str = 'test_Alexander.txt'
 # data_file_str = 'test_Alexey.txt'
-# data_file_str = "test_Holly.txt"
+data_file_str = "test_Holly.txt"
 # data_file_str = "test_Pantea.txt"
 #---------------------------#
 # Image of Alexander
@@ -246,18 +246,18 @@ pattern_scale_list = list()
 # point_3d_dict_list.append(point_3d_dict)
 # pattern_scale_list.append(pattern_scale)
 #-------------------------------------------------#
-# Alexander
+# Holly
 # list: [x,y,z]
 point_3d_dict = dict()
 # Note: Each axis should exist at least 3 different values to make A_all full rank
 # Note: the Landmark definition in the pitcture in reversed
-point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_l_96"] = [ 0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_r_97"] = [-0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
 point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
-point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
-point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
-point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+point_3d_dict["mouse_l_76"] = [ 0.025, 0.060, 0.0] # [ 0.025, 0.085, 0.0]
+point_3d_dict["mouse_r_82"] = [ -0.025, 0.060, 0.0] # [ -0.025, 0.085, 0.0]
+point_3d_dict["nose_t_54"] = [ 0.00, 0.039, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+point_3d_dict["chin_t_16"] = [0.0, 0.098, 0.0]
 # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
 # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
 # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
