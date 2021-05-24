@@ -436,9 +436,9 @@ class PNP_SOLVER_A2_M3(object):
             A_y_u, A_y_s, A_y_vh = np.linalg.svd(A_y)
             np.set_printoptions(suppress=True, precision=4)
             self.lib_print("A_x_s = %s" % str(A_x_s))
-            self.lib_print("A_x_vh = %s" % str(A_x_vh)) # Note: the first row of the vh reveal the most significant element in phi_est (more precise in it estimation), and so on
+            self.lib_print("A_x_vh = \n%s" % str(A_x_vh)) # Note: the first row of the vh reveal the most significant element in phi_est (more precise in it estimation), and so on
             self.lib_print("A_y_s = %s" % str(A_y_s))
-            self.lib_print("A_y_vh = %s" % str(A_y_vh)) # Note: the first row of the vh reveal the most significant element in phi_est (more precise in it estimation), and so on
+            self.lib_print("A_y_vh = \n%s" % str(A_y_vh)) # Note: the first row of the vh reveal the most significant element in phi_est (more precise in it estimation), and so on
             np.set_printoptions(suppress=False, precision=8)
             #-------------------------#
 
@@ -684,8 +684,8 @@ class PNP_SOLVER_A2_M3(object):
     def get_phi_half_from_whole(self, phi_est):
         '''
         '''
-        phi_x = phi_est[0::2]
-        phi_y = phi_est[1::2]
+        phi_x = np.vstack( [phi_est[0:3,:], phi_est[6:7,:]])
+        phi_y = np.vstack( [phi_est[3:6,:], phi_est[7:8,:]])
         return (phi_x, phi_y)
 
     def solve_phi_half(self, A_half, B_half, name='half'):
@@ -700,7 +700,9 @@ class PNP_SOLVER_A2_M3(object):
         '''
         res = B_half - A_half @ phi_half
         res_norm = np.linalg.norm(res)
-        self.lib_print("[%s] res_norm = %f\t|\tres = %s.T" % (name, res_norm, str(res.T)))
+        np.set_printoptions(suppress=True, precision=4)
+        self.lib_print("[%s] res_norm = %f\n\tres = %s.T" % (name, res_norm, str(res.T)))
+        np.set_printoptions(suppress=False, precision=8)
         return (res, res_norm)
     #-------------------------------------------#
 
