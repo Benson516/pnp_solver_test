@@ -497,13 +497,31 @@ class PNP_SOLVER_A2_M3(object):
                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est, phi_3_est, step_alpha)
 
             # Real residule (residule after reconstruction)
+            # As well as checking which sign of alpha is correct
             #---------------------------------------------#
+            _nz = np.array([[1.0, 1.0, -1.0, 1.0]]).T
             phi_est_new = np.vstack([ np_R_est[0:1,:].T, np_R_est[1:2,:].T, np_t_est[0:2,:] ] ) / t3_est
             phi_x_est, phi_y_est = self.get_phi_half_from_whole(phi_est_new)
             self.lib_print("phi_x_est = %s.T" % str(phi_x_est.T))
             self.lib_print("phi_y_est = %s.T" % str(phi_y_est.T))
-            res_x, res_norm_x = self.cal_res(A_x, B_x, phi_x_est, name='x')
-            res_y, res_norm_y = self.cal_res(A_y, B_y, phi_y_est, name='y')
+            res_result_p = self.cal_res_all(A_x, B_x, phi_x_est, A_y, B_y, phi_y_est)
+            res_result_n = self.cal_res_all(A_x, B_x, (phi_x_est*_nz), A_y, B_y, (phi_y_est*_nz))
+            print("res_norm_p = %f" % res_result_p[0])
+            print("res_norm_n = %f" % res_result_n[0])
+            #
+            res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_p
+            # if res_result_n[0] <= res_result_p[0]:
+            #     print(">>> The sign of alpha is wrong, fix it!!")
+            #     res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_n
+            #     # Fix all the related things...
+            #     np_R_est[0:2,2] *= -1.0 # alpha
+            #     np_R_est[2,0:2] *= -1.0 # beta.T
+            #     phi_3_est_new[0:2,0] *= -1.0 # beta
+            # else:
+            #     print(">>> The sign of alpha is correct~")
+            #     res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_p
+            #
+            print("res_norm = %f" % res_norm)
             # Update
             res_old_x = copy.deepcopy(res_x)
             res_old_y = copy.deepcopy(res_y)
@@ -524,7 +542,8 @@ class PNP_SOLVER_A2_M3(object):
         if update_phi_3_method == 1:
             np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est)
         else:
-            np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
+            pass # Note: if we are using the update_phi_3_method==0, we don't need to reconstruct the rotation matrix again
+            # np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
         # self.lib_print("np_R_est = \n%s" % str(np_R_est))
 
         # test, pre-transfer
@@ -547,10 +566,10 @@ class PNP_SOLVER_A2_M3(object):
         roll_est, yaw_est, pitch_est = Euler_angle_est
         #--------------------------------------------------------#
 
-        # Get the whole residual
-        #-----------------------------#
-        res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
-        #-----------------------------#
+        # # Get the whole residual
+        # #-----------------------------#
+        # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        # #-----------------------------#
 
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
@@ -746,7 +765,7 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
         return phi_half
 
-    def cal_res(self, A_half, B_half, phi_half, name='half'):
+    def cal_res_half(self, A_half, B_half, phi_half, name='half'):
         '''
         '''
         res = B_half - A_half @ phi_half
@@ -755,6 +774,14 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("[%s] res_norm = %f\n\tres = %s.T" % (name, res_norm, str(res.T)))
         np.set_printoptions(suppress=False, precision=8)
         return (res, res_norm)
+
+    def cal_res_all(self, A_x, B_x, phi_x_est, A_y, B_y, phi_y_est):
+        '''
+        '''
+        res_x, res_norm_x = self.cal_res_half(A_x, B_x, phi_x_est, name='x')
+        res_y, res_norm_y = self.cal_res_half(A_y, B_y, phi_y_est, name='y')
+        res_norm_all = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        return (res_norm_all, res_x, res_norm_x, res_y, res_norm_y)
     #-------------------------------------------#
 
     def update_phi_3_est_m1(self, phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha=1.0):
