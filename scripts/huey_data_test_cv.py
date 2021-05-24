@@ -52,6 +52,7 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy["pitch"] = "-30"
 # specific_drpy["yaw"] = "40"
 # specific_drpy = {"distance":"40", "roll":"-25", "pitch":"0", "yaw":"0"}
+# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"0"}
 specific_drpy = None
 #
 DATA_COUNT = 3
@@ -214,6 +215,38 @@ print("np_K_camera_est = \n%s" % str(np_K_camera_est))
 
 # 3D landmark point - local coordinate
 #----------------------------------------#
+point_3d_dict_list = list()
+pattern_scale_list = list()
+
+#-------------------------------------------------#
+# # Alexander
+# # list: [x,y,z]
+# point_3d_dict = dict()
+# # Note: Each axis should exist at least 3 different values to make A_all full rank
+# # Note: the Landmark definition in the pitcture in reversed
+# point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+# point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+# point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+# point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
+# point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
+# point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+# point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+# # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+# # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+# # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+# # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+# #
+# # point_3d_dict["face_c"] = solving_center_point(
+# #                         point_3d_dict["eye_r_97"],
+# #                         point_3d_dict["eye_l_96"],
+# #                         point_3d_dict["mouse_l_76"],
+# #                         point_3d_dict["mouse_r_82"]
+# #                         )
+# # Append to the list
+# point_3d_dict_list.append(point_3d_dict)
+# pattern_scale_list.append(pattern_scale)
+#-------------------------------------------------#
+# Alexander
 # list: [x,y,z]
 point_3d_dict = dict()
 # Note: Each axis should exist at least 3 different values to make A_all full rank
@@ -229,28 +262,19 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
 # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
 # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
-# point_3d_dict["face_c"] = [ 0.0, 0.035, 0.0]
-# point_3d_dict["chin"] = [ 0.0, 0.08, -0.005]
-# point_3d_dict["far"] = [ 0.0, 0.0, -0.5]
 #
-point_3d_dict["face_c"] = solving_center_point(
-                        point_3d_dict["eye_r_97"],
-                        point_3d_dict["eye_l_96"],
-                        point_3d_dict["mouse_l_76"],
-                        point_3d_dict["mouse_r_82"]
-                        )
-# point_3d_dict["face_cl"] = solving_center_point(
+# point_3d_dict["face_c"] = solving_center_point(
 #                         point_3d_dict["eye_r_97"],
 #                         point_3d_dict["eye_l_96"],
 #                         point_3d_dict["mouse_l_76"],
-#                         point_3d_dict["chin_t_16"]
-#                         )
-# point_3d_dict["face_cr"] = solving_center_point(
-#                         point_3d_dict["eye_r_97"],
-#                         point_3d_dict["eye_l_96"],
-#                         point_3d_dict["chin_t_16"],
 #                         point_3d_dict["mouse_r_82"]
 #                         )
+# Append to the list
+point_3d_dict_list.append(point_3d_dict)
+pattern_scale_list.append(pattern_scale)
+#-------------------------------------------------#
+
+
 
 # # Convert to numpy vector, shape: (3,1)
 # # Applying the scale as well
@@ -268,7 +292,7 @@ point_3d_dict["face_c"] = solving_center_point(
 
 # Create the solver
 #----------------------------------------#
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, [point_3d_dict], pattern_scale_list=[pattern_scale], verbose=verbose)
+pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
 
 
 def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
@@ -326,22 +350,10 @@ for _idx in range(len(data_list)):
     # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42])
     # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44])
     #
-    np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
-                                                                LM_pixel_data_matrix[97],
-                                                                LM_pixel_data_matrix[96],
-                                                                LM_pixel_data_matrix[76],
-                                                                LM_pixel_data_matrix[82])
-                                                            )
-    # np_point_image_dict["face_cl"] = convert_pixel_to_homo(     solving_center_point(
+    # np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
     #                                                             LM_pixel_data_matrix[97],
     #                                                             LM_pixel_data_matrix[96],
     #                                                             LM_pixel_data_matrix[76],
-    #                                                             LM_pixel_data_matrix[16])
-    #                                                         )
-    # np_point_image_dict["face_cr"] = convert_pixel_to_homo(     solving_center_point(
-    #                                                             LM_pixel_data_matrix[97],
-    #                                                             LM_pixel_data_matrix[96],
-    #                                                             LM_pixel_data_matrix[16],
     #                                                             LM_pixel_data_matrix[82])
     #                                                         )
     #
