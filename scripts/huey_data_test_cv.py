@@ -31,8 +31,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -53,6 +53,7 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy["yaw"] = "40"
 # specific_drpy = {"distance":"40", "roll":"-25", "pitch":"0", "yaw":"0"}
 # specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"0"}
+# specific_drpy = {"distance":"100", "roll":"-45", "pitch":"-15", "yaw":"0"}
 specific_drpy = None
 #
 DATA_COUNT = 3
@@ -67,7 +68,7 @@ is_showing_image = True
 is_storing_fail_case_image = True
 # is_storing_fail_case_image = False
 # Note: pass_count >= pass_count_treshold --> passed!!
-pass_count_treshold = 3 # 2 # Note: max=4. If there are less than (not included) pass_count_treshold pass items, store the image
+pass_count_treshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_treshold pass items, store the image
 #
 # Statistic CSV file
 is_statistic_csv_horizontal = True # class --> (right)
@@ -246,32 +247,32 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 point_3d_dict_list.append(point_3d_dict)
 pattern_scale_list.append(pattern_scale)
 #-------------------------------------------------#
-# Holly
-# list: [x,y,z]
-point_3d_dict = dict()
-# Note: Each axis should exist at least 3 different values to make A_all full rank
-# Note: the Landmark definition in the pitcture in reversed
-point_3d_dict["eye_l_96"] = [ 0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_r_97"] = [-0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
-point_3d_dict["mouse_l_76"] = [ 0.025, 0.060, 0.0] # [ 0.025, 0.085, 0.0]
-point_3d_dict["mouse_r_82"] = [ -0.025, 0.060, 0.0] # [ -0.025, 0.085, 0.0]
-point_3d_dict["nose_t_54"] = [ 0.00, 0.039, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-point_3d_dict["chin_t_16"] = [0.0, 0.098, 0.0]
-# point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
-# point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
-# point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
-# point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
-#
-# point_3d_dict["face_c"] = solving_center_point(
-#                         point_3d_dict["eye_r_97"],
-#                         point_3d_dict["eye_l_96"],
-#                         point_3d_dict["mouse_l_76"],
-#                         point_3d_dict["mouse_r_82"]
-#                         )
-# Append to the list
-point_3d_dict_list.append(point_3d_dict)
-pattern_scale_list.append(pattern_scale)
+# # Holly
+# # list: [x,y,z]
+# point_3d_dict = dict()
+# # Note: Each axis should exist at least 3 different values to make A_all full rank
+# # Note: the Landmark definition in the pitcture in reversed
+# point_3d_dict["eye_l_96"] = [ 0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+# point_3d_dict["eye_r_97"] = [-0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+# point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+# point_3d_dict["mouse_l_76"] = [ 0.025, 0.060, 0.0] # [ 0.025, 0.085, 0.0]
+# point_3d_dict["mouse_r_82"] = [ -0.025, 0.060, 0.0] # [ -0.025, 0.085, 0.0]
+# point_3d_dict["nose_t_54"] = [ 0.00, 0.039, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+# point_3d_dict["chin_t_16"] = [0.0, 0.098, 0.0]
+# # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+# # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+# # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+# # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+# #
+# # point_3d_dict["face_c"] = solving_center_point(
+# #                         point_3d_dict["eye_r_97"],
+# #                         point_3d_dict["eye_l_96"],
+# #                         point_3d_dict["mouse_l_76"],
+# #                         point_3d_dict["mouse_r_82"]
+# #                         )
+# # Append to the list
+# point_3d_dict_list.append(point_3d_dict)
+# pattern_scale_list.append(pattern_scale)
 #-------------------------------------------------#
 
 
@@ -524,13 +525,16 @@ for _idx in range(len(data_list)):
                             (data_list[_idx]['distance'], data_list[_idx]['roll'], data_list[_idx]['pitch'], data_list[_idx]['yaw']),
                             (10.0, 10.0, 10.0, 10.0) )
     print("pass_count = %d  |  drpy_pass_list = %s" % (pass_count, str(drpy_pass_list)))
+    fail_count = len(drpy_pass_list) - pass_count
+
+    fitting_error = (predict_LM_error_average * distance_GT)
 
     # Determin if we want to further investigate this sample
-    fail_count = len(drpy_pass_list) - pass_count
     is_storing_case_image = False
     if pass_count < pass_count_treshold: # Note: pass_count >= pass_count_treshold --> passed!!
-        failed_sample_filename_list.append(data_list[_idx]['file_name'])
-        is_storing_case_image = is_storing_fail_case_image
+        if fitting_error > 1.5:
+            failed_sample_filename_list.append(data_list[_idx]['file_name'])
+            is_storing_case_image = is_storing_fail_case_image
     #----------------------------#
 
 
