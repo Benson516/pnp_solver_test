@@ -119,8 +119,8 @@ class PNP_SOLVER_A2_M3(object):
     def solve_pnp(self, np_point_image_dict):
         '''
         '''
-        res_norm_n_est_list = list()
-        min_res_norm_n_est = None
+        res_norm_list = list()
+        min_res_norm = None
         idx_best = None
         result_best = None
 
@@ -128,19 +128,21 @@ class PNP_SOLVER_A2_M3(object):
             _point_3d_dict = self.np_point_3d_pretransfer_dict_list[_idx]
             # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
             _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
-            _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
-            self.lib_print("---\nPattern [%d]: _res_norm_n_est = %f\n---\n" % (_idx, _res_norm_n_est))
-            res_norm_n_est_list.append(_res_norm_n_est)
-            if (min_res_norm_n_est is None) or (_res_norm_n_est < min_res_norm_n_est):
-                min_res_norm_n_est = _res_norm_n_est
+            # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
+            _res_norm = _result[-1]
+            # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
+            self.lib_print("---\nPattern [%d]: _res_norm = %f\n---\n" % (_idx, _res_norm))
+            res_norm_list.append(_res_norm)
+            if (min_res_norm is None) or (_res_norm < min_res_norm):
+                min_res_norm = _res_norm
                 idx_best = _idx
                 result_best = _result
 
         self.lib_print("-"*70)
-        for _idx in range(len(res_norm_n_est_list)):
-            self.lib_print("Pattern [%d]: _res_norm_n_est = %f" % (_idx, res_norm_n_est_list[_idx]))
+        for _idx in range(len(res_norm_list)):
+            self.lib_print("Pattern [%d]: _res_norm = %f" % (_idx, res_norm_list[_idx]))
         self.lib_print("-"*70)
-        self.lib_print("--> Best fitted pattern is [%d] with res_norm_n_est = %f" % (idx_best, min_res_norm_n_est))
+        self.lib_print("--> Best fitted pattern is [%d] with res_norm_n_est = %f" % (idx_best, min_res_norm))
         self.lib_print("-"*70 + "\n")
 
         # Update the global id
@@ -148,7 +150,7 @@ class PNP_SOLVER_A2_M3(object):
 
         # Note: Euler angles are in degree
         return result_best
-        # return [*result_best, idx_best, min_res_norm_n_est]
+        # return [*result_best, idx_best, min_res_norm]
 
     def solve_pnp_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
         '''
