@@ -119,6 +119,7 @@ class PNP_SOLVER_A2_M3(object):
     def solve_pnp(self, np_point_image_dict):
         '''
         '''
+        res_norm_n_est_list = list()
         min_res_norm_n_est = None
         idx_best = None
         result_best = None
@@ -129,10 +130,15 @@ class PNP_SOLVER_A2_M3(object):
             _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
             _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             self.lib_print("---\nPattern [%d]: _res_norm_n_est = %f\n---\n" % (_idx, _res_norm_n_est))
+            res_norm_n_est_list.append(_res_norm_n_est)
             if (min_res_norm_n_est is None) or (_res_norm_n_est < min_res_norm_n_est):
                 min_res_norm_n_est = _res_norm_n_est
                 idx_best = _idx
                 result_best = _result
+
+        self.lib_print("-"*70)
+        for _idx in range(len(res_norm_n_est_list)):
+            self.lib_print("Pattern [%d]: _res_norm_n_est = %f" % (_idx, res_norm_n_est_list[_idx]))
         self.lib_print("-"*70)
         self.lib_print("--> Best fitted pattern is [%d] with res_norm_n_est = %f" % (idx_best, min_res_norm_n_est))
         self.lib_print("-"*70 + "\n")

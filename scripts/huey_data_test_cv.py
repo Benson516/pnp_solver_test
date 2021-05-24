@@ -219,32 +219,32 @@ point_3d_dict_list = list()
 pattern_scale_list = list()
 
 #-------------------------------------------------#
-# # Alexander
-# # list: [x,y,z]
-# point_3d_dict = dict()
-# # Note: Each axis should exist at least 3 different values to make A_all full rank
-# # Note: the Landmark definition in the pitcture in reversed
-# point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-# point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-# point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
-# point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
-# point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
-# point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-# point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
-# # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
-# # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
-# # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
-# # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
-# #
-# # point_3d_dict["face_c"] = solving_center_point(
-# #                         point_3d_dict["eye_r_97"],
-# #                         point_3d_dict["eye_l_96"],
-# #                         point_3d_dict["mouse_l_76"],
-# #                         point_3d_dict["mouse_r_82"]
-# #                         )
-# # Append to the list
-# point_3d_dict_list.append(point_3d_dict)
-# pattern_scale_list.append(pattern_scale)
+# Alexander
+# list: [x,y,z]
+point_3d_dict = dict()
+# Note: Each axis should exist at least 3 different values to make A_all full rank
+# Note: the Landmark definition in the pitcture in reversed
+point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
+point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
+point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+# point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+# point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+# point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+# point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+#
+# point_3d_dict["face_c"] = solving_center_point(
+#                         point_3d_dict["eye_r_97"],
+#                         point_3d_dict["eye_l_96"],
+#                         point_3d_dict["mouse_l_76"],
+#                         point_3d_dict["mouse_r_82"]
+#                         )
+# Append to the list
+point_3d_dict_list.append(point_3d_dict)
+pattern_scale_list.append(pattern_scale)
 #-------------------------------------------------#
 # Holly
 # list: [x,y,z]
