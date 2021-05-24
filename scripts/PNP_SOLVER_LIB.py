@@ -44,13 +44,21 @@ class PNP_SOLVER_A2_M3(object):
             self.np_point_3d_pretransfer_dict_list.append(_np_point_3d_pretransfer_dict)
 
         # Setup the global variables
-        self.current_golden_pattern_id = 0
-        self.np_point_3d_dict = self.np_point_3d_dict_list[ self.current_golden_pattern_id ]
-        self.np_point_3d_pretransfer_dict = self.np_point_3d_pretransfer_dict_list[ self.current_golden_pattern_id ]
+        self.set_golden_pattern_id(0)
+        # self.np_point_3d_dict = self.get_current_golden_pattern()
+        # self.np_point_3d_pretransfer_dict = self.get_current_pretransfered_golden_pattern()
 
         # Setup the desire verbose status
         self.verbose = verbose
 
+    def set_golden_pattern_id(self, id):
+        self.current_golden_pattern_id = id
+
+    def get_current_golden_pattern(self):
+        return self.np_point_3d_dict_list[ self.current_golden_pattern_id ]
+
+    def get_current_pretransfered_golden_pattern(self):
+        return self.np_point_3d_pretransfer_dict_list[ self.current_golden_pattern_id ]
 
     def get_np_point_3d_dict(self, point_3d_dict, pattern_scale, is_using_pre_transform=False, pre_trans_R_a_h=None, pre_trans_t_a_h=None):
         '''
@@ -128,6 +136,10 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("-"*70)
         self.lib_print("--> Best fitted pattern is [%d] with res_norm_n_est = %f" % (idx_best, min_res_norm_n_est))
         self.lib_print("-"*70 + "\n")
+
+        # Update the global id
+        self.set_golden_pattern_id(idx_best)
+        
         # Note: Euler angles are in degree
         return result_best
         # return [*result_best, idx_best, min_res_norm_n_est]
@@ -1020,11 +1032,13 @@ class PNP_SOLVER_A2_M3(object):
         # Perspective Projection + quantization
         #--------------------------------------------------#
         # Not the self.np_point_3d_pretransfer_dict
-        for _k in self.np_point_3d_dict:
+        _np_point_3d_dict = self.get_current_golden_pattern()
+        _np_point_3d_pretransfer_dict = self.get_current_pretransfered_golden_pattern()
+        for _k in _np_point_3d_dict:
             if is_pretrans_points:
-                _point = self.np_point_3d_pretransfer_dict[_k]
+                _point = _np_point_3d_pretransfer_dict[_k]
             else:
-                _point = self.np_point_3d_dict[_k]
+                _point = _np_point_3d_dict[_k]
             _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized)
             np_point_image_dict[_k] = _np_point_image
             np_point_quantization_error_dict[_k] = (_np_point_image - _projection_no_q)
