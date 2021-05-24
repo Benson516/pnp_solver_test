@@ -127,7 +127,7 @@ class PNP_SOLVER_A2_M3(object):
             _point_3d_dict = self.np_point_3d_pretransfer_dict_list[_idx]
             # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
             _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
-            _res_norm_n_est = _result[-1] * _result[2] # Normalize the residual with distance estimation
+            _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             self.lib_print("---\nPattern [%d]: _res_norm_n_est = %f\n---\n" % (_idx, _res_norm_n_est))
             if (min_res_norm_n_est is None) or (_res_norm_n_est < min_res_norm_n_est):
                 min_res_norm_n_est = _res_norm_n_est
@@ -139,7 +139,7 @@ class PNP_SOLVER_A2_M3(object):
 
         # Update the global id
         self.set_golden_pattern_id(idx_best)
-        
+
         # Note: Euler angles are in degree
         return result_best
         # return [*result_best, idx_best, min_res_norm_n_est]
