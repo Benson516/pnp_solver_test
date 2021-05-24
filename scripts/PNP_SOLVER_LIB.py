@@ -414,6 +414,10 @@ class PNP_SOLVER_A2_M3(object):
         res_norm_x = 10*3
         res_norm_y = 10*3
         #
+        # weight
+        w_sqrt_x_vec = np.ones(B_x.shape)
+        w_sqrt_y_vec = np.ones(B_x.shape)
+        #
         while k_it < num_it:
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
@@ -443,10 +447,19 @@ class PNP_SOLVER_A2_M3(object):
             #-------------------------#
 
 
+            # Update square-rooted weight vectors
+            #----------------------------------#
+            w_sqrt_x_vec = self.get_weight_from_residual(res_old_x, name="x")
+            w_sqrt_y_vec = self.get_weight_from_residual(res_old_y, name="y")
+            #----------------------------------#
+
+
             # Separately solve for phi
             #----------------------------------#
-            phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
-            phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
+            # phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
+            # phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
+            phi_x_est = self.solve_phi_half_weighted(A_x, B_x, w_sqrt_x_vec, name='x')
+            phi_y_est = self.solve_phi_half_weighted(A_y, B_y, w_sqrt_y_vec, name='y')
             phi_est = self.get_phi_est_from_halves(phi_x_est, phi_y_est)
             #----------------------------------#
 
@@ -692,6 +705,32 @@ class PNP_SOLVER_A2_M3(object):
         '''
         '''
         phi_half = np.linalg.pinv(A_half) @ B_half
+        self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
+        return phi_half
+
+
+    def get_weight_from_residual(self, res, name="half"):
+        '''
+        '''
+        res_unit = self.unit_vec(res)
+        w_sqrt_half_vec = 1.0 / (0.001 + res_unit**2)
+        np.set_printoptions(suppress=True, precision=4)
+        self.lib_print("[%s] w_sqrt_vec = %s.T" % (name, str(w_sqrt_half_vec.T)) )
+        np.set_printoptions(suppress=False, precision=8)
+        return w_sqrt_half_vec
+
+    def solve_phi_half_weighted(self, A_half, B_half, w_sqrt_half_vec=None, name='half'):
+        '''
+        w_sqrt_half_vec: the vector of square roots of the weights
+        '''
+        # phi_half = np.linalg.pinv(A_half) @ B_half
+        # phi_half = np.linalg.pinv(A_half.T @ A_half) @ A_half.T @ B_half
+        if w_sqrt_half_vec is None:
+            w_sqrt_half_vec = np.ones(B_half.shape)
+        w_sqrt_half_vec = w_sqrt_half_vec.reshape(B_half.shape) # Note: should be in the same shape as B_half
+        Aw = w_sqrt_half_vec * A_half # Note: row-wise, broadcast through column
+        Bw = w_sqrt_half_vec * B_half # Note: per-element multiplication
+        phi_half = np.linalg.pinv(Aw.T @ Aw) @ Aw.T @ Bw
         self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
         return phi_half
 
