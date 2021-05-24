@@ -6,29 +6,20 @@ import copy
 class PNP_SOLVER_A2_M3(object):
     '''
     '''
-    def __init__(self, np_K_camera_est, point_3d_dict, pattern_scale=1.0, verbose=False):
+    def __init__(self, np_K_camera_est, point_3d_dict_list, pattern_scale_list=None, verbose=False):
         '''
         '''
         self.verbose = True
         self.np_K_camera_est = copy.deepcopy(np_K_camera_est)
+        self.pattern_scale_list = pattern_scale_list
+        self.point_3d_dict_list = copy.deepcopy(point_3d_dict_list)
 
-        # LM in face local frame
-        self.pattern_scale = pattern_scale
-        self.point_3d_dict = copy.deepcopy(point_3d_dict)
-        # Convert to numpy vector, shape: (3,1)
-        # Applying the scale as well
-        self.np_point_3d_dict = dict()
-        for _k in self.point_3d_dict:
-            self.np_point_3d_dict[_k] = np.array(self.point_3d_dict[_k]).reshape((3,1))
-            self.np_point_3d_dict[_k] *= pattern_scale # Multiply the scale
-            # # Tilting or other correction
-            # _R_correct = self.get_rotation_matrix_from_Euler(0.0, 0.0, 10.0, is_degree=True) # 15 deg up
-            # _t_correct = np.array([[0.0, 0.0, 0.0]]).T
-            # self.np_point_3d_dict[_k] = self.transform_3D_point(self.np_point_3d_dict[_k], _R_correct, _t_correct)
-        # self.lib_print(self.np_point_3d_dict)
+        if self.pattern_scale_list is None:
+            self.pattern_scale_list = [1.0 for _i in range(len(self.point_3d_dict_list))]
+        elif len(self.pattern_scale_list) < len(self.point_3d_dict_list):
+            # Padding the rest to zero
+            self.pattern_scale_list += [1.0 for _i in range(len(self.point_3d_dict_list) - len(self.pattern_scale_list))]
 
-        # Backup
-        self.np_point_3d_pretransfer_dict = copy.deepcopy(self.np_point_3d_dict)
 
         # test, pre-transfer
         #---------------------------#
@@ -38,34 +29,86 @@ class PNP_SOLVER_A2_M3(object):
         self.pre_trans_t_a_h = np.array([[0.0, 0.0, -0.5]]).T
         # self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
         # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
-        if self.is_using_pre_transform:
-            for _k in self.np_point_3d_pretransfer_dict:
-                self.np_point_3d_pretransfer_dict[_k] = self.transform_3D_point(self.np_point_3d_pretransfer_dict[_k], self.pre_trans_R_a_h, self.pre_trans_t_a_h)
+
         # For storing the estimated result of R_ca and t_ca
         self.np_R_c_a_est = np.eye(3)
         self.np_t_c_a_est = np.zeros((3,1))
         #---------------------------#
+        self.np_point_3d_dict_list = list()
+        self.np_point_3d_pretransfer_dict_list = list()
+        for _i in range(len(self.point_3d_dict_list)):
+            _point_3d_dict = self.point_3d_dict_list[_i]
+            _pattern_scale = self.pattern_scale_list[_i]
+            _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(_point_3d_dict, _pattern_scale, self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
+            self.np_point_3d_dict_list.append(_np_point_3d_dict)
+            self.np_point_3d_pretransfer_dict_list.append(_np_point_3d_pretransfer_dict)
+
+        # Setup the global variables
+        self.set_golden_pattern_id(0)
+        # self.np_point_3d_dict = self.get_current_golden_pattern()
+        # self.np_point_3d_pretransfer_dict = self.get_current_pretransfered_golden_pattern()
+
+        # Setup the desire verbose status
+        self.verbose = verbose
+
+    def set_golden_pattern_id(self, id):
+        self.current_golden_pattern_id = id
+
+    def get_current_golden_pattern(self):
+        return self.np_point_3d_dict_list[ self.current_golden_pattern_id ]
+
+    def get_current_pretransfered_golden_pattern(self):
+        return self.np_point_3d_pretransfer_dict_list[ self.current_golden_pattern_id ]
+
+    def get_np_point_3d_dict(self, point_3d_dict, pattern_scale, is_using_pre_transform=False, pre_trans_R_a_h=None, pre_trans_t_a_h=None):
+        '''
+        '''
+        # LM in face local frame
+        #---------------------------#
+        # Convert to numpy vector, shape: (3,1)
+        # Applying the scale as well
+        _np_point_3d_dict = dict()
+        for _k in point_3d_dict:
+            _np_point_3d_dict[_k] = np.array(point_3d_dict[_k]).reshape((3,1))
+            _np_point_3d_dict[_k] *= pattern_scale # Multiply the scale
+            # # Tilting or other correction
+            # _R_correct = self.get_rotation_matrix_from_Euler(0.0, 0.0, 10.0, is_degree=True) # 15 deg up
+            # _t_correct = np.array([[0.0, 0.0, 0.0]]).T
+            # _np_point_3d_dict[_k] = self.transform_3D_point(_np_point_3d_dict[_k], _R_correct, _t_correct)
+        # self.lib_print(_np_point_3d_dict)
+        #---------------------------#
+
+        # Pre-transfer
+        #---------------------------#
+        _np_point_3d_pretransfer_dict = copy.deepcopy(_np_point_3d_dict)
+        if is_using_pre_transform:
+            for _k in _np_point_3d_pretransfer_dict:
+                _np_point_3d_pretransfer_dict[_k] = self.transform_3D_point(_np_point_3d_pretransfer_dict[_k], pre_trans_R_a_h, pre_trans_t_a_h)
+        #---------------------------#
 
 
+        # Logging
+        #---------------------------#
         self.lib_print("-"*35)
         self.lib_print("3D points in local coordinate:")
         self.lib_print("pattern_scale = %f" % pattern_scale)
-        for _k in self.np_point_3d_dict:
-            # self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_dict[_k])))
-            # self.lib_print("%s:\n%s" % (_k, str(self.np_point_3d_pretransfer_dict[_k])))
+        for _k in _np_point_3d_dict:
+            # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_dict[_k])))
+            # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_pretransfer_dict[_k])))
             np.set_printoptions(suppress=True, precision=2)
             print("%s:%sp_3D=%s.T | p_3D_pretrans=%s.T" %
                 (   _k,
                     " "*(12-len(_k)),
-                    str(self.np_point_3d_dict[_k].T),
-                    str(self.np_point_3d_pretransfer_dict[_k].T)
+                    str(_np_point_3d_dict[_k].T),
+                    str(_np_point_3d_pretransfer_dict[_k].T)
                 )
             )
             np.set_printoptions(suppress=False, precision=8)
         self.lib_print("-"*35)
-        #
+        #---------------------------#
 
-        self.verbose = verbose
+        return (_np_point_3d_dict, _np_point_3d_pretransfer_dict)
+
 
     def lib_print(self, str=''):
         if self.verbose:
@@ -74,6 +117,42 @@ class PNP_SOLVER_A2_M3(object):
     # Solution
     #-----------------------------------------------------------#
     def solve_pnp(self, np_point_image_dict):
+        '''
+        '''
+        res_norm_list = list()
+        min_res_norm = None
+        idx_best = None
+        result_best = None
+
+        for _idx in range(len(self.np_point_3d_pretransfer_dict_list)):
+            _point_3d_dict = self.np_point_3d_pretransfer_dict_list[_idx]
+            # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+            _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
+            _res_norm = _result[-1]
+            # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
+            self.lib_print("---\nPattern [%d]: _res_norm = %f\n---\n" % (_idx, _res_norm))
+            res_norm_list.append(_res_norm)
+            if (min_res_norm is None) or (_res_norm < min_res_norm):
+                min_res_norm = _res_norm
+                idx_best = _idx
+                result_best = _result
+
+        self.lib_print("-"*70)
+        for _idx in range(len(res_norm_list)):
+            self.lib_print("Pattern [%d]: _res_norm = %f" % (_idx, res_norm_list[_idx]))
+        self.lib_print("-"*70)
+        self.lib_print("--> Best fitted pattern is [%d] with res_norm_n_est = %f" % (idx_best, min_res_norm))
+        self.lib_print("-"*70 + "\n")
+
+        # Update the global id
+        self.set_golden_pattern_id(idx_best)
+
+        # Note: Euler angles are in degree
+        return result_best
+        # return [*result_best, idx_best, min_res_norm]
+
+    def solve_pnp_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -120,7 +199,7 @@ class PNP_SOLVER_A2_M3(object):
 
             # Generate Delta_i(k-1) and A(k-1)
             # Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_dict, np_point_image_dict, phi_3_est)
-            Delta_all, A_all = self.get_Delta_A_all(self.np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
+            Delta_all, A_all = self.get_Delta_A_all( np_point_3d_pretransfer_dict, np_point_image_dict, phi_3_est)
             #-------------------------#
             # self.lib_print("A_all = \n%s" % str(A_all))
             self.lib_print("A_all.shape = %s" % str(A_all.shape))
@@ -961,11 +1040,13 @@ class PNP_SOLVER_A2_M3(object):
         # Perspective Projection + quantization
         #--------------------------------------------------#
         # Not the self.np_point_3d_pretransfer_dict
-        for _k in self.np_point_3d_dict:
+        _np_point_3d_dict = self.get_current_golden_pattern()
+        _np_point_3d_pretransfer_dict = self.get_current_pretransfered_golden_pattern()
+        for _k in _np_point_3d_dict:
             if is_pretrans_points:
-                _point = self.np_point_3d_pretransfer_dict[_k]
+                _point = _np_point_3d_pretransfer_dict[_k]
             else:
-                _point = self.np_point_3d_dict[_k]
+                _point = _np_point_3d_dict[_k]
             _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized)
             np_point_image_dict[_k] = _np_point_image
             np_point_quantization_error_dict[_k] = (_np_point_image - _projection_no_q)
@@ -1081,7 +1162,7 @@ def main():
     np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
     print("np_K_camera_est = \n%s" % str(np_K_camera_est))
     #
-    pnp_solver = PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, verbose=True)
+    pnp_solver = PNP_SOLVER_A2_M3(np_K_camera_est, [point_3d_dict], verbose=True)
 
     # test
     # roll = 10.0
