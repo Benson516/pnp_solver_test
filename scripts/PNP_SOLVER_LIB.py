@@ -453,9 +453,9 @@ class PNP_SOLVER_A2_M3(object):
             res_grow_det_list = None
             # phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
             # phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
-            phi_x_est, D_x, Bd_x = self.solve_phi_half_numerator(A_x, B_x, name='x')
-            phi_y_est, D_y, Bd_y = self.solve_phi_half_numerator(A_y, B_y, name='y')
-            res_grow_det_list = (D_x, B_x, D_y, B_y, phi_3_est, res_old_x, res_old_y)
+            phi_x_est, D_x, Bd_x, Delta_vec = self.solve_phi_half_numerator(A_x, B_x, name='x')
+            phi_y_est, D_y, Bd_y, Delta_vec = self.solve_phi_half_numerator(A_y, B_y, name='y')
+            res_grow_det_list = (D_x, B_x, D_y, B_y, phi_3_est, -res_old_x*Delta_vec, -res_old_y*Delta_vec)
 
             # # Update square-rooted weight vectors
             # w_sqrt_x_vec = self.get_weight_from_residual(res_old_x, name="x")
@@ -739,7 +739,7 @@ class PNP_SOLVER_A2_M3(object):
         # phi_half = np.linalg.pinv(A_half) @ B_half
         phi_half = np.linalg.pinv(D_half) @ Bd_half
         self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
-        return (phi_half, D_half, Bd_half)
+        return (phi_half, D_half, Bd_half, Delta_vec)
 
 
     def get_weight_from_residual(self, res, name="half"):
@@ -1106,14 +1106,14 @@ class PNP_SOLVER_A2_M3(object):
             _pi_y_p = D_y[:,0:3] @ _phi_3_est_new_p
             _piB_x_p = _pi_x_p * B_x # Element wise
             _piB_y_p = _pi_y_p * B_y # Element wise
-            _e_grow_p = -1 * ((-res_old_x).T @ _piB_x_p + (-res_old_y).T @ _piB_y_p)  # Note: the residual definition is different here
+            _e_grow_p = -1 * (res_old_x.T @ _piB_x_p + res_old_y.T @ _piB_y_p)  # Note: the residual definition is different here
 
             _phi_3_est_new_n = np.vstack([-1.0*_beta_se, _c]).reshape((3,1))
             _pi_x_n = D_x[:,0:3] @ _phi_3_est_new_n
             _pi_y_n = D_y[:,0:3] @ _phi_3_est_new_n
             _piB_x_n = _pi_x_n * B_x # Element wise
             _piB_y_n = _pi_y_n * B_y # Element wise
-            _e_grow_n = -1 * ((-res_old_x).T @ _piB_x_n + (-res_old_y).T @ _piB_y_n)  # Note: the residual definition is different here
+            _e_grow_n = -1 * (res_old_x.T @ _piB_x_n + res_old_y.T @ _piB_y_n)  # Note: the residual definition is different here
 
             self.lib_print("_e_grow_p = %f" % _e_grow_p)
             self.lib_print("_e_grow_n = %f" % _e_grow_n)
