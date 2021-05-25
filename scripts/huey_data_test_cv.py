@@ -537,6 +537,7 @@ for _idx in range(len(data_list)):
         failed_sample_count += 1
         if fitting_error > 1.5:
             failed_sample_fit_error_count += 1
+        # if fitting_error <= 1.5:
             failed_sample_filename_list.append(data_list[_idx]['file_name'])
             is_storing_case_image = is_storing_fail_case_image
 
