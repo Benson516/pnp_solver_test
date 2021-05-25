@@ -719,10 +719,21 @@ class PNP_SOLVER_A2_M3(object):
         phi_y = np.vstack( [phi_est[3:6,:], phi_est[7:8,:]])
         return (phi_x, phi_y)
 
+    # def solve_phi_half(self, A_half, B_half, name='half'):
+    #     '''
+    #     '''
+    #     phi_half = np.linalg.pinv(A_half) @ B_half
+    #     self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
+    #     return phi_half
+
     def solve_phi_half(self, A_half, B_half, name='half'):
         '''
         '''
-        phi_half = np.linalg.pinv(A_half) @ B_half
+        Delta_vec = 1.0 / A_half[:,3:4]
+        D_half = A_half * Delta_vec
+        B_half_1 = Delta_vec * B_half
+        # phi_half = np.linalg.pinv(A_half) @ B_half
+        phi_half = np.linalg.pinv(D_half) @ B_half_1
         self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
         return phi_half
 
