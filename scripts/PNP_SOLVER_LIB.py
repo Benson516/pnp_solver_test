@@ -507,8 +507,8 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("phi_y_est = %s.T" % str(phi_y_est.T))
             res_result_p = self.cal_res_all(A_x, B_x, phi_x_est, A_y, B_y, phi_y_est)
             res_result_n = self.cal_res_all(A_x, B_x, (phi_x_est*_nz), A_y, B_y, (phi_y_est*_nz))
-            print("res_norm_p = %f" % res_result_p[0])
-            print("res_norm_n = %f" % res_result_n[0])
+            self.lib_print("res_norm_p = %f" % res_result_p[0])
+            self.lib_print("res_norm_n = %f" % res_result_n[0])
             #
             res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_p
             # if res_result_n[0] <= res_result_p[0]:
@@ -522,7 +522,7 @@ class PNP_SOLVER_A2_M3(object):
             #     print(">>> The sign of alpha is correct~")
             #     res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_p
             #
-            print("res_norm = %f" % res_norm)
+            self.lib_print("res_norm = %f" % res_norm)
             # Update
             res_old_x = copy.deepcopy(res_x)
             res_old_y = copy.deepcopy(res_y)
@@ -1071,11 +1071,11 @@ class PNP_SOLVER_A2_M3(object):
         _similarity = _alpha_se[:,0].dot(_alpha_lsq)
         # _similarity_angle = np.arccos(self.unit_vec(_alpha_se[:,0]).dot(self.unit_vec(_alpha_lsq))) * 180.0 / np.pi # The angle
         self.lib_print("_similarity = %f" % _similarity)
-        _se = np.sign(_similarity)
-        # if (_alpha_se[:,0].dot(_alpha_lsq)) < 0.0:
-        #     _se = -1.0
-        # else:
-        #     _se = 1.0
+        # _se = np.sign(_similarity)
+        if _similarity < 0.0:
+            _se = -1.0
+        else:
+            _se = 1.0
         # _beta_lsq_gamma = np.cross(np_Gamma_est[0, :], np_Gamma_est[1, :])[0:2]
         # self.lib_print("_beta_lsq_gamma.T = %s.T" % str(_beta_lsq_gamma))
         # _se = np.sign(_beta_se[:,0].dot(_beta_lsq_gamma))

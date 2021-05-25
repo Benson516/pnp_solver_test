@@ -31,8 +31,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_run_through_all_data = True
-# is_run_through_all_data = False
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -326,6 +326,8 @@ def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_lis
 #--------------------------#
 result_list = list()
 failed_sample_filename_list = list()
+failed_sample_count = 0
+failed_sample_fit_error_count = 0
 #--------------------------#
 
 s_stamp = time.time()
@@ -532,9 +534,15 @@ for _idx in range(len(data_list)):
     # Determin if we want to further investigate this sample
     is_storing_case_image = False
     if pass_count < pass_count_treshold: # Note: pass_count >= pass_count_treshold --> passed!!
+        failed_sample_count += 1
         if fitting_error > 1.5:
+            failed_sample_fit_error_count += 1
             failed_sample_filename_list.append(data_list[_idx]['file_name'])
             is_storing_case_image = is_storing_fail_case_image
+
+    # if not drpy_pass_list[0]:
+    #     failed_sample_filename_list.append(data_list[_idx]['file_name'])
+    #     is_storing_case_image = is_storing_fail_case_image
     #----------------------------#
 
 
@@ -775,6 +783,9 @@ print("Average processing time for single data = %f" % (delta_time / len(data_li
 print()
 
 print("len(failed_sample_filename_list) = %d" % len(failed_sample_filename_list))
+print("failed_sample_count = %d" % failed_sample_count)
+print("failed_sample_fit_error_count = %d" % failed_sample_fit_error_count)
+print()
 
 failed_sample_filename_list_file_path = image_result_unflipped_dir_str + "fail_case_list.txt"
 with open(failed_sample_filename_list_file_path, "w") as _f:
