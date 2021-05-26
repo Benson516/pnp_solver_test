@@ -1,6 +1,7 @@
 import numpy as np
 # import scipy.linalg as sp_lin
 import copy
+import time
 
 
 class PNP_SOLVER_A2_M3(object):
@@ -671,6 +672,10 @@ class PNP_SOLVER_A2_M3(object):
 
         self.lib_print("f2_D_pinv = \n%s" % str(f2_D_pinv))
 
+        # Measure the duration of the process
+        #-------------------------------------#
+        _stamp_s = time.time()
+        #-------------------------------------#
 
         # Change with sample, constant in iteration
         #--------------------------------#
@@ -853,6 +858,13 @@ class PNP_SOLVER_A2_M3(object):
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
         # #-----------------------------#
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _duration = time.time() - _stamp_s
+        self.lib_print("_duration = %f ms\n" % (_duration*1000.0))
+        #-------------------------------------#
 
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
