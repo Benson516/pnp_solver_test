@@ -455,7 +455,69 @@ class PNP_SOLVER_A2_M3(object):
             # phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
             phi_x_est, D_x, Bd_x, Delta_vec = self.solve_phi_half_numerator(A_x, B_x, name='x')
             phi_y_est, D_y, Bd_y, Delta_vec = self.solve_phi_half_numerator(A_y, B_y, name='y')
-            res_grow_det_list = (D_x, B_x, D_y, B_y, phi_3_est, -res_old_x*Delta_vec, -res_old_y*Delta_vec)
+            # res_grow_det_list = (D_x, B_x, D_y, B_y, phi_3_est, -res_old_x*Delta_vec, -res_old_y*Delta_vec)
+
+            # Dpinv_x = np.linalg.pinv(D_x)
+            # self.lib_print("Dpinv_x = \n%s" % str(Dpinv_x))
+            # DDpinv_x = D_x @ Dpinv_x
+            # self.lib_print("DDpinv_x = \n%s" % str(DDpinv_x))
+            # I_DDpinv_x = np.eye( Bd_x.shape[0] ) - DDpinv_x
+            # self.lib_print("I_DDpinv_x = \n%s" % str(I_DDpinv_x))
+            # rank_I_DDpinv_x = np.linalg.matrix_rank(I_DDpinv_x)
+            # self.lib_print("rank_I_DDpinv_x = %d" % rank_I_DDpinv_x)
+            # I_DDpinv_x_u, I_DDpinv_x_s, I_DDpinv_x_vh = np.linalg.svd(I_DDpinv_x)
+            # # self.lib_print("I_DDpinv_x_u = \n%s" % str(I_DDpinv_x_u))
+            # self.lib_print("I_DDpinv_x_s = \n%s" % str(I_DDpinv_x_s))
+            # # self.lib_print("I_DDpinv_x_vh = \n%s" % str(I_DDpinv_x_vh))
+            # I_DDpinv_x_s_is_dropped = I_DDpinv_x_s < 10**(-7)
+            # I_DDpinv_x_s_truncate = copy.deepcopy(I_DDpinv_x_s)
+            # I_DDpinv_x_s_truncate[I_DDpinv_x_s_is_dropped] = 0.0
+            # I_DDpinv_x_truncate = I_DDpinv_x_u @ np.diag(I_DDpinv_x_s_truncate) @ I_DDpinv_x_vh
+            # self.lib_print("I_DDpinv_x_truncate = \n%s" % str(I_DDpinv_x_truncate))
+            #
+            # # I_DDpinv_Bdiag_P_x = I_DDpinv_x @ np.diag(B_x[:,0]) @ D_x[:,0:3]
+            # I_DDpinv_Bdiag_P_x = I_DDpinv_x_truncate @ np.diag(B_x[:,0]) @ D_x[:,0:3]
+            # self.lib_print("I_DDpinv_Bdiag_P_x = \n%s" % str(I_DDpinv_Bdiag_P_x))
+            # I_DDpinv_Bdiag_P_pinv_x = np.linalg.pinv(I_DDpinv_Bdiag_P_x)
+            # self.lib_print("I_DDpinv_Bdiag_P_pinv_x = \n%s" % str(I_DDpinv_Bdiag_P_pinv_x))
+            #
+            # # e0_x = I_DDpinv_x @ B_x
+            # e0_x = I_DDpinv_x_truncate @ B_x
+            # self.lib_print("e0_x = \n%s" % str(e0_x))
+            # phi_3_est_x = I_DDpinv_Bdiag_P_pinv_x @ (-e0_x)
+            # self.lib_print("phi_3_est_x = \n%s" % str(phi_3_est_x))
+
+            # piB_op_x = np.diag(B_x[:,0]) @ D_x[:,0:3]
+            # piB_op_y = np.diag(B_y[:,0]) @ D_y[:,0:3]
+            # self.lib_print("piB_op_x = \n%s" % str(piB_op_x))
+            # self.lib_print("piB_op_y = \n%s" % str(piB_op_y))
+            # rank_piB_op_x = np.linalg.matrix_rank(piB_op_x)
+            # rank_piB_op_y = np.linalg.matrix_rank(piB_op_y)
+            # self.lib_print("rank_piB_op_x = %d" % rank_piB_op_x)
+            # self.lib_print("rank_piB_op_y = %d" % rank_piB_op_y)
+            # # SVD
+            # piB_op_x_u, piB_op_x_s, _piB_op_x_vh = np.linalg.svd(piB_op_x)
+            # print("piB_op_x_s = %s" % str(piB_op_x_s))
+            # #
+            # piB_op_xy = np.vstack((piB_op_x, piB_op_y))
+            # rank_piB_op_xy = np.linalg.matrix_rank(piB_op_xy)
+            # self.lib_print("rank_piB_op_xy = %d" % rank_piB_op_xy)
+            # B_xy = np.vstack( (B_x, B_y) )
+            # #
+            # piB_op_pinv_x = np.linalg.pinv(piB_op_x, rcond=10**(-7))
+            # piB_op_pinv_y = np.linalg.pinv(piB_op_y, rcond=10**(-7))
+            # piB_op_pinv_xy = np.linalg.pinv(piB_op_xy, rcond=10**(-7))
+            # self.lib_print("piB_op_pinv_x = \n%s" % str(piB_op_pinv_x))
+            # self.lib_print("piB_op_pinv_y = \n%s" % str(piB_op_pinv_y))
+            # self.lib_print("piB_op_pinv_xy = \n%s" % str(piB_op_pinv_xy))
+            # phi_3_est_x = piB_op_pinv_x @ (-B_x)
+            # phi_3_est_y = piB_op_pinv_y @ (-B_y)
+            # phi_3_est_xy = piB_op_pinv_xy @ (-B_xy)
+            # # self.lib_print("B_x = \n%s" % str(B_x))
+            # self.lib_print("phi_3_est_x = \n%s" % str(phi_3_est_x))
+            # self.lib_print("phi_3_est_y = \n%s" % str(phi_3_est_y))
+            # self.lib_print("phi_3_est_xy = \n%s" % str(phi_3_est_xy))
+
 
             # # Update square-rooted weight vectors
             # w_sqrt_x_vec = self.get_weight_from_residual(res_old_x, name="x")
