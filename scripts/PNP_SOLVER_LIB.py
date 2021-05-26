@@ -863,7 +863,7 @@ class PNP_SOLVER_A2_M3(object):
         # Measure the duration of the process
         #-------------------------------------#
         _duration = time.time() - _stamp_s
-        self.lib_print("_duration = %f ms\n" % (_duration*1000.0))
+        self.lib_print("\n*** _duration = %f ms ***\n" % (_duration*1000.0))
         #-------------------------------------#
 
         # Note: Euler angles are in degree
