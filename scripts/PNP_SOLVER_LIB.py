@@ -790,10 +790,8 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("phi_x_est = %s.T" % str(phi_x_est.T))
             self.lib_print("phi_y_est = %s.T" % str(phi_y_est.T))
             #
-            B_Delta_x = B_x + (B_x * f2_P) @ phi_3_est_new
-            B_Delta_y = B_y + (B_y * f2_P) @ phi_3_est_new
-            res_result_p = self.cal_res_all(f2_D, B_Delta_x, phi_x_est, f2_D, B_Delta_y, phi_y_est)
-            res_result_n = self.cal_res_all(f2_D, B_Delta_x, (phi_x_est*_nz), f2_D, B_Delta_y, (phi_y_est*_nz))
+            res_result_p = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, phi_x_est, phi_y_est, phi_3_est)
+            res_result_n = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, (phi_x_est*_nz), (phi_y_est*_nz), phi_3_est)
             self.lib_print("res_norm_p = %f" % res_result_p[0])
             self.lib_print("res_norm_n = %f" % res_result_n[0])
             #
@@ -1174,6 +1172,33 @@ class PNP_SOLVER_A2_M3(object):
         v_phi_half = v_phi_o_half + M_half @ phi_3_est
         self.lib_print("v_phi_half [%s] = %s.T" % (name, str(v_phi_half.T)))
         return v_phi_half
+
+    def f2_get_Delta_bar(self, P, phi_3_est):
+        '''
+        shape=(n,1)
+        '''
+        _n = P.shape[0]
+        Delta_bar = 1.0 + P @ phi_3_est
+        return Delta_bar
+
+    def f2_cal_res_half(self, B_half, D, v_phi_half, Delta_bar, name='half'):
+        '''
+        '''
+        res = B_half - (D @ v_phi_half) / Delta_bar
+        res_norm = np.linalg.norm(res)
+        np.set_printoptions(suppress=True, precision=4)
+        self.lib_print("[%s] res_norm = %f\n\tres = %s.T" % (name, res_norm, str(res.T)))
+        np.set_printoptions(suppress=False, precision=8)
+        return (res, res_norm)
+
+    def f2_cal_res_all(self, D, P, B_x, B_y, v_phi_x, v_phi_y, phi_3_est):
+        '''
+        '''
+        Delta_bar = self.f2_get_Delta_bar(P, phi_3_est)
+        res_x, res_norm_x = self.f2_cal_res_half(B_x, D, v_phi_x, Delta_bar, name='x')
+        res_y, res_norm_y = self.f2_cal_res_half(B_y, D, v_phi_y, Delta_bar, name='y')
+        res_norm_all = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        return (res_norm_all, res_x, res_norm_x, res_y, res_norm_y)
 
     #-------------------------------------------#
 
