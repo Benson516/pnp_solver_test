@@ -450,8 +450,74 @@ class PNP_SOLVER_A2_M3(object):
 
             # Separately solve for phi
             #----------------------------------#
-            phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
-            phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
+            res_grow_det_list = None
+            # phi_x_est = self.solve_phi_half(A_x, B_x, name='x')
+            # phi_y_est = self.solve_phi_half(A_y, B_y, name='y')
+            phi_x_est, D_x, Bd_x, Delta_vec = self.solve_phi_half_numerator(A_x, B_x, name='x')
+            phi_y_est, D_y, Bd_y, Delta_vec = self.solve_phi_half_numerator(A_y, B_y, name='y')
+            # res_grow_det_list = (D_x, B_x, D_y, B_y, phi_3_est, -res_old_x*Delta_vec, -res_old_y*Delta_vec)
+
+            # Dpinv_x = np.linalg.pinv(D_x)
+            # self.lib_print("Dpinv_x = \n%s" % str(Dpinv_x))
+            # DDpinv_x = D_x @ Dpinv_x
+            # self.lib_print("DDpinv_x = \n%s" % str(DDpinv_x))
+            # I_DDpinv_x = np.eye( Bd_x.shape[0] ) - DDpinv_x
+            # self.lib_print("I_DDpinv_x = \n%s" % str(I_DDpinv_x))
+            # rank_I_DDpinv_x = np.linalg.matrix_rank(I_DDpinv_x)
+            # self.lib_print("rank_I_DDpinv_x = %d" % rank_I_DDpinv_x)
+            # I_DDpinv_x_u, I_DDpinv_x_s, I_DDpinv_x_vh = np.linalg.svd(I_DDpinv_x)
+            # # self.lib_print("I_DDpinv_x_u = \n%s" % str(I_DDpinv_x_u))
+            # self.lib_print("I_DDpinv_x_s = \n%s" % str(I_DDpinv_x_s))
+            # # self.lib_print("I_DDpinv_x_vh = \n%s" % str(I_DDpinv_x_vh))
+            # I_DDpinv_x_s_is_dropped = I_DDpinv_x_s < 10**(-7)
+            # I_DDpinv_x_s_truncate = copy.deepcopy(I_DDpinv_x_s)
+            # I_DDpinv_x_s_truncate[I_DDpinv_x_s_is_dropped] = 0.0
+            # I_DDpinv_x_truncate = I_DDpinv_x_u @ np.diag(I_DDpinv_x_s_truncate) @ I_DDpinv_x_vh
+            # self.lib_print("I_DDpinv_x_truncate = \n%s" % str(I_DDpinv_x_truncate))
+            #
+            # # I_DDpinv_Bdiag_P_x = I_DDpinv_x @ np.diag(B_x[:,0]) @ D_x[:,0:3]
+            # I_DDpinv_Bdiag_P_x = I_DDpinv_x_truncate @ np.diag(B_x[:,0]) @ D_x[:,0:3]
+            # self.lib_print("I_DDpinv_Bdiag_P_x = \n%s" % str(I_DDpinv_Bdiag_P_x))
+            # I_DDpinv_Bdiag_P_pinv_x = np.linalg.pinv(I_DDpinv_Bdiag_P_x)
+            # self.lib_print("I_DDpinv_Bdiag_P_pinv_x = \n%s" % str(I_DDpinv_Bdiag_P_pinv_x))
+            #
+            # # e0_x = I_DDpinv_x @ B_x
+            # e0_x = I_DDpinv_x_truncate @ B_x
+            # self.lib_print("e0_x = \n%s" % str(e0_x))
+            # phi_3_est_x = I_DDpinv_Bdiag_P_pinv_x @ (-e0_x)
+            # self.lib_print("phi_3_est_x = \n%s" % str(phi_3_est_x))
+
+            # piB_op_x = np.diag(B_x[:,0]) @ D_x[:,0:3]
+            # piB_op_y = np.diag(B_y[:,0]) @ D_y[:,0:3]
+            # self.lib_print("piB_op_x = \n%s" % str(piB_op_x))
+            # self.lib_print("piB_op_y = \n%s" % str(piB_op_y))
+            # rank_piB_op_x = np.linalg.matrix_rank(piB_op_x)
+            # rank_piB_op_y = np.linalg.matrix_rank(piB_op_y)
+            # self.lib_print("rank_piB_op_x = %d" % rank_piB_op_x)
+            # self.lib_print("rank_piB_op_y = %d" % rank_piB_op_y)
+            # # SVD
+            # piB_op_x_u, piB_op_x_s, _piB_op_x_vh = np.linalg.svd(piB_op_x)
+            # print("piB_op_x_s = %s" % str(piB_op_x_s))
+            # #
+            # piB_op_xy = np.vstack((piB_op_x, piB_op_y))
+            # rank_piB_op_xy = np.linalg.matrix_rank(piB_op_xy)
+            # self.lib_print("rank_piB_op_xy = %d" % rank_piB_op_xy)
+            # B_xy = np.vstack( (B_x, B_y) )
+            # #
+            # piB_op_pinv_x = np.linalg.pinv(piB_op_x, rcond=10**(-7))
+            # piB_op_pinv_y = np.linalg.pinv(piB_op_y, rcond=10**(-7))
+            # piB_op_pinv_xy = np.linalg.pinv(piB_op_xy, rcond=10**(-7))
+            # self.lib_print("piB_op_pinv_x = \n%s" % str(piB_op_pinv_x))
+            # self.lib_print("piB_op_pinv_y = \n%s" % str(piB_op_pinv_y))
+            # self.lib_print("piB_op_pinv_xy = \n%s" % str(piB_op_pinv_xy))
+            # phi_3_est_x = piB_op_pinv_x @ (-B_x)
+            # phi_3_est_y = piB_op_pinv_y @ (-B_y)
+            # phi_3_est_xy = piB_op_pinv_xy @ (-B_xy)
+            # # self.lib_print("B_x = \n%s" % str(B_x))
+            # self.lib_print("phi_3_est_x = \n%s" % str(phi_3_est_x))
+            # self.lib_print("phi_3_est_y = \n%s" % str(phi_3_est_y))
+            # self.lib_print("phi_3_est_xy = \n%s" % str(phi_3_est_xy))
+
 
             # # Update square-rooted weight vectors
             # w_sqrt_x_vec = self.get_weight_from_residual(res_old_x, name="x")
@@ -493,7 +559,7 @@ class PNP_SOLVER_A2_M3(object):
                 # end Test
             else: # update_phi_3_method == 0
                 # First reconstructing R
-                np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
+                np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est, res_grow_det_list=res_grow_det_list)
                 # Then, update phi_3_est
                 phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est, phi_3_est, step_alpha)
 
@@ -719,23 +785,23 @@ class PNP_SOLVER_A2_M3(object):
         phi_y = np.vstack( [phi_est[3:6,:], phi_est[7:8,:]])
         return (phi_x, phi_y)
 
-    # def solve_phi_half(self, A_half, B_half, name='half'):
-    #     '''
-    #     '''
-    #     phi_half = np.linalg.pinv(A_half) @ B_half
-    #     self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
-    #     return phi_half
-
     def solve_phi_half(self, A_half, B_half, name='half'):
+        '''
+        '''
+        phi_half = np.linalg.pinv(A_half) @ B_half
+        self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
+        return phi_half
+
+    def solve_phi_half_numerator(self, A_half, B_half, name='half'):
         '''
         '''
         Delta_vec = 1.0 / A_half[:,3:4]
         D_half = A_half * Delta_vec
-        B_half_1 = Delta_vec * B_half
+        Bd_half = Delta_vec * B_half
         # phi_half = np.linalg.pinv(A_half) @ B_half
-        phi_half = np.linalg.pinv(D_half) @ B_half_1
+        phi_half = np.linalg.pinv(D_half) @ Bd_half
         self.lib_print("phi_est [%s] = %s.T" % (name, str(phi_half.T)))
-        return phi_half
+        return (phi_half, D_half, Bd_half, Delta_vec)
 
 
     def get_weight_from_residual(self, res, name="half"):
@@ -977,7 +1043,7 @@ class PNP_SOLVER_A2_M3(object):
         # end Test
         return (np_R_est, np_t_est, t3_est)
 
-    def reconstruct_R_t_block_reconstruction(self, phi_est, phi_3_est):
+    def reconstruct_R_t_block_reconstruction(self, phi_est, phi_3_est, res_grow_det_list=None):
     # def reconstruct_R_t_block_reconstruction(self, phi_est):
         '''
         Reconstruct the G = gamma*R using only the 2x2 block of the element in G
@@ -986,6 +1052,8 @@ class PNP_SOLVER_A2_M3(object):
         G = | K         beta |
             | alpha.T   c    |
           = gamma * R
+
+        res_grow_det_list = (D_x, B_x, D_y, B_y, phi_3_est, res_old_x, res_old_y)
         '''
         self.lib_print()
 
@@ -1090,6 +1158,34 @@ class PNP_SOLVER_A2_M3(object):
         # _beta_lsq_gamma = np.cross(np_Gamma_est[0, :], np_Gamma_est[1, :])[0:2]
         # self.lib_print("_beta_lsq_gamma.T = %s.T" % str(_beta_lsq_gamma))
         # _se = np.sign(_beta_se[:,0].dot(_beta_lsq_gamma))
+
+        # test
+        #------------------------#
+        if res_grow_det_list is not None:
+            D_x, B_x, D_y, B_y, phi_3_est, res_old_x, res_old_y = res_grow_det_list
+            _phi_3_est_new_p = np.vstack([_beta_se, _c]).reshape((3,1))
+            _pi_x_p = D_x[:,0:3] @ _phi_3_est_new_p
+            _pi_y_p = D_y[:,0:3] @ _phi_3_est_new_p
+            _piB_x_p = _pi_x_p * B_x # Element wise
+            _piB_y_p = _pi_y_p * B_y # Element wise
+            _e_grow_p = -1 * (res_old_x.T @ _piB_x_p + res_old_y.T @ _piB_y_p)  # Note: the residual definition is different here
+
+            _phi_3_est_new_n = np.vstack([-1.0*_beta_se, _c]).reshape((3,1))
+            _pi_x_n = D_x[:,0:3] @ _phi_3_est_new_n
+            _pi_y_n = D_y[:,0:3] @ _phi_3_est_new_n
+            _piB_x_n = _pi_x_n * B_x # Element wise
+            _piB_y_n = _pi_y_n * B_y # Element wise
+            _e_grow_n = -1 * (res_old_x.T @ _piB_x_n + res_old_y.T @ _piB_y_n)  # Note: the residual definition is different here
+
+            self.lib_print("_e_grow_p = %f" % _e_grow_p)
+            self.lib_print("_e_grow_n = %f" % _e_grow_n)
+
+            if _e_grow_n < _e_grow_p:
+                _se = -1.0
+            else:
+                _se = 1.0
+
+        #------------------------#
 
         _alpha = _se * _alpha_se
         _beta = _se * _beta_se
