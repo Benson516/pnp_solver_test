@@ -790,8 +790,10 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("phi_x_est = %s.T" % str(phi_x_est.T))
             self.lib_print("phi_y_est = %s.T" % str(phi_y_est.T))
             #
-            res_result_p = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, phi_x_est, phi_y_est, phi_3_est)
-            res_result_n = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, (phi_x_est*_nz), (phi_y_est*_nz), phi_3_est)
+            # is_f1_res = True
+            is_f1_res = False
+            res_result_p = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, phi_x_est, phi_y_est, phi_3_est, is_f1_res=is_f1_res)
+            res_result_n = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, (phi_x_est*_nz), (phi_y_est*_nz), phi_3_est, is_f1_res=is_f1_res)
             self.lib_print("res_norm_p = %f" % res_result_p[0])
             self.lib_print("res_norm_n = %f" % res_result_n[0])
             #
@@ -1181,22 +1183,28 @@ class PNP_SOLVER_A2_M3(object):
         Delta_bar = 1.0 + P @ phi_3_est
         return Delta_bar
 
-    def f2_cal_res_half(self, B_half, D, v_phi_half, Delta_bar, name='half'):
+    def f2_cal_res_half(self, B_half, D, v_phi_half, Delta_bar, name='half', is_f1_res=False):
         '''
+        is_f1_res: Determine if using the residual of the formulation 1 (f1)
+                    - True: Use f1's residual
+                    - False: Use f2's residual
         '''
-        res = B_half - (D @ v_phi_half) / Delta_bar
+        if is_f1_res:
+            res = B_half - (D @ v_phi_half) / Delta_bar
+        else:
+            res = (B_half * Delta_bar) - (D @ v_phi_half)
         res_norm = np.linalg.norm(res)
         np.set_printoptions(suppress=True, precision=4)
         self.lib_print("[%s] res_norm = %f\n\tres = %s.T" % (name, res_norm, str(res.T)))
         np.set_printoptions(suppress=False, precision=8)
         return (res, res_norm)
 
-    def f2_cal_res_all(self, D, P, B_x, B_y, v_phi_x, v_phi_y, phi_3_est):
+    def f2_cal_res_all(self, D, P, B_x, B_y, v_phi_x, v_phi_y, phi_3_est, is_f1_res=False):
         '''
         '''
         Delta_bar = self.f2_get_Delta_bar(P, phi_3_est)
-        res_x, res_norm_x = self.f2_cal_res_half(B_x, D, v_phi_x, Delta_bar, name='x')
-        res_y, res_norm_y = self.f2_cal_res_half(B_y, D, v_phi_y, Delta_bar, name='y')
+        res_x, res_norm_x = self.f2_cal_res_half(B_x, D, v_phi_x, Delta_bar, name='x', is_f1_res=is_f1_res)
+        res_y, res_norm_y = self.f2_cal_res_half(B_y, D, v_phi_y, Delta_bar, name='y', is_f1_res=is_f1_res)
         res_norm_all = np.sqrt(res_norm_x**2 + res_norm_y**2)
         return (res_norm_all, res_x, res_norm_x, res_y, res_norm_y)
 
