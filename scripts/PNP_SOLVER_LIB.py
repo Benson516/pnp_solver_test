@@ -1706,7 +1706,7 @@ class PNP_SOLVER_A2_M3(object):
         '''
         _eps = 10.0**-7
         # if np.linalg.norm([R_in[2,1], R_in[2,2]]) <= _eps: # Note: abs(c2) = np.linalg.norm([R_in[2,1], R_in[2,2]])
-        if np.abs(np.pi/2.0 - np.arcsin(np.abs(R_in[2,0]))) <= _eps: # Faster
+        if np.abs(np.pi/2.0 - np.arcsin(np.abs(R_in[2,1]))) <= _eps: # Faster
             # Singularity, "gimbal locked"
             theta_2 = np.sign(-R_in[2,1]) * (np.pi/2.0) # theta_2
             # Assume theta_3 = 0.0 (theta_3 = 0.0)
