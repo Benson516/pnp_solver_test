@@ -60,7 +60,8 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 specific_drpy = None
 #
 DATA_COUNT = 3
-# DATA_COUNT = 2000 # 1000
+# DATA_COUNT = 1000
+# DATA_COUNT = 10000 # 1000
 #
 verbose = True
 # verbose = False
