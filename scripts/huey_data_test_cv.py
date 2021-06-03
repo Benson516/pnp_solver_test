@@ -60,7 +60,7 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 specific_drpy = None
 #
 DATA_COUNT = 3
-# DATA_COUNT = 1000
+# DATA_COUNT = 2000 # 1000
 #
 verbose = True
 # verbose = False
@@ -210,9 +210,9 @@ for _idx in range(len(data_str_list_list)):
         _class_dict['yaw'] = data_str_list_list[_idx][4]
     else:
         _class_dict['distance'] = class_depth_label[ np.digitize( data_id_dict['distance'], class_depth_bins) ]
-        _class_dict['pitch'] = class_pitch_label[ np.digitize( data_id_dict['distance'], class_pitch_bins) ]
-        _class_dict['roll'] = class_roll_label[ np.digitize( data_id_dict['distance'], class_roll_bins) ]
-        _class_dict['yaw'] = class_yaw_label[ np.digitize( data_id_dict['distance'], class_yaw_bins) ]
+        _class_dict['pitch'] = class_pitch_label[ np.digitize( data_id_dict['pitch'], class_pitch_bins) ]
+        _class_dict['roll'] = class_roll_label[ np.digitize( data_id_dict['roll'], class_roll_bins) ]
+        _class_dict['yaw'] = class_yaw_label[ np.digitize( data_id_dict['yaw'], class_yaw_bins) ]
     data_id_dict['class'] = _class_dict
     #----------------------------------------------#
 
