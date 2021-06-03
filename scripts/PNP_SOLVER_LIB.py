@@ -759,8 +759,43 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("norm_phi_1_est = %f" % norm_phi_1_est)
             self.lib_print("norm_phi_2_est = %f" % norm_phi_2_est)
             #
-            self.lib_print("phi_3_est = \n%s" % str(phi_3_est_new))
+            self.lib_print("phi_3_est = \n%s" % str(phi_3_est))
             #-------------------------#
+
+
+            # # Experiment
+            # #----------------------------------#
+            # np.set_printoptions(suppress=True, precision=4)
+            # n_point = f2_D.shape[0]
+            # _Q = np.eye(n_point) - (f2_D @ f2_D_pinv)
+            # self.lib_print("_Q = %s" % _Q)
+            # DBx = np.diag(B_x[:,0])
+            # DBy = np.diag(B_y[:,0])
+            #
+            # DBxP = DBx @ f2_P
+            # DByP = DBy @ f2_P
+            #
+            # self.lib_print("DBxP = \n%s" % DBxP)
+            # PTDBxQ = DBxP.T @ _Q
+            # self.lib_print("PTDBxQ = \n%s" % PTDBxQ)
+            # np.set_printoptions(suppress=False, precision=8)
+            #
+            # PTDBxQBx = PTDBxQ @ B_x
+            # PTDBxQDBxP = PTDBxQ @ DBxP
+            # self.lib_print("PTDBxQBx = \n%s" % PTDBxQBx)
+            # self.lib_print("PTDBxQDBxP = \n%s" % PTDBxQDBxP)
+            #
+            # # THe derivative
+            # d_phi_3_x = DBxP.T @ _Q @ ( B_x + DBxP @ phi_3_est)
+            # d_phi_3_y = DByP.T @ _Q @ ( B_y + DByP @ phi_3_est)
+            # d_phi_3_total = d_phi_3_x + d_phi_3_y
+            # self.lib_print("d_phi_3_x = \n%s" % d_phi_3_x)
+            # self.lib_print("d_phi_3_y = \n%s" % d_phi_3_y)
+            # self.lib_print("d_phi_3_total = \n%s" % d_phi_3_total)
+            #
+            # phi_3_est_GD = phi_3_est - 10.0**5 * d_phi_3_total;
+            # self.lib_print("phi_3_est_GD = \n%s" % phi_3_est_GD)
+            # #----------------------------------#
 
 
             #-------------------------#
@@ -817,6 +852,7 @@ class PNP_SOLVER_A2_M3(object):
 
             # Real update of phi_3_est
             phi_3_est = copy.deepcopy(phi_3_est_new)
+            # phi_3_est = copy.deepcopy(phi_3_est_GD)
             self.lib_print("---")
 
         #--------------------------------------#

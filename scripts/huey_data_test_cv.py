@@ -54,6 +54,7 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy = {"distance":"40", "roll":"-25", "pitch":"0", "yaw":"0"}
 # specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"0"}
 # specific_drpy = {"distance":"100", "roll":"-45", "pitch":"-15", "yaw":"0"} # The "flipping" case
+# specific_drpy = {"distance":"120", "roll":"45", "pitch":"-15", "yaw":"40"} # The "flipping" case
 specific_drpy = None
 #
 DATA_COUNT = 3
