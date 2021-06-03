@@ -15,6 +15,8 @@ data_file_str = 'test_Alexander.txt'
 # data_file_str = 'test_Alexey.txt'
 # data_file_str = "test_Holly.txt"
 # data_file_str = "test_Pantea.txt"
+#
+# data_file_str = "train_head03.txt"
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -88,6 +90,12 @@ elif specific_drpy is not None:
     is_limiting_line_count = False
     # verbose = False # Inherent the above setting
     # is_showing_image = False # Inherent the above setting
+
+# No image, son't try to open the image
+# The set is too big, son't bother to do so
+if data_file_str == "train_head03.txt":
+    is_storing_fail_case_image = False
+
 #
 
 # Parameters of the data
@@ -123,9 +131,14 @@ with open(data_path_str, 'r') as _f:
         _line = _f.readline()
         _idx += 1
 #
+print("-"*70)
+print("data count = %d" % len(data_idx_list))
+print("-"*70)
 print(data_idx_list[0])
 print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
 print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
+#
+# time.sleep(10.0)
 #----------------------------------------------------------#
 
 
@@ -871,8 +884,9 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
 def get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0, verbose=True):
     '''
     '''
-    if len(result_list) == 0:
-        return (1.0, 0.0, 0.0, 0.0, 0.0)
+    n_data = len(result_list)
+    if n_data == 0:
+        return None
     data_est_vec = np.vstack( [ _d[ data_est_key ] for _d in result_list] )
     data_GT_vec = np.vstack( [ _d[ data_GT_key ] for _d in result_list] )
     _np_data_ratio_vec = data_est_vec / data_GT_vec
@@ -886,7 +900,7 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     MAE_2_mean = np.linalg.norm((_np_data_error_vec - error_mean), ord=1)/(_np_data_error_vec.shape[0])
     #
     if verbose:
-        print("class: [%s], class_label: [%s]" % (class_name, class_label))
+        print("class: [%s], class_label: [%s], n_data=[%d]" % (class_name, class_label, n_data) )
         print("ratio_mean (estimated/actual) = %f" % ratio_mean)
         print("error_mean = %f %s" % (error_mean*unit_scale, unit))
         print("error_stddev = %f %s" % (error_stddev*unit_scale, unit))
@@ -897,6 +911,7 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
 
     # Capsulate the statistic results as a dict, which contains all the matric names.
     statis_dict = dict()
+    statis_dict['n_data'] = n_data
     statis_dict['m_ratio'] = ratio_mean
     statis_dict['mean(%s)' % unit] = error_mean * unit_scale
     statis_dict['stddev(%s)' % unit] = error_stddev * unit_scale
@@ -1321,6 +1336,16 @@ def write_drpy_2_depth_statistic_CSV(drpy_2_statistic_dict, csv_path, d_label_li
         # for _e_dict in row_dict_list:
         #     _csv_w.writerow(_e_dict)
         print("\n*** Wrote the drpy statistic results to the csv file:\n\t[%s]\n" % ( csv_path))
+
+
+# Record the data distribution (drpy histogram)
+# Generate the drpy data
+matric_name = "n_data"
+statistic_data_name = "all" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_depth_statistic_dict # Since our data is complete, it's no matter we use the depth's data or other's
+matric_label = "n_data"
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 
 # Generate the drpy data
