@@ -11,12 +11,12 @@ import PNP_SOLVER_LIB as PNPS
 #---------------------------#
 # Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'test_Alexander.txt'
+# data_file_str = 'test_Alexander.txt'
 # data_file_str = 'test_Alexey.txt'
 # data_file_str = "test_Holly.txt"
 # data_file_str = "test_Pantea.txt"
 #
-# data_file_str = "train_head03.txt"
+data_file_str = "train_head03.txt"
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -60,6 +60,7 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 specific_drpy = None
 #
 DATA_COUNT = 3
+# DATA_COUNT = 1000
 #
 verbose = True
 # verbose = False
@@ -94,7 +95,10 @@ elif specific_drpy is not None:
 # No image, son't try to open the image
 # The set is too big, son't bother to do so
 if data_file_str == "train_head03.txt":
+    is_showing_image = False
     is_storing_fail_case_image = False
+    #
+    verbose = False
 
 #
 
@@ -142,6 +146,37 @@ print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split
 #----------------------------------------------------------#
 
 
+# Ground truth classification
+#-------------------------------#
+# is_classified_by_label = True
+is_classified_by_label = False
+
+# class label and bins
+# Depth
+class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
+class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
+class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
+print("class_depth_label = %s" % class_depth_label)
+print("class_depth_bins = %s" % class_depth_bins)
+# Roll
+class_roll_nominal_value = np.array([-45, -25, 0, 25, 45]) # Note: the length of label should be one element longer than the bin
+class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
+class_roll_bins = [-35, -15, 15, 35] # Only the middle bound values
+print("class_roll_label = %s" % class_roll_label)
+print("class_roll_bins = %s" % class_roll_bins)
+# Pitch
+class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
+class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
+class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
+print("class_pitch_label = %s" % class_pitch_label)
+print("class_pitch_bins = %s" % class_pitch_bins)
+# Yaw
+class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
+class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
+class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
+print("class_yaw_label = %s" % class_yaw_label)
+print("class_yaw_bins = %s" % class_yaw_bins)
+#-------------------------------#
 
 # Convert the original data to structured data_list
 #-------------------------------------------------------#
@@ -152,12 +187,7 @@ for _idx in range(len(data_str_list_list)):
     data_id_dict['idx'] = data_idx_list[_idx]
     data_id_dict['file_name'] = data_str_list_list[_idx][0]
     # "Label" of classes, type: string
-    _class_dict = dict()
-    _class_dict['distance'] = data_str_list_list[_idx][1]
-    _class_dict['pitch'] = data_str_list_list[_idx][2]
-    _class_dict['roll'] = data_str_list_list[_idx][3]
-    _class_dict['yaw'] = data_str_list_list[_idx][4]
-    data_id_dict['class'] = _class_dict
+    data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
     # Grund truth
     data_id_dict['distance'] = float(data_str_list_list[_idx][1])
     data_id_dict['pitch'] = float(data_str_list_list[_idx][2])
@@ -169,6 +199,22 @@ for _idx in range(len(data_str_list_list)):
     data_id_dict['LM_local_norm'] = (np.array([data_str_list_list[_idx][5::2], data_str_list_list[_idx][6::2]]).T).astype(np.float) # np array, shape=(2,)
     #
     data_id_dict['LM_pixel'] = data_id_dict['LM_local_norm'] * data_id_dict['box_h'] + data_id_dict['box_xy'].reshape((1,2))
+
+    # Classify ground truth data! (drpy class)
+    #----------------------------------------------#
+    _class_dict = dict()
+    if is_classified_by_label:
+        _class_dict['distance'] = data_str_list_list[_idx][1]
+        _class_dict['pitch'] = data_str_list_list[_idx][2]
+        _class_dict['roll'] = data_str_list_list[_idx][3]
+        _class_dict['yaw'] = data_str_list_list[_idx][4]
+    else:
+        _class_dict['distance'] = class_depth_label[ np.digitize( data_id_dict['distance'], class_depth_bins) ]
+        _class_dict['pitch'] = class_pitch_label[ np.digitize( data_id_dict['distance'], class_pitch_bins) ]
+        _class_dict['roll'] = class_roll_label[ np.digitize( data_id_dict['distance'], class_roll_bins) ]
+        _class_dict['yaw'] = class_yaw_label[ np.digitize( data_id_dict['distance'], class_yaw_bins) ]
+    data_id_dict['class'] = _class_dict
+    #----------------------------------------------#
 
     # Get only the specified data
     #----------------------------------#
@@ -962,7 +1008,8 @@ def _class_order_func(e):
     For sorting the key of class
     Note: "all" class is placed specifically at the top.
     '''
-    return ( (-1) if (e == "all") else int(e))
+    # return ( (-1) if (e == "all") else int(e))
+    return ( float("-inf") if (e == "all") else float(e))
 
 def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name="distance", statistic_data_name="depth"):
     '''
