@@ -964,7 +964,7 @@ class PNP_SOLVER_A2_M3(object):
         zeros_3x3 = np.zeros((3,3))
         eye_3x3 = np.eye(3)
         zeros_3x1 = np.zeros((3,1))
-        n_point = co_P.size[0]
+        n_point = co_P.shape[0]
 
         # f1
         # --A
@@ -972,7 +972,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai[0:3,:] = np.hstack([co_Ux, co_Uy, (-co_VxpVy), co_PTBx, co_PTBy])
         _co_Ai[6:9,:] = np.hstack([co_W, zeros_3x3, (-co_Ux), co_PTone, zeros_3x1])
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         _co_bi[:,0:3] = (-co_PTBxBxByBy.T)
         _co_bi[:,6:9] = (-co_PTBx.T)
         # --c
@@ -989,7 +989,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai[3:6,:] = np.hstack([co_Ux, co_Uy, (-co_VxpVy), co_PTBx, co_PTBy])
         _co_Ai[6:9,:] = np.hstack([zeros_3x3, co_W, (-co_Uy), zeros_3x1, co_PTone])
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         _co_bi[:,3:6] = (-co_PTBxBxByBy.T)
         _co_bi[:,6:9] = (-co_PTBy.T)
         # --c
@@ -1006,7 +1006,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai[0:3,:] = np.hstack([zeros_3x3, (-co_W), co_Uy, zeros_3x1, (-co_PTone)])
         _co_Ai[3:6,:] = np.hstack([co_W, zeros_3x3, (-co_Ux), co_PTone, zeros_3x1])
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         _co_bi[:,0:3] = co_PTBy.T
         _co_bi[:,3:6] = (-co_PTBx.T)
         # --c
@@ -1023,7 +1023,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai[3:6,:] = np.hstack([zeros_3x3, co_W, (-co_Uy), zeros_3x1, co_PTone])
         _co_Ai[6:9,:] = np.hstack([(-co_Ux), (-co_Uy), co_VxpVy, (-co_PTBx), (-co_PTBy)])
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         _co_bi[:,0:3] = (-co_PTBx.T)
         _co_bi[:,3:6] = (-co_PTBy.T)
         _co_bi[:,6:9] = co_PTBxBxByBy.T
@@ -1039,7 +1039,7 @@ class PNP_SOLVER_A2_M3(object):
         # --A
         _co_Ai = np.zeros((11,11))
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         _co_bi[:,0:3] = co_PTone.T
         _co_bi[:,6:9] = (-co_PTBx.T)
         _co_bi[0,9] = n_point
@@ -1055,7 +1055,7 @@ class PNP_SOLVER_A2_M3(object):
         # --A
         _co_Ai = np.zeros((11,11))
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         _co_bi[:,3:6] = co_PTone.T
         _co_bi[:,6:9] = (-co_PTBy.T)
         _co_bi[0,10] = n_point
@@ -1072,7 +1072,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai = np.zeros((11,11))
         _co_Ai[0:3,6:9] = eye_3x3
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         # --c
         _co_ci = 0.0
         #
@@ -1085,7 +1085,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai = np.zeros((11,11))
         _co_Ai[3:6,6:9] = eye_3x3
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         # --c
         _co_ci = 0.0
         #
@@ -1099,7 +1099,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai = np.zeros((11,11))
         _co_Ai[0:3,3:6] = eye_3x3
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         # --c
         _co_ci = 0.0
         #
@@ -1114,7 +1114,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai[0:3,0:3] = eye_3x3
         _co_Ai[6:9,6:9] = (-eye_3x3)
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         # --c
         _co_ci = 0.0
         #
@@ -1129,7 +1129,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_Ai[3:6,3:6] = eye_3x3
         _co_Ai[6:9,6:9] = (-eye_3x3)
         # --b
-        _co_bi = np.zeros((11,1))
+        _co_bi = np.zeros((1,11))
         # --c
         _co_ci = 0.0
         #
@@ -1141,9 +1141,9 @@ class PNP_SOLVER_A2_M3(object):
         #
         self.lib_print("-"*70)
         for _idx in range(len(co_A_list)):
-            self.lib_print("A[%d] = \n%s" % co_A_list[_idx])
-            self.lib_print("bT[%d] = %s" % co_bT_list[_idx])
-            self.lib_print("c[%d] = %f" % co_c_list[_idx])
+            self.lib_print("A[%d] = \n%s" % (_idx, co_A_list[_idx]))
+            self.lib_print("bT[%d] = %s" % (_idx, co_bT_list[_idx]))
+            self.lib_print("c[%d] = %f" % (_idx, co_c_list[_idx]))
         self.lib_print("-"*70)
         #
 
@@ -1159,7 +1159,7 @@ class PNP_SOLVER_A2_M3(object):
         #
 
         step_alpha = 1.0 # 0.5
-        num_it = 3
+        num_it = 14 # 3
         #
         # Iteration
         k_it = 0
@@ -1173,11 +1173,15 @@ class PNP_SOLVER_A2_M3(object):
             # co_fx = None # 11 x 1
             # co_Jf  = None # 11 x 11
             co_fx, co_Jf = self.co_get_function_value_and_Jacobian(co_x, co_A_list, co_bT_list, co_c_list)
+            co_Jf_u, co_Jf_s, co_Jf_vh = np.linalg.svd(co_Jf)
+            #
             co_Jf_pinv = np.linalg.pinv(co_Jf) # 11 x 11
+
             co_delta_x = -1.0 * (co_Jf_pinv @ co_fx) # 11 x 1
             #
             self.lib_print("co_fx = \n%s" % str(co_fx))
             self.lib_print("co_Jf = \n%s" % str(co_Jf))
+            self.lib_print("co_Jf_s = \n%s" % str(co_Jf_s))
             self.lib_print("co_Jf_pinv = \n%s" % str(co_Jf_pinv))
             self.lib_print("co_delta_x = \n%s" % str(co_delta_x))
             #-----------------------------#
@@ -1196,7 +1200,7 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print()
         # Reconstruct (R, t)
         #--------------------------------------------------------#
-        np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est)
+        np_R_est, np_t_est, t3_est = self.co_reconstruct_R_t_m1(co_x)
 
         # test, pre-transfer
         #---------------------------#
@@ -1221,6 +1225,7 @@ class PNP_SOLVER_A2_M3(object):
         # # Get the whole residual
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        res_norm = 0.0
         # #-----------------------------#
 
 
@@ -1578,7 +1583,7 @@ class PNP_SOLVER_A2_M3(object):
     def co_prepare_matrix_components(self, B_x, B_y, P):
         '''
         '''
-        n_point = P.size[0] # The number of row of P
+        n_point = P.shape[0] # The number of row of P
         BxP = B_x * P # Broadcast through column to get element-wise product.
         ByP = B_y * P # Broadcast through column to get element-wise product.
         one_n = np.ones((n_point,1)) # Column vector
@@ -1603,7 +1608,7 @@ class PNP_SOLVER_A2_M3(object):
 
         return (W, Ux, Uy, VxpVy, PTone, PTBx, PTBy, PTBxBxByBy, BxTone, ByTone)
 
-    def self.co_get_function_value_and_Jacobian(co_x, co_A_list, co_bT_list, co_c_list):
+    def co_get_function_value_and_Jacobian(self, co_x, co_A_list, co_bT_list, co_c_list):
         '''
         '''
         # The container for fx and Jf
@@ -1620,6 +1625,45 @@ class PNP_SOLVER_A2_M3(object):
         fx = np.array(fx_list).reshape((11,1)) # 11x1
         Jf = np.vstack(Jf_list) # 11x11
         return (fx, Jf)
+
+    def co_reconstruct_R_t_m1(self, co_x):
+        '''
+        - Use co_x
+        '''
+        # Test
+        #---------------------------------#
+        Gamma_list = [co_x[0:3,:].T, co_x[3:6,:].T, co_x[6:9,:].T]
+        np_Gamma_est = np.vstack(Gamma_list)
+        self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+        G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
+        # self.lib_print("G_u = \n%s" % str(G_u))
+        self.lib_print("G_s = \n%s" % str(G_s))
+        # self.lib_print("G_vh = \n%s" % str(G_vh))
+        G_D = np.linalg.det(G_u @ G_vh)
+        self.lib_print("G_D = %f" % G_D)
+
+
+        # Reconstruct R
+        np_R_est = G_u @ np.diag([1.0, 1.0, G_D]) @ G_vh
+        self.lib_print("np_R_est = \n%s" % str(np_R_est))
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, is_degree=True)
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est ) ) # Note: Euler angles are in degree.
+        # roll_est, yaw_est, pitch_est = Euler_angle_est
+
+        # Reconstruct t vector
+        # Get the "value" of G
+        value_G = np.linalg.norm(np_Gamma_est, ord=2)
+        self.lib_print("value_G = %f" % value_G)
+        #
+        t3_est = 1.0 / value_G
+        # t3_est = 1.0 / np.average(G_s)
+        self.lib_print("t3_est = %f" % t3_est)
+        np_t_est = np.vstack((co_x[9:11,:], 1.0)) * t3_est
+        self.lib_print("np_t_est = \n%s" % str(np_t_est))
+        #---------------------------------#
+        # end Test
+        return (np_R_est, np_t_est, t3_est)
     #-------------------------------------------#
 
 

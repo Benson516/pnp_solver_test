@@ -11,12 +11,12 @@ import PNP_SOLVER_LIB as PNPS
 #---------------------------#
 # Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-# data_file_str = 'test_Alexander.txt'
+data_file_str = 'test_Alexander.txt'
 # data_file_str = 'test_Alexey.txt'
 # data_file_str = "test_Holly.txt"
 # data_file_str = "test_Pantea.txt"
 #
-data_file_str = "train_head03.txt"
+# data_file_str = "train_head03.txt"
 #---------------------------#
 # Image of Alexander
 # Original image
