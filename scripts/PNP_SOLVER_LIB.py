@@ -914,9 +914,9 @@ class PNP_SOLVER_A2_M3(object):
         # Form the problem for solving
         # Constant, only changed when golden pattern changed
         #--------------------------------#
-        f2_P = self.f2_get_P(np_point_3d_pretransfer_dict)
+        co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
         #--------------------------------#
-        self.lib_print("f2_P = \n%s" % str(f2_P))
+        self.lib_print("co_P = \n%s" % str(co_P))
         #
         self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
 
@@ -932,8 +932,8 @@ class PNP_SOLVER_A2_M3(object):
         #--------------------------------#
         np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
         B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
-        co_matrices = self.co_prepare_matrix_components(B_x, B_y, P)
-         co_W, co_Ux, co_Uy, co_VxpVy, co_PTone, co_PTBx, co_PTBy, co_PTBxBxByBy, co_BxTone, co_ByTone = co_matrices
+        co_matrices = self.co_prepare_matrix_components(B_x, B_y, co_P)
+        co_W, co_Ux, co_Uy, co_VxpVy, co_PTone, co_PTBx, co_PTBy, co_PTBxBxByBy, co_BxTone, co_ByTone = co_matrices
         #--------------------------------#
 
         # B
@@ -962,7 +962,7 @@ class PNP_SOLVER_A2_M3(object):
         co_c_list = list()
         zeros_3x3 = np.zeros((3,3))
         zeros_3x1 = np.zeros((3,1))
-
+        n_point = co_P.size[0]
 
         # f1
         # --A
@@ -1034,7 +1034,37 @@ class PNP_SOLVER_A2_M3(object):
 
 
         # f5
+        # --A
+        _co_Ai = np.zeros((11,11))
+        # --b
+        _co_bi = np.zeros((11,1))
+        _co_bi[:,0:3] = co_PTone.T
+        _co_bi[:,6:9] = (-co_PTBx.T)
+        _co_bi[0,9] = n_point
+        # --c
+        _co_ci = (-co_BxTone)
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
         # f6
+        # --A
+        _co_Ai = np.zeros((11,11))
+        # --b
+        _co_bi = np.zeros((11,1))
+        _co_bi[:,3:6] = co_PTone.T
+        _co_bi[:,6:9] = (-co_PTBy.T)
+        _co_bi[0,10] = n_point
+        # --c
+        _co_ci = (-co_ByTone)
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
         # f7
         # f8
         # f9
