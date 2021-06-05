@@ -960,7 +960,9 @@ class PNP_SOLVER_A2_M3(object):
         co_A_list = list()
         co_b_list = list()
         co_c_list = list()
+        #
         zeros_3x3 = np.zeros((3,3))
+        eye_3x3 = np.eye(3)
         zeros_3x1 = np.zeros((3,1))
         n_point = co_P.size[0]
 
@@ -1066,10 +1068,74 @@ class PNP_SOLVER_A2_M3(object):
 
 
         # f7
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[0:3,6:9] = eye_3x3
+        # --b
+        _co_bi = np.zeros((11,1))
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
         # f8
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[3:6,6:9] = eye_3x3
+        # --b
+        _co_bi = np.zeros((11,1))
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
         # f9
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[0:3,3:6] = eye_3x3
+        # --b
+        _co_bi = np.zeros((11,1))
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
         # f10
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[0:3,0:3] = eye_3x3
+        _co_Ai[6:9,6:9] = (-eye_3x3)
+        # --b
+        _co_bi = np.zeros((11,1))
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
         # f11
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[3:6,3:6] = eye_3x3
+        _co_Ai[6:9,6:9] = (-eye_3x3)
+        # --b
+        _co_bi = np.zeros((11,1))
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
 
         #--------------------------------#
 
