@@ -127,10 +127,11 @@ class PNP_SOLVER_A2_M3(object):
 
         for _idx in range(len(self.np_point_3d_pretransfer_dict_list)):
             _point_3d_dict = self.np_point_3d_pretransfer_dict_list[_idx]
-            # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+            # # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
             # _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
+            _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -905,6 +906,221 @@ class PNP_SOLVER_A2_M3(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
+    def solve_pnp_constrained_optimization_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+        '''
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        '''
+        # Form the problem for solving
+        # Constant, only changed when golden pattern changed
+        #--------------------------------#
+        f2_P = self.f2_get_P(np_point_3d_pretransfer_dict)
+        #--------------------------------#
+        self.lib_print("f2_P = \n%s" % str(f2_P))
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _stamp_s = time.time()
+        #-------------------------------------#
+
+
+        # Change with sample, constant in iteration
+        #--------------------------------#
+        np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
+        B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
+        co_W, co_Ux, co_Uy, co_VxpVy, co_PT1, co_PTBx, co_PTBy, co_PTBxBxByBy, co_BxTone, co_ByTone = self.co_prepare_matrix_components(B_x, B_y, P)
+        #--------------------------------#
+
+        # B
+        self.lib_print("B_x = \n%s" % str(B_x))
+        self.lib_print("B_y = \n%s" % str(B_y))
+        self.lib_print("B_x.shape = %s" % str(B_x.shape))
+        self.lib_print("B_y.shape = %s" % str(B_y.shape))
+        # 3x3 matrices
+        self.lib_print("co_W = \n%s" % str(co_W))
+        self.lib_print("co_Ux = \n%s" % str(co_Ux))
+        self.lib_print("co_Uy = \n%s" % str(co_Uy))
+        self.lib_print("co_VxpVy = \n%s" % str(co_VxpVy))
+        # 3x1 vectors
+        self.lib_print("co_PT1 = \n%s" % str(co_PT1))
+        self.lib_print("co_PTBx = \n%s" % str(co_PTBx))
+        self.lib_print("co_PTBy = \n%s" % str(co_PTBy))
+        self.lib_print("co_PTBxBxByBy = \n%s" % str(co_PTBxBxByBy))
+        # 1x1 scalars
+        self.lib_print("co_BxTone = %f" % co_BxTone)
+        self.lib_print("co_ByTone = %f" % co_ByTone)
+
+
+        #
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
+
+        # Solve by iteration
+        #--------------------------------------#
+        # Initial guess, not neccessaryly unit vector!!
+        # phi_3_est = np.array([-1.0, -1.0, -1.0]).reshape((3,1))
+        phi_3_est = np.array([0.0, 0.0, 1.0]).reshape((3,1))
+        # phi_3_est = np.array([0.0, 0.0, 0.0]).reshape((3,1))
+        phi_3_est_new = copy.deepcopy(phi_3_est)
+        step_alpha = 1.0 # 0.5
+        num_it = 3
+        #
+        # update_phi_3_method = 1
+        update_phi_3_method = 0
+        # Iteration
+        k_it = 0
+        self.lib_print("---")
+        #
+        res_old_x = np.ones(B_x.shape)
+        res_old_y = np.ones(B_y.shape)
+        res_norm_x = 10*3
+        res_norm_y = 10*3
+        #
+        # weight
+        w_sqrt_x_vec = np.ones(B_x.shape)
+        w_sqrt_y_vec = np.ones(B_x.shape)
+        #
+        while k_it < num_it:
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            # # Real update of phi_3_est
+            # phi_3_est = copy.deepcopy(phi_3_est_new)
+
+            # Separately solve for phi
+            #----------------------------------#
+            res_grow_det_list = None
+            phi_x_est = self.f2_solve_phi_half_from_phi_3(v_phi_o_x, M_x, phi_3_est, name='x')
+            phi_y_est = self.f2_solve_phi_half_from_phi_3(v_phi_o_y, M_y, phi_3_est, name='y')
+            # res_grow_det_list = (D_x, B_x, D_y, B_y, phi_3_est, -res_old_x*Delta_vec, -res_old_y*Delta_vec)
+            #
+            # Note: phi_est = [phi_1_est; phi_2_est; delta_est]
+            phi_est = self.get_phi_est_from_halves(phi_x_est, phi_y_est)
+            self.lib_print("phi_est = \n%s" % str(phi_est))
+            #----------------------------------#
+
+
+            #-------------------------#
+            phi_1_est = phi_est[0:3,:]
+            phi_2_est = phi_est[3:6,:]
+            self.lib_print("phi_1_est = \n%s" % str(phi_1_est))
+            self.lib_print("phi_2_est = \n%s" % str(phi_2_est))
+            norm_phi_1_est = np.linalg.norm(phi_1_est)
+            norm_phi_2_est = np.linalg.norm(phi_2_est)
+            self.lib_print("norm_phi_1_est = %f" % norm_phi_1_est)
+            self.lib_print("norm_phi_2_est = %f" % norm_phi_2_est)
+            #
+            self.lib_print("phi_3_est = \n%s" % str(phi_3_est))
+            #-------------------------#
+
+
+            #-------------------------#
+            if update_phi_3_method == 1:
+                # First update phi_3_est
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m1(phi_1_est, norm_phi_1_est, phi_2_est, norm_phi_2_est, phi_3_est, step_alpha)
+                # Then, test (not necessary)
+                #---------------------------------#
+                if self.verbose:
+                    np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est_new)
+                else:
+                    pass # Save the computing power
+                #---------------------------------#
+                # end Test
+            else: # update_phi_3_method == 0
+                # First reconstructing R
+                np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est, res_grow_det_list=res_grow_det_list)
+                # Then, update phi_3_est
+                phi_3_est_new, norm_phi_3_est = self.update_phi_3_est_m2(np_R_est, t3_est, phi_3_est, step_alpha)
+
+            # Real residule (residule after reconstruction)
+            # As well as checking which sign of alpha is correct
+            #---------------------------------------------#
+            _nz = np.array([[1.0, 1.0, -1.0, 1.0]]).T
+            phi_est_new = np.vstack([ np_R_est[0:1,:].T, np_R_est[1:2,:].T, np_t_est[0:2,:] ] ) / t3_est
+            phi_x_est, phi_y_est = self.get_phi_half_from_whole(phi_est_new)
+            self.lib_print("phi_x_est = %s.T" % str(phi_x_est.T))
+            self.lib_print("phi_y_est = %s.T" % str(phi_y_est.T))
+            #
+            # is_f1_res = True
+            is_f1_res = False
+            res_result_p = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, phi_x_est, phi_y_est, phi_3_est, is_f1_res=is_f1_res)
+            res_result_n = self.f2_cal_res_all(f2_D, f2_P, B_x, B_y, (phi_x_est*_nz), (phi_y_est*_nz), phi_3_est, is_f1_res=is_f1_res)
+            self.lib_print("res_norm_p = %f" % res_result_p[0])
+            self.lib_print("res_norm_n = %f" % res_result_n[0])
+            #
+            res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_p
+            # if res_result_n[0] <= res_result_p[0]:
+            #     print(">>> The sign of alpha is wrong, fix it!!")
+            #     res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_n
+            #     # Fix all the related things...
+            #     np_R_est[0:2,2] *= -1.0 # alpha
+            #     np_R_est[2,0:2] *= -1.0 # beta.T
+            #     phi_3_est_new[0:2,0] *= -1.0 # beta
+            # else:
+            #     print(">>> The sign of alpha is correct~")
+            #     res_norm, res_x, res_norm_x, res_y, res_norm_y = res_result_p
+            #
+            self.lib_print("res_norm = %f" % res_norm)
+            # Update
+            res_old_x = copy.deepcopy(res_x)
+            res_old_y = copy.deepcopy(res_y)
+            #---------------------------------------------#
+
+            # Real update of phi_3_est
+            phi_3_est = copy.deepcopy(phi_3_est_new)
+            # phi_3_est = copy.deepcopy(phi_3_est_GD)
+            self.lib_print("---")
+
+        #--------------------------------------#
+
+        self.lib_print()
+        self.lib_print("phi_est = \n%s" % str(phi_est))
+        self.lib_print("phi_3_est = \n%s" % str(phi_3_est))
+        self.lib_print()
+        # Reconstruct (R, t)
+        #--------------------------------------------------------#
+        if update_phi_3_method == 1:
+            np_R_est, np_t_est, t3_est = self.reconstruct_R_t_m1(phi_est, phi_3_est)
+        else:
+            pass # Note: if we are using the update_phi_3_method==0, we don't need to reconstruct the rotation matrix again
+            # np_R_est, np_t_est, t3_est = self.reconstruct_R_t_block_reconstruction(phi_est, phi_3_est)
+        # self.lib_print("np_R_est = \n%s" % str(np_R_est))
+
+        # test, pre-transfer
+        #---------------------------#
+        self.np_R_c_a_est = copy.deepcopy(np_R_est)
+        self.np_t_c_a_est = copy.deepcopy(np_t_est)
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = copy.deepcopy(np_R_c_h_est)
+            np_t_est = copy.deepcopy(np_t_c_h)
+            t3_est = np_t_est[2,0]
+        #---------------------------#
+
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
+        roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------------------------------#
+
+        # # Get the whole residual
+        # #-----------------------------#
+        # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        # #-----------------------------#
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _duration = time.time() - _stamp_s
+        self.lib_print("\n*** _duration = %f ms ***\n" % (_duration*1000.0))
+        #-------------------------------------#
+
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
     #-----------------------------------------------------------#
 
     # Components of the solution
@@ -1243,7 +1459,37 @@ class PNP_SOLVER_A2_M3(object):
         res_y, res_norm_y = self.f2_cal_res_half(B_y, D, v_phi_y, Delta_bar, name='y', is_f1_res=is_f1_res)
         res_norm_all = np.sqrt(res_norm_x**2 + res_norm_y**2)
         return (res_norm_all, res_x, res_norm_x, res_y, res_norm_y)
+    #-------------------------------------------#
 
+    # Constrained optimization: Lagrange multiplier + Newton-Raphson method
+    #-------------------------------------------#
+    def co_prepare_matrix_components(self, B_x, B_y, P):
+        '''
+        '''
+        n_point = P.size[0] # The number of row of P
+        BxP = B_x * P # Broadcast through column to get element-wise product.
+        ByP = B_y * P # Broadcast through column to get element-wise product.
+        one_n = np.ones((n_point,1)) # Column vector
+
+        # 3x3 square matrices
+        W = P.T @ P
+        Ux = P.T @ BxP
+        Uy = P.T @ ByP
+        # Vx = BxP.T @ BxP
+        # Vy = ByP.T @ ByP
+        VxpVy = BxP.T @ BxP + ByP.T @ ByP # We only need (Vx + Vy), instead of separated Vx and Vy
+
+        # 3x1 column vectors
+        PT1 = P.T @ one_n
+        PTBx = P.T @ B_x
+        PTBy = P.T @ B_y
+        PTBxBxByBy = P.T @ (B_x*B_x + B_y*B_y) # Element-wise product
+
+        # 1x1 scalar
+        BxTone = B_x.T @ one_n
+        ByTone = B_y.T @ one_n
+
+        return (W, Ux, Uy, VxpVy, PT1, PTBx, PTBy, PTBxBxByBy, BxTone, ByTone)
     #-------------------------------------------#
 
 
