@@ -955,6 +955,94 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("co_BxTone = %f" % co_BxTone)
         self.lib_print("co_ByTone = %f" % co_ByTone)
 
+        # Prepare big matrices
+        #--------------------------------#
+        co_A_list = list()
+        co_b_list = list()
+        co_c_list = list()
+        zeros_3x3 = np.zeros((3,3))
+        zeros_3x1 = np.zeros((3,1))
+
+
+        # f1
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[0:3,:] = np.hstack([co_Ux, co_Uy, (-co_VxpVy), co_PTBx, co_PTBy])
+        _co_Ai[6:9,:] = np.hstack([co_W, zeros_3x3, (-co_Ux), co_PTone, zeros_3x1])
+        # --b
+        _co_bi = np.zeros((11,1))
+        _co_bi[:,0:3] = (-co_PTBxBxByBy.T)
+        _co_bi[:,6:9] = (-co_PTBx.T)
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
+        # f2
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[3:6,:] = np.hstack([co_Ux, co_Uy, (-co_VxpVy), co_PTBx, co_PTBy])
+        _co_Ai[6:9,:] = np.hstack([zeros_3x3, co_W, (-co_Uy), zeros_3x1, co_PTone])
+        # --b
+        _co_bi = np.zeros((11,1))
+        _co_bi[:,3:6] = (-co_PTBxBxByBy.T)
+        _co_bi[:,6:9] = (-co_PTBy.T)
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
+        # f3
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[0:3,:] = np.hstack([zeros_3x3, (-co_W), co_Uy, zeros_3x1, (-co_PTone)])
+        _co_Ai[3:6,:] = np.hstack([co_W, zeros_3x3, (-co_Ux), co_PTone, zeros_3x1])
+        # --b
+        _co_bi = np.zeros((11,1))
+        _co_bi[:,0:3] = co_PTBy.T
+        _co_bi[:,3:6] = (-co_PTBx.T)
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+        # f4
+        # --A
+        _co_Ai = np.zeros((11,11))
+        _co_Ai[0:3,:] = np.hstack([co_W, zeros_3x3, (-co_Ux), co_PTone, zeros_3x1])
+        _co_Ai[3:6,:] = np.hstack([zeros_3x3, co_W, (-co_Uy), zeros_3x1, co_PTone])
+        _co_Ai[6:9,:] = np.hstack([(-co_Ux), (-co_Uy), co_VxpVy, (-co_PTBx), (-co_PTBy)])
+        # --b
+        _co_bi = np.zeros((11,1))
+        _co_bi[:,0:3] = (-co_PTBx.T)
+        _co_bi[:,3:6] = (-co_PTBy.T)
+        _co_bi[:,6:9] = co_PTBxBxByBy.T
+        # --c
+        _co_ci = 0.0
+        #
+        co_A_list.append(_co_Ai)
+        co_b_list.append(_co_bi)
+        co_c_list.append(_co_ci)
+
+
+        # f5
+        # f6
+        # f7
+        # f8
+        # f9
+        # f10
+        # f11
+
+        #--------------------------------#
+
 
 
         # Solve by iteration (Newton-Raphson method)
@@ -1416,11 +1504,19 @@ class PNP_SOLVER_A2_M3(object):
         '''
         '''
         W, Ux, Uy, VxpVy, PTone, PTBx, PTBy, PTBxBxByBy, BxTone, ByTone = co_matrices
+        phi_1 = co_x[0:3,:]
+        phi_2 = co_x[3:6,:]
+        phi_3 = co_x[6:9,:]
+        delta_1 = co_x[9,0]
+        delta_2 = co_x[10,0]
         # The container for fx and Jf
         fx_list = list()
         Jf_list = list()
         # f1
-
+        _fx_i = co_x[0:3,:].T @ ( Ux @ co_x[0:3,:] + Ux @ co_x[3:6,:])
+        fx_list.append(_fx_i)
+        _Jf_i =
+        Jf_list.append(_Jf_i)
         # f2
         # f3
         # f4
