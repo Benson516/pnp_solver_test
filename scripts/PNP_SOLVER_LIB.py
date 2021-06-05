@@ -958,7 +958,7 @@ class PNP_SOLVER_A2_M3(object):
         # Prepare big matrices
         #--------------------------------#
         co_A_list = list()
-        co_b_list = list()
+        co_bT_list = list()
         co_c_list = list()
         #
         zeros_3x3 = np.zeros((3,3))
@@ -979,7 +979,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -996,7 +996,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -1013,7 +1013,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
         # f4
@@ -1031,7 +1031,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -1047,7 +1047,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = (-co_BxTone)
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -1063,7 +1063,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = (-co_ByTone)
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -1077,7 +1077,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
         # f8
@@ -1090,7 +1090,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -1104,7 +1104,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -1119,7 +1119,7 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
 
 
@@ -1134,11 +1134,18 @@ class PNP_SOLVER_A2_M3(object):
         _co_ci = 0.0
         #
         co_A_list.append(_co_Ai)
-        co_b_list.append(_co_bi)
+        co_bT_list.append(_co_bi)
         co_c_list.append(_co_ci)
-
         #--------------------------------#
 
+        #
+        self.lib_print("-"*70)
+        for _idx in range(len(co_A_list)):
+            self.lib_print("A[%d] = \n%s" % co_A_list[_idx])
+            self.lib_print("bT[%d] = %s" % co_bT_list[_idx])
+            self.lib_print("c[%d] = %f" % co_c_list[_idx])
+        self.lib_print("-"*70)
+        #
 
 
         # Solve by iteration (Newton-Raphson method)
@@ -1165,7 +1172,7 @@ class PNP_SOLVER_A2_M3(object):
             #-----------------------------#
             # co_fx = None # 11 x 1
             # co_Jf  = None # 11 x 11
-            co_fx, co_Jf = self.co_get_function_value_and_Jacobian(co_x, co_matrices)
+            co_fx, co_Jf = self.co_get_function_value_and_Jacobian(co_x, co_A_list, co_bT_list, co_c_list)
             co_Jf_pinv = np.linalg.pinv(co_Jf) # 11 x 11
             co_delta_x = -1.0 * (co_Jf_pinv @ co_fx) # 11 x 1
             #
@@ -1596,33 +1603,18 @@ class PNP_SOLVER_A2_M3(object):
 
         return (W, Ux, Uy, VxpVy, PTone, PTBx, PTBy, PTBxBxByBy, BxTone, ByTone)
 
-    def self.co_get_function_value_and_Jacobian(co_x, co_matrices):
+    def self.co_get_function_value_and_Jacobian(co_x, co_A_list, co_bT_list, co_c_list):
         '''
         '''
-        W, Ux, Uy, VxpVy, PTone, PTBx, PTBy, PTBxBxByBy, BxTone, ByTone = co_matrices
-        phi_1 = co_x[0:3,:]
-        phi_2 = co_x[3:6,:]
-        phi_3 = co_x[6:9,:]
-        delta_1 = co_x[9,0]
-        delta_2 = co_x[10,0]
         # The container for fx and Jf
         fx_list = list()
         Jf_list = list()
-        # f1
-        _fx_i = co_x[0:3,:].T @ ( Ux @ co_x[0:3,:] + Ux @ co_x[3:6,:])
-        fx_list.append(_fx_i)
-        _Jf_i =
-        Jf_list.append(_Jf_i)
-        # f2
-        # f3
-        # f4
-        # f5
-        # f6
-        # f7
-        # f8
-        # f9
-        # f10
-        # f11
+
+        #
+        for _idx in range(len(co_A_list)):
+            fx_list.append( ( co_x.T @ co_A_list[_idx] @ co_x + co_bT_list[_idx] @ co_x + co_c_list[_idx] ) )
+            Jf_list.append( ( co_x.T @ (co_A_list[_idx] + co_A_list[_idx].T) + co_bT_list[_idx] ) )
+        #
 
         # Generate fx and Jf
         fx = np.array(fx_list).reshape((11,1)) # 11x1
