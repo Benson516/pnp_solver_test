@@ -1333,6 +1333,7 @@ class PNP_SOLVER_A2_M3(object):
             #-----------------------------#
             ekf_Q = np.eye((2*n_point+5))
             ekf_Q[-5:, -5:] *= 225.68 # f_camera # 2.3*10**2
+            ekf_Q /= 225.68
             #
             ekf_x_bar = ekf_x
             ekf_Sigma_bar = ekf_G @ ekf_Sigma @ ekf_G.T + ekf_R
