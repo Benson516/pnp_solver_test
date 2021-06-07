@@ -28,12 +28,12 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_stress_test = True
-# is_stress_test = False
+# is_stress_test = True
+is_stress_test = False
 
 # Data generation
-is_random = True
-# is_random = False
+# is_random = True
+is_random = False
 
 #
 # DATA_COUNT = 3
@@ -61,6 +61,8 @@ is_statistic_csv_horizontal = True # class --> (right)
 if is_stress_test:
     is_random = True
     is_showing_image = False
+if not is_random:
+    DATA_COUNT = 1
 #
 
 # Parameters of the data
@@ -240,8 +242,8 @@ for _idx in range( DATA_COUNT ):
         _yaw = 45.0 # deg.
         #
         _np_t_GT = np.zeros((3,1))
-        _np_t_GT[0,0] = 0.34 # m
-        _np_t_GT[1,0] = 0.34 # m
+        _np_t_GT[0,0] = 0.35 # m
+        _np_t_GT[1,0] = 0.35 # m
         _np_t_GT[2,0] = 0.5 # m
         # _np_t_GT[0,0] = 0.0 # m
         # _np_t_GT[1,0] = 0.0 # m
