@@ -1332,7 +1332,7 @@ class PNP_SOLVER_A2_M3(object):
             # Calculate K
             #-----------------------------#
             ekf_Q = np.eye((2*n_point+5))
-            ekf_Q[-1:-5] *= 10**-5
+            ekf_Q[-5:, -5:] *= 225.68 # f_camera # 2.3*10**2
             #
             ekf_x_bar = ekf_x
             ekf_Sigma_bar = ekf_G @ ekf_Sigma @ ekf_G.T + ekf_R
@@ -1344,11 +1344,15 @@ class PNP_SOLVER_A2_M3(object):
             ekf_S_pinv = np.linalg.pinv(ekf_S)
             ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
             #
-            self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
-            self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
-            self.lib_print("ekf_S = \n%s" % str(ekf_S))
+            self.lib_print("ekf_Q = \n%s" % str(ekf_Q))
+            # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
+            # self.lib_print("ekf_S = \n%s" % str(ekf_S))
             self.lib_print("ekf_S_s = \n%s" % str(ekf_S_s))
-            self.lib_print("ekf_S_pinv = \n%s" % str(ekf_S_pinv))
+            # self.lib_print("ekf_S_pinv = \n%s" % str(ekf_S_pinv))
+            self.lib_print("ekf_K = \n%s" % str(ekf_K))
+            self.lib_print("ekf_z = \n%s" % str(ekf_z))
+            self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
+            self.lib_print("(ekf_z-ekf_hx) = \n%s" % str(ekf_z-ekf_hx))
             #-----------------------------#
 
             # Update x
