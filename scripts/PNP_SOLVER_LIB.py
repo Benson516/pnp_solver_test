@@ -1635,6 +1635,7 @@ class PNP_SOLVER_A2_M3(object):
         gamma_2_123 = phi_1.T @ phi_1
         # gamma_2_123 = phi_2.T @ phi_2
         # gamma_2_123 = phi_3.T @ phi_3
+        # gamma_2_123 = (phi_1.T @ phi_1 + phi_2.T @ phi_2 +  phi_3.T @ phi_3) / 3.0
         # The container for fx and Jf
         fx_list = list()
         Jf_list = list()
@@ -1645,7 +1646,12 @@ class PNP_SOLVER_A2_M3(object):
             _Jf = ( co_x.T @ (co_A_list[_idx] + co_A_list[_idx].T) + co_bT_list[_idx] )
             if _idx < 4:
                 _Jf /= gamma_2_123
-                _Jf -= np.hstack( [ (_fx / (gamma_2_123**2) * (phi_1.T)), np.zeros((1,8)) ])
+                _fx_gamma_123 = _fx / (gamma_2_123**2)
+                _Jf -= np.hstack( [ (_fx_gamma_123 * (phi_1.T)), np.zeros((1,8)) ])
+                # _fx_gamma_123 = _fx / (gamma_2_123**2)
+                # _Jf -= np.hstack( [ np.zeros((1,6)), (_fx_gamma_123 * (phi_3.T)), np.zeros((1,2)) ])
+                # _fx_gamma_123 = _fx / (gamma_2_123**2) / 3.0
+                # _Jf -= np.hstack( [ (_fx_gamma_123 * (phi_1.T)), (_fx_gamma_123 * (phi_2.T)), (_fx_gamma_123 * (phi_3.T)), np.zeros((1,2)) ])
                 _fx /= gamma_2_123
             fx_list.append( _fx )
             Jf_list.append( _Jf )
