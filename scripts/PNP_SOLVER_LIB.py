@@ -130,8 +130,9 @@ class PNP_SOLVER_A2_M3(object):
             # # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
             # _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
+            # _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
             # _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -1263,6 +1264,147 @@ class PNP_SOLVER_A2_M3(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
+    def solve_pnp_EKF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+        '''
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        '''
+        # Form the problem for solving
+        # Constant, only changed when golden pattern changed
+        #--------------------------------#
+        co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
+        n_point = co_P.shape[0]
+        ekf_G = np.eye(11)
+        ekf_R = np.eye(11) * (10**-3)
+        #--------------------------------#
+        self.lib_print("co_P = \n%s" % str(co_P))
+        #
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
+
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _stamp_s = time.time()
+        #-------------------------------------#
+
+
+        # Change with sample, constant in iteration
+        #--------------------------------#
+        np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
+        B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
+        #
+        ekf_z = np.zeros( ((2*n_point+5), 1) )
+        ekf_z[:n_point,:] = B_x
+        ekf_z[n_point:(2*n_point),:] = B_y
+        #--------------------------------#
+
+        # B
+        self.lib_print("B_x = \n%s" % str(B_x))
+        self.lib_print("B_y = \n%s" % str(B_y))
+        self.lib_print("B_x.shape = %s" % str(B_x.shape))
+        self.lib_print("B_y.shape = %s" % str(B_y.shape))
+        #
+        self.lib_print("ekf_z = \n%s" % str(ekf_z))
+
+
+        # Solve by iteration (EKF)
+        #--------------------------------------#
+        # Initial guess
+        ekf_x = np.zeros((11,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
+        # Set the initial scaled rotation matrix (Gamma) to be an identidy matrix
+        ekf_x[(3*0)+0, 0] = 1.0
+        ekf_x[(3*1)+1, 0] = 1.0
+        ekf_x[(3*2)+2, 0] = 1.0
+        #
+        ekf_Sigma = np.eye(11) * 10**5
+
+
+        num_it = 14 # 3
+        #
+        # Iteration
+        k_it = 0
+        self.lib_print("---")
+        while k_it < num_it:
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            # Calculate K
+            #-----------------------------#
+            ekf_Q = np.eye((2*n_point+5))
+            ekf_Q[-1:-5] *= 10**-5
+            #
+            ekf_x_bar = ekf_x
+            ekf_Sigma_bar = ekf_G @ ekf_Sigma @ ekf_G.T + ekf_R
+            #
+            ekf_hx, ekf_Hx = self.EKF_get_hx_H(ekf_x, B_x, B_y, co_P)
+            #
+            ekf_S = ( ekf_Hx @ ekf_Sigma_bar @ (ekf_Hx.T) + ekf_Q )
+            ekf_S_u, ekf_S_s, ekf_S_vh = np.linalg.svd(ekf_S)
+            ekf_S_pinv = np.linalg.pinv(ekf_S)
+            ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
+            #
+            self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
+            self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
+            self.lib_print("ekf_S = \n%s" % str(ekf_S))
+            self.lib_print("ekf_S_s = \n%s" % str(ekf_S_s))
+            self.lib_print("ekf_S_pinv = \n%s" % str(ekf_S_pinv))
+            #-----------------------------#
+
+            # Update x
+            #-----------------------------#
+            self.lib_print("(old) ekf_x = \n%s" % str(ekf_x))
+            ekf_x += ekf_K @ (ekf_z - ekf_hx)
+            ekf_Sigma -= (ekf_K @ ekf_Hx) @ ekf_Sigma_bar
+            self.lib_print("(new) ekf_x = \n%s" % str(ekf_x))
+            #-----------------------------#
+
+
+            self.lib_print("---")
+
+        #--------------------------------------#
+
+        self.lib_print()
+        # Reconstruct (R, t)
+        #--------------------------------------------------------#
+        np_R_est, np_t_est, t3_est = self.co_reconstruct_R_t_m1(ekf_x)
+
+        # test, pre-transfer
+        #---------------------------#
+        self.np_R_c_a_est = copy.deepcopy(np_R_est)
+        self.np_t_c_a_est = copy.deepcopy(np_t_est)
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = copy.deepcopy(np_R_c_h_est)
+            np_t_est = copy.deepcopy(np_t_c_h)
+            t3_est = np_t_est[2,0]
+        #---------------------------#
+
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
+        roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------------------------------#
+
+        # # Get the whole residual
+        # #-----------------------------#
+        # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        res_norm = 0.0
+        # #-----------------------------#
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _duration = time.time() - _stamp_s
+        self.lib_print("\n*** _duration = %f ms ***\n" % (_duration*1000.0))
+        #-------------------------------------#
+
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
     #-----------------------------------------------------------#
 
     # Components of the solution
@@ -1724,6 +1866,56 @@ class PNP_SOLVER_A2_M3(object):
         #---------------------------------#
         # end Test
         return (np_R_est, np_t_est, t3_est)
+    #-------------------------------------------#
+
+    # Constrained optimization: Lagrange multiplier + Newton-Raphson method
+    #-------------------------------------------#
+    def EKF_get_hx_H(self, ekf_x, B_x, B_y, P):
+        '''
+        '''
+        n_point = P.shape[0]
+        #
+        phi_1 = ekf_x[0:3,:]
+        phi_2 = ekf_x[3:6,:]
+        phi_3 = ekf_x[6:9,:]
+        delta_1 = ekf_x[9,0]
+        delta_2 = ekf_x[10,0]
+        #
+        zeros_nx3 = np.zeros((n_point,3))
+        zeros_nx1 = np.zeros((n_point,1))
+        ones_nx1 = np.ones((n_point,1))
+        H1 = np.hstack([P, zeros_nx3, (-B_x*P), ones_nx1, zeros_nx1])
+        H2 = np.hstack([zeros_nx3, P, (-B_y*P), zeros_nx1, ones_nx1])
+        # hx
+        hx = np.zeros((2*n_point+5, 1))
+        hx[:n_point,:] = H1 @ ekf_x # P @ phi_1 - (B_x*P) + delta_1
+        hx[n_point:(2*n_point),:] = H2 @ ekf_x # P @ phi_2 - (B_y*P) + delta_2
+        hx[(2*n_point),0] = phi_1.T @ phi_3
+        hx[(2*n_point+1),0] = phi_2.T @ phi_3
+        hx[(2*n_point+2),0] = phi_1.T @ phi_2
+        hx[(2*n_point+3),0] = phi_1.T @ phi_1 - phi_3.T @ phi_3
+        hx[(2*n_point+4),0] = phi_2.T @ phi_2 - phi_3.T @ phi_3
+        # Hx
+        Hx = np.zeros( (2*n_point+5, 11))
+        Hx[:n_point, :] = H1
+        Hx[n_point:(2*n_point), :] = H2
+        # Hg, 1
+        Hx[(2*n_point),0:3] = phi_3.T
+        Hx[(2*n_point),6:9] = phi_1.T
+        # Hg, 2
+        Hx[(2*n_point+1),3:6] = phi_3.T
+        Hx[(2*n_point+1),6:9] = phi_2.T
+        # Hg, 3
+        Hx[(2*n_point+2),0:3] = phi_2.T
+        Hx[(2*n_point+2),3:6] = phi_1.T
+        # Hg, 4
+        Hx[(2*n_point+3),0:3] = phi_1.T
+        Hx[(2*n_point+3),6:9] = -phi_3.T
+        # Hg, 5
+        Hx[(2*n_point+4),3:6] = phi_2.T
+        Hx[(2*n_point+4),6:9] = -phi_3.T
+        #
+        return (hx, Hx)
     #-------------------------------------------#
 
 
