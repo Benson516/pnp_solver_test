@@ -11,12 +11,7 @@ import PNP_SOLVER_LIB as PNPS
 #---------------------------#
 # Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'test_Alexander.txt'
-# data_file_str = 'test_Alexey.txt'
-# data_file_str = "test_Holly.txt"
-# data_file_str = "test_Pantea.txt"
-#
-# data_file_str = "train_head03.txt"
+data_file_str = 'random.txt'
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -33,34 +28,16 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
-# Data
-is_limiting_line_count = True
-# is_limiting_line_count = False
-# DATA_START_ID = 0
-# DATA_START_ID = 658
-DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pose estimation by current method (m1)
-# DATA_START_ID = 926 # (0, -20, 0)
-# DATA_START_ID = 1070 # (0, 40, 0)
-# DATA_START_ID = 922
-# DATA_START_ID = 969
-# DATA_START_ID = 235
-# DATA_START_ID = 146 # 1203 # 1205 # 1124 # 616 # 487 # 379 # 934 # 893 # 540 # 512 # 775 # (0, 0, 0), d=220~20
+is_stress_test = True
+# is_stress_test = False
+
+# Data generation
+is_random = True
+# is_random = False
+
 #
-# specific_drpy = dict()
-# specific_drpy["distance"] = '140'
-# specific_drpy["roll"] = "-45"
-# specific_drpy["pitch"] = "-30"
-# specific_drpy["yaw"] = "40"
-# specific_drpy = {"distance":"40", "roll":"-25", "pitch":"0", "yaw":"0"}
-# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"0"}
-# specific_drpy = {"distance":"100", "roll":"-45", "pitch":"-15", "yaw":"0"} # The "flipping" case
-# specific_drpy = {"distance":"120", "roll":"45", "pitch":"-15", "yaw":"40"} # The "flipping" case
-specific_drpy = None
-#
-DATA_COUNT = 3
-# DATA_COUNT = 1000
+# DATA_COUNT = 3
+DATA_COUNT = 1000
 # DATA_COUNT = 10000 # 1000
 #
 verbose = True
@@ -81,199 +58,36 @@ is_statistic_csv_horizontal = True # class --> (right)
 #---------------------------#
 
 # Not to flush the screen
-if is_run_through_all_data:
-    DATA_START_ID = 0
-    is_limiting_line_count = False
-    verbose = False
+if is_stress_test:
+    is_random = True
     is_showing_image = False
-    specific_drpy = None
-elif specific_drpy is not None:
-    DATA_START_ID = 0
-    is_limiting_line_count = False
-    # verbose = False # Inherent the above setting
-    # is_showing_image = False # Inherent the above setting
-
-# No image, son't try to open the image
-# The set is too big, son't bother to do so
-if data_file_str == "train_head03.txt":
-    is_showing_image = False
-    is_storing_fail_case_image = False
-    #
-    verbose = False
-
 #
 
 # Parameters of the data
 #---------------------------#
-is_mirrored_image = True
+# is_mirrored_image = True
+is_mirrored_image = False
 pattern_scale = 1.0 # 0.85 # Multiply onto the golden pattern
 #---------------------------#
 
 
-# Loading Data
-#----------------------------------------------------------#
-data_path_str = data_dir_str + data_file_str
-#
-data_idx_list = list()
-data_str_list_list = list()
-data_name_split_list_list = list()
-with open(data_path_str, 'r') as _f:
-    # Read and print the entire file line by line
-    _line = _f.readline()
-    _idx = 0
-    while (_line != '') and ((not is_limiting_line_count) or (_idx < (DATA_START_ID+DATA_COUNT) ) ):  # The EOF char is an empty string
-        if _idx >= DATA_START_ID:
-            data_idx_list.append(_idx)
-            # print(_line, end='')
-            _line_split_list = _line.split()
-            # print(_line_split_list)
-            data_str_list_list.append(_line_split_list)
-            #
-            data_name_split_list = _line_split_list[0].split('_')
-            # print("data_name_split_list = %s" % str(data_name_split_list))
-            data_name_split_list_list.append( data_name_split_list )
-        # Update
-        _line = _f.readline()
-        _idx += 1
-#
-print("-"*70)
-print("data count = %d" % len(data_idx_list))
-print("-"*70)
-print(data_idx_list[0])
-print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
-print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
-#
-# time.sleep(10.0)
-#----------------------------------------------------------#
 
-
-# Ground truth classification
-#-------------------------------#
-# is_classified_by_label = True
-is_classified_by_label = False
-
-# class label and bins
-# Depth
-class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
-class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
-class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
-print("class_depth_label = %s" % class_depth_label)
-print("class_depth_bins = %s" % class_depth_bins)
-# Roll
-class_roll_nominal_value = np.array([-45, -25, 0, 25, 45]) # Note: the length of label should be one element longer than the bin
-class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
-class_roll_bins = [-35, -15, 15, 35] # Only the middle bound values
-print("class_roll_label = %s" % class_roll_label)
-print("class_roll_bins = %s" % class_roll_bins)
-# Pitch
-class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
-class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
-class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
-print("class_pitch_label = %s" % class_pitch_label)
-print("class_pitch_bins = %s" % class_pitch_bins)
-# Yaw
-class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
-class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
-class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
-print("class_yaw_label = %s" % class_yaw_label)
-print("class_yaw_bins = %s" % class_yaw_bins)
-#-------------------------------#
-
-# Convert the original data to structured data_list
-#-------------------------------------------------------#
-data_list = list()
-for _idx in range(len(data_str_list_list)):
-    data_id_dict = dict()
-    # File info
-    data_id_dict['idx'] = data_idx_list[_idx]
-    data_id_dict['file_name'] = data_str_list_list[_idx][0]
-    # "Label" of classes, type: string
-    data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
-    # Grund truth
-    data_id_dict['distance'] = float(data_str_list_list[_idx][1])
-    data_id_dict['pitch'] = float(data_str_list_list[_idx][2])
-    data_id_dict['roll'] = float(data_str_list_list[_idx][3])
-    data_id_dict['yaw'] = float(data_str_list_list[_idx][4])
-    # Test inputs
-    data_id_dict['box_xy'] = np.array(data_name_split_list_list[_idx][9:11]).astype(np.float) # np array, shape=(2,)
-    data_id_dict['box_h'] = float(data_name_split_list_list[_idx][11]) # np array, shape=(2,)
-    data_id_dict['LM_local_norm'] = (np.array([data_str_list_list[_idx][5::2], data_str_list_list[_idx][6::2]]).T).astype(np.float) # np array, shape=(2,)
-    #
-    data_id_dict['LM_pixel'] = data_id_dict['LM_local_norm'] * data_id_dict['box_h'] + data_id_dict['box_xy'].reshape((1,2))
-
-    # Classify ground truth data! (drpy class)
-    #----------------------------------------------#
-    _class_dict = dict()
-    if is_classified_by_label:
-        _class_dict['distance'] = data_str_list_list[_idx][1]
-        _class_dict['pitch'] = data_str_list_list[_idx][2]
-        _class_dict['roll'] = data_str_list_list[_idx][3]
-        _class_dict['yaw'] = data_str_list_list[_idx][4]
-    else:
-        _class_dict['distance'] = class_depth_label[ np.digitize( data_id_dict['distance'], class_depth_bins) ]
-        _class_dict['pitch'] = class_pitch_label[ np.digitize( data_id_dict['pitch'], class_pitch_bins) ]
-        _class_dict['roll'] = class_roll_label[ np.digitize( data_id_dict['roll'], class_roll_bins) ]
-        _class_dict['yaw'] = class_yaw_label[ np.digitize( data_id_dict['yaw'], class_yaw_bins) ]
-    data_id_dict['class'] = _class_dict
-    #----------------------------------------------#
-
-    # Get only the specified data
-    #----------------------------------#
-    if (specific_drpy is not None) and (specific_drpy != _class_dict):
-        continue
-    #----------------------------------#
-
-    # Sppend to the total data list
-    data_list.append(data_id_dict)
-#
-# print(data_list[0])
-#-------------------------------------------------------#
-
-def solving_center_point(p1,p2,p3,p4):
-    '''
-    p1   p2
-       \/
-       pc
-       /\
-    p4   p3
-    '''
-    # Transform to 2D arrays
-    _n = np.array(p1).size
-    _p1_shape = np.array(p1).shape
-    _p1 = np.array(p1).reshape( (_n,1) )
-    _p2 = np.array(p2).reshape( (_n,1) )
-    _p3 = np.array(p3).reshape( (_n,1) )
-    _p4 = np.array(p4).reshape( (_n,1) )
-    #
-    _d13 = _p3 - _p1
-    _d24 = _p4 - _p2
-    _A = np.hstack([_d13, _d24])
-    _b = _p2 - _p1
-    _uv = np.linalg.pinv(_A) @ _b
-    _pc = _p1 + _uv[0,0] * _d13
-    # reshape
-    pc = _pc.reshape( _p1_shape )
-    if type(p1) == type(list()):
-        pc = list(pc)
-    return pc
-
-# ============= Start testing ================
+# ============= Random data ================
 #-------------------------------------------------------#
 # Parameters and data
 # Camera intrinsic matrix (Ground truth)
-# f_camera = 188.55 # 175.0
-f_camera = 225.68717584155982 # / 1.15
-# f_camera = 225.68717584155982  / 1.2
+#----------------------------------------#
+f_camera = 225.68717584155982
 #
 fx_camera = f_camera
 # fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
 fy_camera = f_camera
 xo_camera = 320/2.0
 yo_camera = 240/2.0
-# np_K_camera_GT = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Grund truth
-np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
-# print("np_K_camera_GT = \n%s" % str(np_K_camera_GT))
-print("np_K_camera_est = \n%s" % str(np_K_camera_est))
+np_K_camera_GT = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Ground truth
+print("np_K_camera_GT = \n%s" % str(np_K_camera_GT))
+#----------------------------------------#
+
 
 # 3D landmark point - local coordinate
 #----------------------------------------#
@@ -352,9 +166,175 @@ pattern_scale_list.append(pattern_scale)
 # # print(np_point_3d_dict)
 #----------------------------------------#
 
+# Create the PnP class for generating the LMs by projecting the golden patterns
+#----------------------------------------#
+pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
+
+
+
+
+
+# ============= Loading Data ================
+#----------------------------------------------------------#
+
+# Ground truth classification
+#-------------------------------#
+
+# class label and bins
+# Depth
+class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
+class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
+class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
+print("class_depth_label = %s" % class_depth_label)
+print("class_depth_bins = %s" % class_depth_bins)
+# Roll
+class_roll_nominal_value = np.array([-45, -25, 0, 25, 45]) # Note: the length of label should be one element longer than the bin
+class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
+class_roll_bins = [-35, -15, 15, 35] # Only the middle bound values
+print("class_roll_label = %s" % class_roll_label)
+print("class_roll_bins = %s" % class_roll_bins)
+# Pitch
+class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
+class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
+class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
+print("class_pitch_label = %s" % class_pitch_label)
+print("class_pitch_bins = %s" % class_pitch_bins)
+# Yaw
+class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
+class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
+class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
+print("class_yaw_label = %s" % class_yaw_label)
+print("class_yaw_bins = %s" % class_yaw_bins)
+#-------------------------------#
+
+# Convert the original data to structured data_list
+#-------------------------------------------------------#
+random_gen = np.random.default_rng()
+data_list = list()
+for _idx in range( DATA_COUNT ):
+    data_id_dict = dict()
+    # File info
+    data_id_dict['idx'] = _idx # data_idx_list[_idx]
+    data_id_dict['file_name'] = None # Move to below. Put this here just for keeping the order of key.
+    # "Label" of classes, type: string
+    data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
+
+    # Grund truth
+    if is_random:
+        _angle_range = 45.0 # deg
+        _roll = random_gen.uniform( (-_angle_range), _angle_range, None)
+        _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
+        _yaw = random_gen.uniform( (-_angle_range), _angle_range, None)
+        #
+        _depth = random_gen.uniform(20, 220, None)/100.0 # m
+        _FOV_max = 1.0 # 45.0 # deg.
+        _FOV_x = random_gen.uniform((-_FOV_max), _FOV_max, None)
+        _FOV_y = random_gen.uniform((-_FOV_max), _FOV_max, None)
+        _np_t_GT = np.zeros((3,1))
+        _np_t_GT[0,0] = _depth * np.tan( np.deg2rad(_FOV_x) )
+        _np_t_GT[1,0] = _depth * np.tan( np.deg2rad(_FOV_y) )
+        _np_t_GT[2,0] = _depth
+    else:
+        _roll = 15.0 # deg.
+        _pitch = -15.0 # deg.
+        _yaw = 45.0 # deg.
+        #
+        _np_t_GT = np.zeros((3,1))
+        _np_t_GT[0,0] = 0.34 # m
+        _np_t_GT[1,0] = 0.34 # m
+        _np_t_GT[2,0] = 0.5 # m
+        # _np_t_GT[0,0] = 0.0 # m
+        # _np_t_GT[1,0] = 0.0 # m
+        # _np_t_GT[2,0] = 1.2 # m
+    #
+    np_R_GT = pnp_solver_GT.get_rotation_matrix_from_Euler(_roll, _yaw, _pitch, is_degree=True)
+    np_t_GT = _np_t_GT
+    #
+    data_id_dict['distance'] = _np_t_GT[2,0] * 100.0 # cm
+    data_id_dict['roll'] = _roll
+    data_id_dict['pitch'] = _pitch
+    data_id_dict['yaw'] = _yaw
+    #
+    data_id_dict['np_R_GT'] = np_R_GT
+    data_id_dict['np_t_GT'] = np_t_GT
+    # Test inputs
+    is_quantized = True
+    # is_quantized = False
+    data_id_dict['LM_pixel_dict'] = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, is_pretrans_points=False, is_returning_homogeneous_vec=True) # Homogeneous coordinate
+
+    # Classify ground truth data! (drpy class)
+    #----------------------------------------------#
+    _class_dict = dict()
+    _class_dict['distance'] = class_depth_label[ np.digitize( data_id_dict['distance'], class_depth_bins) ]
+    _class_dict['roll'] = class_roll_label[ np.digitize( data_id_dict['roll'], class_roll_bins) ]
+    _class_dict['pitch'] = class_pitch_label[ np.digitize( data_id_dict['pitch'], class_pitch_bins) ]
+    _class_dict['yaw'] = class_yaw_label[ np.digitize( data_id_dict['yaw'], class_yaw_bins) ]
+    #
+    data_id_dict['class'] = _class_dict
+    data_id_dict['file_name'] = "random_drpy_%s_%s_%s_%s" % (_class_dict['distance'], _class_dict['roll'], _class_dict['pitch'], _class_dict['yaw'])
+    #----------------------------------------------#
+
+    # # Get only the specified data
+    # #----------------------------------#
+    # if (specific_drpy is not None) and (specific_drpy != _class_dict):
+    #     continue
+    # #----------------------------------#
+
+    # Sppend to the total data list
+    data_list.append(data_id_dict)
+#
+# print(data_list[0])
+#-------------------------------------------------------#
+
+def solving_center_point(p1,p2,p3,p4):
+    '''
+    p1   p2
+       \/
+       pc
+       /\
+    p4   p3
+    '''
+    # Transform to 2D arrays
+    _n = np.array(p1).size
+    _p1_shape = np.array(p1).shape
+    _p1 = np.array(p1).reshape( (_n,1) )
+    _p2 = np.array(p2).reshape( (_n,1) )
+    _p3 = np.array(p3).reshape( (_n,1) )
+    _p4 = np.array(p4).reshape( (_n,1) )
+    #
+    _d13 = _p3 - _p1
+    _d24 = _p4 - _p2
+    _A = np.hstack([_d13, _d24])
+    _b = _p2 - _p1
+    _uv = np.linalg.pinv(_A) @ _b
+    _pc = _p1 + _uv[0,0] * _d13
+    # reshape
+    pc = _pc.reshape( _p1_shape )
+    if type(p1) == type(list()):
+        pc = list(pc)
+    return pc
+
+# ============= Start testing ================
+#-------------------------------------------------------#
+# Parameters and data
+# Camera intrinsic matrix (Estimated)
+#----------------------------------------#
+f_camera = 225.68717584155982
+#
+fx_camera = f_camera
+# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
+fy_camera = f_camera
+xo_camera = 320/2.0
+yo_camera = 240/2.0
+np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
+print("np_K_camera_est = \n%s" % str(np_K_camera_est))
+#----------------------------------------#
+
 # Create the solver
 #----------------------------------------#
 pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
+
+
 
 
 def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
@@ -394,41 +374,29 @@ failed_sample_fit_error_count = 0
 s_stamp = time.time()
 
 # Loop thrugh data
+is_continuing_to_next_sample = True
 for _idx in range(len(data_list)):
+    #
+    if not is_continuing_to_next_sample:
+        break
+
     print("\n-------------- data_idx = %d (process idx = %d)--------------\n" % (data_list[_idx]['idx'], _idx))
     print('file file_name: [%s]' % data_list[_idx]['file_name'])
 
+    # LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
+    # np_point_image_dict = dict()
+    # # [x,y,1].T, shape: (3,1)
+    # np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96])
+    # np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97])
+    # np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
+    # np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
+    # np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
+    # np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
+    # np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
 
-    LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
-    np_point_image_dict = dict()
-    # [x,y,1].T, shape: (3,1)
-    np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96])
-    np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97])
-    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
-    np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
-    np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
-    np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
-    # np_point_image_dict["brow_cl_35"] = convert_pixel_to_homo(LM_pixel_data_matrix[35])
-    # np_point_image_dict["brow_il_37"] = convert_pixel_to_homo(LM_pixel_data_matrix[37])
-    # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42])
-    # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44])
-    #
-    # np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
-    #                                                             LM_pixel_data_matrix[97],
-    #                                                             LM_pixel_data_matrix[96],
-    #                                                             LM_pixel_data_matrix[76],
-    #                                                             LM_pixel_data_matrix[82])
-    #                                                         )
-
-    # # Print
-    # print("-"*35)
-    # print("2D points on image:")
-    # for _k in np_point_image_dict:
-    #     # print("%s:%sp=%s.T | p_no_q_err=%s.T | q_e=%s.T" % (_k, " "*(12-len(_k)), str(np_point_image_dict[_k].T), str(np_point_image_no_q_err_dict[_k].T), str(np_point_quantization_error_dict[_k].T) ))
-    #     print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
-    #     # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
-    # print("-"*35)
+    # Just reference the original projection data
+    LM_pixel_dict = data_list[_idx]['LM_pixel_dict']
+    np_point_image_dict = LM_pixel_dict
 
     # Solve
     np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
@@ -608,6 +576,15 @@ for _idx in range(len(data_list)):
     #----------------------------#
 
 
+    # Break the stress test
+    #----------------------------#
+    if is_stress_test:
+        if pass_count < pass_count_treshold:
+            print("Fail, break the stress test!!")
+            is_continuing_to_next_sample = False
+    #----------------------------#
+
+
     # Store the error for statistic
     #----------------------------#
     _result_idx_dict = dict()
@@ -701,8 +678,13 @@ for _idx in range(len(data_list)):
     _img = cv2.imread(_image_ori_path_str)
     if _img is None:
         print("!! Error occured while loading the image !!\n")
-        time.sleep(3.0)
-        continue
+        # time.sleep(3.0)
+        # continue
+        _scale = 3
+        _width = 320 * _scale
+        _height = 240 * _scale
+        _intensity = 200
+        _img = np.ones( (_height, _width, 3), dtype=np.uint8) * _intensity
     _img_shape = _img.shape
     print("_img.shape = %s" % str(_img_shape))
     LM_2_image_scale = _img_shape[1] / 320.0
@@ -840,8 +822,8 @@ for _idx in range(len(data_list)):
 
 delta_time = time.time() - s_stamp
 print()
-print("Time elapsed for %d data = %f" % (len(data_list), delta_time))
-print("Average processing time for single data = %f" % (delta_time / len(data_list)) )
+print("Time elapsed for %d data = %f" % (len(result_list), delta_time))
+print("Average processing time for single data = %f" % (delta_time / len(result_list)) )
 print()
 
 print("len(failed_sample_filename_list) = %d" % len(failed_sample_filename_list))

@@ -130,8 +130,8 @@ class PNP_SOLVER_A2_M3(object):
             # # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
             # _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
-            _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
+            # _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -2302,7 +2302,7 @@ class PNP_SOLVER_A2_M3(object):
         return (uv_o, dir_x, dir_y, dir_z)
 
 
-    def perspective_projection_golden_landmarks(self, np_R, np_t, is_quantized=False, is_pretrans_points=False):
+    def perspective_projection_golden_landmarks(self, np_R, np_t, is_quantized=False, is_pretrans_points=False, is_returning_homogeneous_vec=True):
         '''
         Project the golden landmarks onto the image space using the given camera intrinsic.
         '''
@@ -2321,7 +2321,7 @@ class PNP_SOLVER_A2_M3(object):
                 _point = _np_point_3d_pretransfer_dict[_k]
             else:
                 _point = _np_point_3d_dict[_k]
-            _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized)
+            _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized, is_returning_homogeneous_vec=is_returning_homogeneous_vec)
             np_point_image_dict[_k] = _np_point_image
             np_point_quantization_error_dict[_k] = (_np_point_image - _projection_no_q)
             np_point_image_no_q_err_dict[_k] = _projection_no_q
