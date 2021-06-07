@@ -1608,17 +1608,47 @@ class PNP_SOLVER_A2_M3(object):
 
         return (W, Ux, Uy, VxpVy, PTone, PTBx, PTBy, PTBxBxByBy, BxTone, ByTone)
 
+    # def co_get_function_value_and_Jacobian(self, co_x, co_A_list, co_bT_list, co_c_list):
+    #     '''
+    #     '''
+    #     # The container for fx and Jf
+    #     fx_list = list()
+    #     Jf_list = list()
+    #
+    #     #
+    #     for _idx in range(len(co_A_list)):
+    #         fx_list.append( ( co_x.T @ co_A_list[_idx] @ co_x + co_bT_list[_idx] @ co_x + co_c_list[_idx] ) )
+    #         Jf_list.append( ( co_x.T @ (co_A_list[_idx] + co_A_list[_idx].T) + co_bT_list[_idx] ) )
+    #     #
+    #
+    #     # Generate fx and Jf
+    #     fx = np.array(fx_list).reshape((11,1)) # 11x1
+    #     Jf = np.vstack(Jf_list) # 11x11
+    #     return (fx, Jf)
+
     def co_get_function_value_and_Jacobian(self, co_x, co_A_list, co_bT_list, co_c_list):
         '''
         '''
+        phi_1 = co_x[0:3,:]
+        phi_2 = co_x[3:6,:]
+        phi_3 = co_x[6:9,:]
+        gamma_2_123 = phi_1.T @ phi_1
+        # gamma_2_123 = phi_2.T @ phi_2
+        # gamma_2_123 = phi_3.T @ phi_3
         # The container for fx and Jf
         fx_list = list()
         Jf_list = list()
 
         #
         for _idx in range(len(co_A_list)):
-            fx_list.append( ( co_x.T @ co_A_list[_idx] @ co_x + co_bT_list[_idx] @ co_x + co_c_list[_idx] ) )
-            Jf_list.append( ( co_x.T @ (co_A_list[_idx] + co_A_list[_idx].T) + co_bT_list[_idx] ) )
+            _fx = ( co_x.T @ co_A_list[_idx] @ co_x + co_bT_list[_idx] @ co_x + co_c_list[_idx] )
+            _Jf = ( co_x.T @ (co_A_list[_idx] + co_A_list[_idx].T) + co_bT_list[_idx] )
+            if _idx < 4:
+                _Jf /= gamma_2_123
+                _Jf -= np.hstack( [ (_fx / (gamma_2_123**2) * (phi_1.T)), np.zeros((1,8)) ])
+                _fx /= gamma_2_123
+            fx_list.append( _fx )
+            Jf_list.append( _Jf )
         #
 
         # Generate fx and Jf
