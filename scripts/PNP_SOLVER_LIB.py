@@ -1531,7 +1531,7 @@ class PNP_SOLVER_A2_M3(object):
         eif_zeta = eif_Omega @ eif_x
 
 
-        num_it = 3 # 100 # 14 # 3
+        num_it = 14 # 100 # 14 # 3
         #
         # Iteration
         k_it = 0
