@@ -1532,6 +1532,7 @@ class PNP_SOLVER_A2_M3(object):
 
 
         num_it = 14 # 100 # 14 # 3
+        num_it_inner = 1
         #
         # Iteration
         k_it = 0
@@ -1572,28 +1573,51 @@ class PNP_SOLVER_A2_M3(object):
             # eif_Q_pinv = np.linalg.pinv(eif_Q)
 
 
+            # # Predict
+            # #-----------------------------#
+            # # The following will be replaced by incremental updating algorithm
+            # eif_Omega_bar = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
+            # #
+            # eif_x_bar = eif_x # x is not changing in the model
+            # eif_zeta_bar = eif_Omega_bar @ eif_x_bar
+            # #
+            # # eif_Omega_bar = eif_Omega
+            # # eif_x_bar = eif_x
+            # # eif_zeta_bar = eif_zeta
+            # #-----------------------------#
+            #
+            # # Update
+            # #-----------------------------#
+            # eif_hx, eif_Hx = self.EKF_get_hx_H(eif_x_bar, B_x, B_y, co_P)
+            # _eif_HTQpinv = eif_Hx.T @ eif_Q_pinv
+            # eif_Omega = eif_Omega_bar + _eif_HTQpinv @ eif_Hx
+            # eif_zeta = eif_zeta_bar + _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x_bar) )
+            # # The following will be replaced by incremental updating algorithm
+            # eif_Omega_pinv = np.linalg.pinv(eif_Omega)
+            # #-----------------------------#
+
+
             # Predict
             #-----------------------------#
             # The following will be replaced by incremental updating algorithm
-            eif_Omega_bar = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
-            #
-            eif_x_bar = eif_x # x is not changing in the model
-            eif_zeta_bar = eif_Omega_bar @ eif_x_bar
-            #
-            # eif_Omega_bar = eif_Omega
-            # eif_x_bar = eif_x
-            # eif_zeta_bar = eif_zeta
+            eif_Omega = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
+            # eif_x = eif_G @ eif_x # x is not changing in the model
+            eif_zeta = eif_Omega @ eif_x
             #-----------------------------#
 
-            # Update
-            #-----------------------------#
-            eif_hx, eif_Hx = self.EKF_get_hx_H(eif_x_bar, B_x, B_y, co_P)
-            _eif_HTQpinv = eif_Hx.T @ eif_Q_pinv
-            eif_Omega = eif_Omega_bar + _eif_HTQpinv @ eif_Hx
-            eif_zeta = eif_zeta_bar + _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x_bar) )
-            # The following will be replaced by incremental updating algorithm
-            eif_Omega_pinv = np.linalg.pinv(eif_Omega)
-            #-----------------------------#
+            for _i in range(num_it_inner):
+                # Update
+                #-----------------------------#
+                eif_hx, eif_Hx = self.EKF_get_hx_H(eif_x, B_x, B_y, co_P)
+                _eif_HTQpinv = eif_Hx.T @ eif_Q_pinv
+                eif_Omega += _eif_HTQpinv @ eif_Hx
+                eif_zeta += _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x) )
+                # The following will be replaced by incremental updating algorithm
+                eif_Omega_pinv = np.linalg.pinv(eif_Omega)
+                # Update x
+                eif_x = eif_Omega_pinv @ eif_zeta
+                self.lib_print("(new) eif_x = \n%s" % str(eif_x))
+                #-----------------------------#
 
             # Inspections
             #-----------------------------#
