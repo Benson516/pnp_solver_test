@@ -1477,14 +1477,14 @@ class PNP_SOLVER_A2_M3(object):
         #--------------------------------#
         co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
         n_point = co_P.shape[0]
-        ekf_G = np.eye(11)
-        ekf_R_diag = np.ones((11,))
-        ekf_R_diag[:9] *= 10**-3
-        ekf_R_diag[9:] *= 10**-3
-        ekf_R = np.diag(ekf_R_diag)
+        eif_G = np.eye(11)
+        eif_R_diag = np.ones((11,))
+        eif_R_diag[:9] *= 10**-3
+        eif_R_diag[9:] *= 10**-3
+        eif_R = np.diag(eif_R_diag)
         #--------------------------------#
         self.lib_print("co_P = \n%s" % str(co_P))
-        self.lib_print("ekf_R_diag = \n%s" % str(ekf_R_diag))
+        self.lib_print("eif_R_diag = \n%s" % str(eif_R_diag))
         #
         self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
 
@@ -1501,9 +1501,9 @@ class PNP_SOLVER_A2_M3(object):
         np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
         B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
         #
-        ekf_z = np.zeros( ((2*n_point+5), 1) )
-        ekf_z[:n_point,:] = B_x
-        ekf_z[n_point:(2*n_point),:] = B_y
+        eif_z = np.zeros( ((2*n_point+5), 1) )
+        eif_z[:n_point,:] = B_x
+        eif_z[n_point:(2*n_point),:] = B_y
         #--------------------------------#
 
         # B
@@ -1512,22 +1512,26 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("B_x.shape = %s" % str(B_x.shape))
         self.lib_print("B_y.shape = %s" % str(B_y.shape))
         #
-        self.lib_print("ekf_z = \n%s" % str(ekf_z))
+        self.lib_print("eif_z = \n%s" % str(eif_z))
 
 
         # Solve by iteration (EKF)
         #--------------------------------------#
         # Initial guess
-        ekf_x = np.zeros((11,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
+        eif_x = np.zeros((11,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
         # Set the initial scaled rotation matrix (Gamma) to be an identidy matrix
-        ekf_x[(3*0)+0, 0] = 1.0
-        ekf_x[(3*1)+1, 0] = 1.0
-        ekf_x[(3*2)+2, 0] = 1.0
+        eif_x[(3*0)+0, 0] = 1.0
+        eif_x[(3*1)+1, 0] = 1.0
+        eif_x[(3*2)+2, 0] = 1.0
         #
-        ekf_Sigma = np.eye(11) * 10**5
+        # eif_Omega = np.zeros((11,11)) # No information, all zeros
+        eif_Omega = np.eye(11) * 10**-5 # No information, close to zeros
+        eif_Omega_pinv = np.linalg.pinv(eif_Omega) # <-- Later will be replaced by incremental updating algorithm
+        #
+        eif_zeta = eif_Omega @ eif_x
 
 
-        num_it = 14 # 100 # 14 # 3
+        num_it = 14 # 3
         #
         # Iteration
         k_it = 0
@@ -1537,9 +1541,9 @@ class PNP_SOLVER_A2_M3(object):
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
 
-            phi_1 = ekf_x[0:3]
-            phi_2 = ekf_x[3:6]
-            phi_3 = ekf_x[6:9]
+            phi_1 = eif_x[0:3]
+            phi_2 = eif_x[3:6]
+            phi_3 = eif_x[6:9]
             phi_1_norm = np.linalg.norm(phi_1)
             phi_2_norm = np.linalg.norm(phi_2)
             phi_3_norm = np.linalg.norm(phi_3)
@@ -1549,76 +1553,65 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("phi_3_norm = %f" % phi_3_norm)
             self.lib_print("gamma_est = %f" % gamma_est)
 
-            # Calculate K
-            #-----------------------------#
-            # ekf_Q = np.eye((2*n_point+5))
-            # ekf_Q[-5:, -5:] *= 225.68 # f_camera # 2.3*10**2
-            # ekf_Q /= 225.68
-            ekf_Q_diag = np.ones(((2*n_point+5),))
+
+            eif_Q_diag = np.ones(((2*n_point+5),))
             f_camera = 225.68
-            ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
+            eif_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
             #
-            ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
-            # ekf_Q_diag[(2*n_point):] = 10*5
-            # ekf_Q_diag[(2*n_point):] = 10*-12
-            # ekf_Q_diag[(2*n_point):] = gamma_est
-            # ekf_Q_diag[(2*n_point):] = gamma_est**4
+            eif_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
+            # eif_Q_diag[(2*n_point):] = 10*5
+            # eif_Q_diag[(2*n_point):] = 10*-12
+            # eif_Q_diag[(2*n_point):] = gamma_est
+            # eif_Q_diag[(2*n_point):] = gamma_est**4
             #
-            # ekf_Q_diag[(2*n_point+3):] = 1.0
-            # ekf_Q_diag[(2*n_point+3):] = 10**5
-            ekf_Q_diag[(2*n_point+3):] = gamma_est**4
-            ekf_Q = np.diag(ekf_Q_diag)
+            # eif_Q_diag[(2*n_point+3):] = 1.0
+            # eif_Q_diag[(2*n_point+3):] = 10**5
+            eif_Q_diag[(2*n_point+3):] = gamma_est**4
+            eif_Q = np.diag(eif_Q_diag)
             #
-            ekf_x_bar = ekf_x
-            ekf_Sigma_bar = ekf_G @ ekf_Sigma @ ekf_G.T + ekf_R
+            eif_Q_pinv = np.linalg.pinv(eif_Q)
+
+
+            # Predict
+            #-----------------------------#
+            # The following will be replaced by incremental updating algorithm
+            eif_Omega_bar = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
             #
-            ekf_hx, ekf_Hx = self.EKF_get_hx_H(ekf_x, B_x, B_y, co_P)
+            eif_x_bar = eif_x # x is not changing in the model
+            eif_zeta_bar = eif_Omega_bar @ eif_x_bar
+            #-----------------------------#
+
+            # Update
+            #-----------------------------#
+            eif_hx, eif_Hx = self.EKF_get_hx_H(eif_x_bar, B_x, B_y, co_P)
+            _eif_HTQpinv = eif_Hx.T @ eif_Q_pinv
+            eif_Omega = eif_Omega_bar + _eif_HTQpinv @ eif_Hx
+            eif_zeta = eif_zeta_bar + _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x_bar) )
+            # The following will be replaced by incremental updating algorithm
+            eif_Omega_pinv = np.linalg.pinv(eif_Omega)
+            #-----------------------------#
+
+            # Inspections
+            #-----------------------------#
             #
-            ekf_S = ( ekf_Hx @ ekf_Sigma_bar @ (ekf_Hx.T) + ekf_Q )
-            ekf_S_u, ekf_S_s, ekf_S_vh = np.linalg.svd(ekf_S)
-            ekf_S_pinv = np.linalg.pinv(ekf_S)
-            ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
-            delta_z = (ekf_z - ekf_hx)
+            eif_Omega_u, eif_Omega_s, eif_Omega_vh = np.linalg.svd(eif_Omega)
+            delta_z = (eif_z - eif_hx)
             delta_z_norm = np.linalg.norm(delta_z)
             #
-            self.lib_print("diag(ekf_Q) = \n%s" % str(np.diag(ekf_Q)))
-            # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
-            # self.lib_print("ekf_S = \n%s" % str(ekf_S))
-            self.lib_print("ekf_S_s = \n%s" % str(ekf_S_s))
-            # self.lib_print("ekf_S_pinv = \n%s" % str(ekf_S_pinv))
-            # self.lib_print("ekf_K = \n%s" % str(ekf_K))
-            self.lib_print("ekf_z = \n%s" % str(ekf_z))
-            self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
-            self.lib_print("delta_z = (ekf_z-ekf_hx) = \n%s" % str(delta_z))
+            self.lib_print("diag(eif_Q) = \n%s" % str(np.diag(eif_Q)))
+            self.lib_print("eif_Omega_s = \n%s" % str(eif_Omega_s))
+            self.lib_print("eif_z = \n%s" % str(eif_z))
+            self.lib_print("eif_hx = \n%s" % str(eif_hx))
+            self.lib_print("delta_z = (eif_z-eif_hx) = \n%s" % str(delta_z))
             self.lib_print("delta_z_norm = %f" % delta_z_norm)
             #-----------------------------#
 
-            # # Experiment with optimal iteration number
-            # #-----------------------------#
-            # # Update delta_z_norm_old
-            # delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
-            # delta_z_norm_old = delta_z_norm
-            # self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
-            # # Test the slow changing
-            # if (abs(delta_z_ratio) < (5*10**-2)):
-            #     # 10^-1     -> 5~8
-            #     # 5 * 10^-2 -> 9~12
-            #     # 2 * 10^-2 -> 17~21
-            #     # 10^-2     -> 25~30
-            #     break
-            # # # Test if the delta_z_norm will increase --> No
-            # # if (delta_z_ratio >= 0.0) and (k_it > 3):
-            # #     break
-            # #-----------------------------#
 
             # Update x
             #-----------------------------#
-            self.lib_print("(old) ekf_x = \n%s" % str(ekf_x))
-            # self.lib_print("ekf_x_bar = \n%s" % str(ekf_x_bar))
-            # ekf_x = ekf_x_bar + ekf_K @ (ekf_z - ekf_hx)
-            ekf_x = ekf_x_bar + ekf_K @ delta_z
-            ekf_Sigma -= (ekf_K @ ekf_Hx) @ ekf_Sigma_bar
-            self.lib_print("(new) ekf_x = \n%s" % str(ekf_x))
+            self.lib_print("(old) eif_x = \n%s" % str(eif_x))
+            eif_x = eif_Omega_pinv @ eif_zeta
+            self.lib_print("(new) eif_x = \n%s" % str(eif_x))
             #-----------------------------#
 
 
@@ -1631,7 +1624,7 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print()
         # Reconstruct (R, t)
         #--------------------------------------------------------#
-        np_R_est, np_t_est, t3_est = self.co_reconstruct_R_t_m1(ekf_x)
+        np_R_est, np_t_est, t3_est = self.co_reconstruct_R_t_m1(eif_x)
 
         # test, pre-transfer
         #---------------------------#
