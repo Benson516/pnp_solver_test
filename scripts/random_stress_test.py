@@ -28,12 +28,15 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_stress_test = True
-is_stress_test = False
+is_stress_test = True
+# is_stress_test = False
 
 # Data generation
 # is_random = True
 is_random = False
+#
+# is_quantized = True
+is_quantized = False
 
 #
 # DATA_COUNT = 3
@@ -260,8 +263,6 @@ for _idx in range( DATA_COUNT ):
     data_id_dict['np_R_GT'] = np_R_GT
     data_id_dict['np_t_GT'] = np_t_GT
     # Test inputs
-    is_quantized = True
-    # is_quantized = False
     data_id_dict['LM_pixel_dict'] = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, is_pretrans_points=False, is_returning_homogeneous_vec=True) # Homogeneous coordinate
 
     # Classify ground truth data! (drpy class)
