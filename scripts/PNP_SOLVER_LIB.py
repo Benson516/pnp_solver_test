@@ -1531,7 +1531,7 @@ class PNP_SOLVER_A2_M3(object):
         eif_zeta = eif_Omega @ eif_x
 
 
-        num_it = 14 # 100 # 14 # 3
+        num_it = 3 # 100 # 14 # 3
         #
         # Iteration
         k_it = 0
@@ -1606,6 +1606,23 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("delta_z_norm = %f" % delta_z_norm)
             #-----------------------------#
 
+            # # Experiment with optimal iteration number
+            # #-----------------------------#
+            # # Update delta_z_norm_old
+            # delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
+            # delta_z_norm_old = delta_z_norm
+            # self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
+            # # Test the slow changing
+            # if (abs(delta_z_ratio) < (5*10**-2)):
+            #     # 10^-1     -> 5~8
+            #     # 5 * 10^-2 -> 9~12
+            #     # 2 * 10^-2 -> 17~21
+            #     # 10^-2     -> 25~30
+            #     break
+            # # # Test if the delta_z_norm will increase --> No
+            # # if (delta_z_ratio >= 0.0) and (k_it > 3):
+            # #     break
+            # #-----------------------------#
 
             # Update x
             #-----------------------------#
