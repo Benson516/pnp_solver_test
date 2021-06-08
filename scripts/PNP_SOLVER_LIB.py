@@ -132,7 +132,8 @@ class PNP_SOLVER_A2_M3(object):
             # _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
             # _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -1265,6 +1266,208 @@ class PNP_SOLVER_A2_M3(object):
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
     def solve_pnp_EKF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+        '''
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        '''
+        # Form the problem for solving
+        # Constant, only changed when golden pattern changed
+        #--------------------------------#
+        co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
+        n_point = co_P.shape[0]
+        ekf_G = np.eye(11)
+        ekf_R_diag = np.ones((11,))
+        ekf_R_diag[:9] *= 10**-3
+        ekf_R_diag[9:] *= 10**-3
+        ekf_R = np.diag(ekf_R_diag)
+        #--------------------------------#
+        self.lib_print("co_P = \n%s" % str(co_P))
+        self.lib_print("ekf_R_diag = \n%s" % str(ekf_R_diag))
+        #
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
+
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _stamp_s = time.time()
+        #-------------------------------------#
+
+
+        # Change with sample, constant in iteration
+        #--------------------------------#
+        np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
+        B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
+        #
+        ekf_z = np.zeros( ((2*n_point+5), 1) )
+        ekf_z[:n_point,:] = B_x
+        ekf_z[n_point:(2*n_point),:] = B_y
+        #--------------------------------#
+
+        # B
+        self.lib_print("B_x = \n%s" % str(B_x))
+        self.lib_print("B_y = \n%s" % str(B_y))
+        self.lib_print("B_x.shape = %s" % str(B_x.shape))
+        self.lib_print("B_y.shape = %s" % str(B_y.shape))
+        #
+        self.lib_print("ekf_z = \n%s" % str(ekf_z))
+
+
+        # Solve by iteration (EKF)
+        #--------------------------------------#
+        # Initial guess
+        ekf_x = np.zeros((11,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
+        # Set the initial scaled rotation matrix (Gamma) to be an identidy matrix
+        ekf_x[(3*0)+0, 0] = 1.0
+        ekf_x[(3*1)+1, 0] = 1.0
+        ekf_x[(3*2)+2, 0] = 1.0
+        #
+        ekf_Sigma = np.eye(11) * 10**5
+
+
+        num_it = 14 # 100 # 14 # 3
+        #
+        # Iteration
+        k_it = 0
+        self.lib_print("---")
+        delta_z_norm_old = 10**-7
+        while k_it < num_it:
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            phi_1 = ekf_x[0:3]
+            phi_2 = ekf_x[3:6]
+            phi_3 = ekf_x[6:9]
+            phi_1_norm = np.linalg.norm(phi_1)
+            phi_2_norm = np.linalg.norm(phi_2)
+            phi_3_norm = np.linalg.norm(phi_3)
+            gamma_est = (phi_1_norm + phi_2_norm + phi_3_norm)/3.0
+            self.lib_print("phi_1_norm = %f" % phi_1_norm)
+            self.lib_print("phi_2_norm = %f" % phi_2_norm)
+            self.lib_print("phi_3_norm = %f" % phi_3_norm)
+            self.lib_print("gamma_est = %f" % gamma_est)
+
+            # Calculate K
+            #-----------------------------#
+            # ekf_Q = np.eye((2*n_point+5))
+            # ekf_Q[-5:, -5:] *= 225.68 # f_camera # 2.3*10**2
+            # ekf_Q /= 225.68
+            ekf_Q_diag = np.ones(((2*n_point+5),))
+            f_camera = 225.68
+            ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
+            #
+            ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
+            # ekf_Q_diag[(2*n_point):] = 10*5
+            # ekf_Q_diag[(2*n_point):] = 10*-12
+            # ekf_Q_diag[(2*n_point):] = gamma_est
+            # ekf_Q_diag[(2*n_point):] = gamma_est**4
+            #
+            # ekf_Q_diag[(2*n_point+3):] = 1.0
+            # ekf_Q_diag[(2*n_point+3):] = 10**5
+            ekf_Q_diag[(2*n_point+3):] = gamma_est**4
+            ekf_Q = np.diag(ekf_Q_diag)
+            #
+            ekf_x_bar = ekf_x
+            ekf_Sigma_bar = ekf_G @ ekf_Sigma @ ekf_G.T + ekf_R
+            #
+            ekf_hx, ekf_Hx = self.EKF_get_hx_H(ekf_x, B_x, B_y, co_P)
+            #
+            ekf_S = ( ekf_Hx @ ekf_Sigma_bar @ (ekf_Hx.T) + ekf_Q )
+            ekf_S_u, ekf_S_s, ekf_S_vh = np.linalg.svd(ekf_S)
+            ekf_S_pinv = np.linalg.pinv(ekf_S)
+            ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
+            delta_z = (ekf_z - ekf_hx)
+            delta_z_norm = np.linalg.norm(delta_z)
+            #
+            self.lib_print("diag(ekf_Q) = \n%s" % str(np.diag(ekf_Q)))
+            # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
+            # self.lib_print("ekf_S = \n%s" % str(ekf_S))
+            self.lib_print("ekf_S_s = \n%s" % str(ekf_S_s))
+            # self.lib_print("ekf_S_pinv = \n%s" % str(ekf_S_pinv))
+            # self.lib_print("ekf_K = \n%s" % str(ekf_K))
+            self.lib_print("ekf_z = \n%s" % str(ekf_z))
+            self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
+            self.lib_print("delta_z = (ekf_z-ekf_hx) = \n%s" % str(delta_z))
+            self.lib_print("delta_z_norm = %f" % delta_z_norm)
+            #-----------------------------#
+
+            # # Experiment with optimal iteration number
+            # #-----------------------------#
+            # # Update delta_z_norm_old
+            # delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
+            # delta_z_norm_old = delta_z_norm
+            # self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
+            # # Test the slow changing
+            # if (abs(delta_z_ratio) < (5*10**-2)):
+            #     # 10^-1     -> 5~8
+            #     # 5 * 10^-2 -> 9~12
+            #     # 2 * 10^-2 -> 17~21
+            #     # 10^-2     -> 25~30
+            #     break
+            # # # Test if the delta_z_norm will increase --> No
+            # # if (delta_z_ratio >= 0.0) and (k_it > 3):
+            # #     break
+            # #-----------------------------#
+
+            # Update x
+            #-----------------------------#
+            self.lib_print("(old) ekf_x = \n%s" % str(ekf_x))
+            # self.lib_print("ekf_x_bar = \n%s" % str(ekf_x_bar))
+            # ekf_x = ekf_x_bar + ekf_K @ (ekf_z - ekf_hx)
+            ekf_x = ekf_x_bar + ekf_K @ delta_z
+            ekf_Sigma -= (ekf_K @ ekf_Hx) @ ekf_Sigma_bar
+            self.lib_print("(new) ekf_x = \n%s" % str(ekf_x))
+            #-----------------------------#
+
+
+            self.lib_print("---")
+
+        #--------------------------------------#
+
+        self.lib_print()
+        self.lib_print("k_it = %d" % k_it)
+        self.lib_print()
+        # Reconstruct (R, t)
+        #--------------------------------------------------------#
+        np_R_est, np_t_est, t3_est = self.co_reconstruct_R_t_m1(ekf_x)
+
+        # test, pre-transfer
+        #---------------------------#
+        self.np_R_c_a_est = copy.deepcopy(np_R_est)
+        self.np_t_c_a_est = copy.deepcopy(np_t_est)
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = copy.deepcopy(np_R_c_h_est)
+            np_t_est = copy.deepcopy(np_t_c_h)
+            t3_est = np_t_est[2,0]
+        #---------------------------#
+
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
+        roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------------------------------#
+
+        # # Get the whole residual
+        # #-----------------------------#
+        # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        res_norm = 0.0
+        # #-----------------------------#
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _duration = time.time() - _stamp_s
+        self.lib_print("\n*** _duration = %f ms ***\n" % (_duration*1000.0))
+        #-------------------------------------#
+
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
+    def solve_pnp_EIF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
