@@ -1554,22 +1554,22 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("gamma_est = %f" % gamma_est)
 
 
-            eif_Q_diag = np.ones(((2*n_point+5),))
+            eif_Q_pinv_diag = np.ones(((2*n_point+5),))
             f_camera = 225.68
-            eif_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
+            eif_Q_pinv_diag[0:(2*n_point)] = f_camera # f_camera ?
             #
-            eif_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
-            # eif_Q_diag[(2*n_point):] = 10*5
-            # eif_Q_diag[(2*n_point):] = 10*-12
-            # eif_Q_diag[(2*n_point):] = gamma_est
-            # eif_Q_diag[(2*n_point):] = gamma_est**4
+            eif_Q_pinv_diag[(2*n_point):(2*n_point+3)] = 1.0
+            # eif_Q_pinv_diag[(2*n_point):] = 10*-5
+            # eif_Q_pinv_diag[(2*n_point):] = 10*12
+            # eif_Q_pinv_diag[(2*n_point):] = 1.0/gamma_est
+            # eif_Q_pinv_diag[(2*n_point):] = 1.0/gamma_est**4
             #
-            # eif_Q_diag[(2*n_point+3):] = 1.0
-            # eif_Q_diag[(2*n_point+3):] = 10**5
-            eif_Q_diag[(2*n_point+3):] = gamma_est**4
-            eif_Q = np.diag(eif_Q_diag)
+            # eif_Q_pinv_diag[(2*n_point+3):] = 1.0
+            # eif_Q_pinv_diag[(2*n_point+3):] = 10**-5
+            eif_Q_pinv_diag[(2*n_point+3):] = 1.0/ gamma_est**4
+            eif_Q_pinv = np.diag(eif_Q_pinv_diag)
             #
-            eif_Q_pinv = np.linalg.pinv(eif_Q)
+            # eif_Q_pinv = np.linalg.pinv(eif_Q)
 
 
             # Predict
@@ -1602,7 +1602,7 @@ class PNP_SOLVER_A2_M3(object):
             delta_z = (eif_z - eif_hx)
             delta_z_norm = np.linalg.norm(delta_z)
             #
-            self.lib_print("diag(eif_Q) = \n%s" % str(np.diag(eif_Q)))
+            self.lib_print("diag(eif_Q_pinv) = \n%s" % str(np.diag(eif_Q_pinv)))
             self.lib_print("eif_Omega_s = \n%s" % str(eif_Omega_s))
             self.lib_print("eif_z = \n%s" % str(eif_z))
             self.lib_print("eif_hx = \n%s" % str(eif_hx))
