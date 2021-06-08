@@ -243,11 +243,17 @@ for _idx in range( DATA_COUNT ):
         _roll = 15.0 # deg.
         _pitch = -15.0 # deg.
         _yaw = 45.0 # deg.
+        # _roll = 40.0 # deg.
+        # _pitch = -60.0 # deg.
+        # _yaw = 67.0 # deg.
         #
         _np_t_GT = np.zeros((3,1))
         _np_t_GT[0,0] = 0.35 # m
         _np_t_GT[1,0] = 0.35 # m
         _np_t_GT[2,0] = 0.5 # m
+        # _np_t_GT[0,0] = 3.5 # m
+        # _np_t_GT[1,0] = -3.5 # m
+        # _np_t_GT[2,0] = 0.1 # m
         # _np_t_GT[0,0] = 0.0 # m
         # _np_t_GT[1,0] = 0.0 # m
         # _np_t_GT[2,0] = 1.2 # m
