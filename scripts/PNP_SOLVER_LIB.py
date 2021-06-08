@@ -1329,11 +1329,37 @@ class PNP_SOLVER_A2_M3(object):
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
 
+            phi_1 = ekf_x[0:3]
+            phi_2 = ekf_x[3:6]
+            phi_3 = ekf_x[6:9]
+            phi_1_norm = np.linalg.norm(phi_1)
+            phi_2_norm = np.linalg.norm(phi_2)
+            phi_3_norm = np.linalg.norm(phi_3)
+            gamma_est = (phi_1_norm + phi_2_norm + phi_3_norm)/3.0
+            self.lib_print("phi_1_norm = %f" % phi_1_norm)
+            self.lib_print("phi_2_norm = %f" % phi_2_norm)
+            self.lib_print("phi_3_norm = %f" % phi_3_norm)
+            self.lib_print("gamma_est = %f" % gamma_est)
+
             # Calculate K
             #-----------------------------#
-            ekf_Q = np.eye((2*n_point+5))
-            ekf_Q[-5:, -5:] *= 225.68 # f_camera # 2.3*10**2
-            ekf_Q /= 225.68
+            # ekf_Q = np.eye((2*n_point+5))
+            # ekf_Q[-5:, -5:] *= 225.68 # f_camera # 2.3*10**2
+            # ekf_Q /= 225.68
+            ekf_Q_diag = np.ones(((2*n_point+5),))
+            f_camera = 225.68
+            ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
+            #
+            ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
+            # ekf_Q_diag[(2*n_point):] = 10*5
+            # ekf_Q_diag[(2*n_point):] = 10*-12
+            # ekf_Q_diag[(2*n_point):] = gamma_est
+            # ekf_Q_diag[(2*n_point):] = gamma_est**4
+            #
+            # ekf_Q_diag[(2*n_point+3):] = 1.0
+            # ekf_Q_diag[(2*n_point+3):] = 10**5
+            ekf_Q_diag[(2*n_point+3):] = gamma_est**4
+            ekf_Q = np.diag(ekf_Q_diag)
             #
             ekf_x_bar = ekf_x
             ekf_Sigma_bar = ekf_G @ ekf_Sigma @ ekf_G.T + ekf_R
@@ -1345,12 +1371,12 @@ class PNP_SOLVER_A2_M3(object):
             ekf_S_pinv = np.linalg.pinv(ekf_S)
             ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
             #
-            self.lib_print("ekf_Q = \n%s" % str(ekf_Q))
+            self.lib_print("diag(ekf_Q) = \n%s" % str(np.diag(ekf_Q)))
             # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
             # self.lib_print("ekf_S = \n%s" % str(ekf_S))
             self.lib_print("ekf_S_s = \n%s" % str(ekf_S_s))
             # self.lib_print("ekf_S_pinv = \n%s" % str(ekf_S_pinv))
-            self.lib_print("ekf_K = \n%s" % str(ekf_K))
+            # self.lib_print("ekf_K = \n%s" % str(ekf_K))
             self.lib_print("ekf_z = \n%s" % str(ekf_z))
             self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
             self.lib_print("(ekf_z-ekf_hx) = \n%s" % str(ekf_z-ekf_hx))
