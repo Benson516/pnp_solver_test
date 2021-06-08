@@ -1275,9 +1275,13 @@ class PNP_SOLVER_A2_M3(object):
         co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
         n_point = co_P.shape[0]
         ekf_G = np.eye(11)
-        ekf_R = np.eye(11) * (10**-3)
+        ekf_R_diag = np.ones((11,))
+        ekf_R_diag[:9] *= 10**-3
+        ekf_R_diag[9:] *= 10**-3
+        ekf_R = np.diag(ekf_R_diag)
         #--------------------------------#
         self.lib_print("co_P = \n%s" % str(co_P))
+        self.lib_print("ekf_R_diag = \n%s" % str(ekf_R_diag))
         #
         self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
 
@@ -1370,6 +1374,8 @@ class PNP_SOLVER_A2_M3(object):
             ekf_S_u, ekf_S_s, ekf_S_vh = np.linalg.svd(ekf_S)
             ekf_S_pinv = np.linalg.pinv(ekf_S)
             ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
+            delta_z = (ekf_z - ekf_hx)
+            delta_z_norm = np.linalg.norm(delta_z)
             #
             self.lib_print("diag(ekf_Q) = \n%s" % str(np.diag(ekf_Q)))
             # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
@@ -1379,13 +1385,16 @@ class PNP_SOLVER_A2_M3(object):
             # self.lib_print("ekf_K = \n%s" % str(ekf_K))
             self.lib_print("ekf_z = \n%s" % str(ekf_z))
             self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
-            self.lib_print("(ekf_z-ekf_hx) = \n%s" % str(ekf_z-ekf_hx))
+            self.lib_print("delta_z = (ekf_z-ekf_hx) = \n%s" % str(delta_z))
+            self.lib_print("delta_z_norm = %f" % delta_z_norm)
             #-----------------------------#
 
             # Update x
             #-----------------------------#
             self.lib_print("(old) ekf_x = \n%s" % str(ekf_x))
-            ekf_x += ekf_K @ (ekf_z - ekf_hx)
+            # self.lib_print("ekf_x_bar = \n%s" % str(ekf_x_bar))
+            # ekf_x = ekf_x_bar + ekf_K @ (ekf_z - ekf_hx)
+            ekf_x = ekf_x_bar + ekf_K @ delta_z
             ekf_Sigma -= (ekf_K @ ekf_Hx) @ ekf_Sigma_bar
             self.lib_print("(new) ekf_x = \n%s" % str(ekf_x))
             #-----------------------------#
