@@ -1579,6 +1579,10 @@ class PNP_SOLVER_A2_M3(object):
             #
             eif_x_bar = eif_x # x is not changing in the model
             eif_zeta_bar = eif_Omega_bar @ eif_x_bar
+            #
+            # eif_Omega_bar = eif_Omega
+            # eif_x_bar = eif_x
+            # eif_zeta_bar = eif_zeta
             #-----------------------------#
 
             # Update
