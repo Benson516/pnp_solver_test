@@ -132,8 +132,8 @@ class PNP_SOLVER_A2_M3(object):
             # _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
             # _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -1365,8 +1365,13 @@ class PNP_SOLVER_A2_M3(object):
             # ekf_Q_diag[(2*n_point):] = gamma_est**4
             #
             # ekf_Q_diag[(2*n_point+3):] = 1.0
+            # ekf_Q_diag[(2*n_point+3):] = 1.0 / k_it
             # ekf_Q_diag[(2*n_point+3):] = 10**5
-            ekf_Q_diag[(2*n_point+3):] = gamma_est**4
+            # ekf_Q_diag[(2*n_point+3):] = gamma_est**4
+            ekf_Q_diag[(2*n_point+3):] = gamma_est**4 / (k_it**2)
+
+            # ekf_Q_diag[(2*n_point):] = 1.0 / (k_it**2)
+            # ekf_Q_diag[(2*n_point):] /= (k_it)
             ekf_Q = np.diag(ekf_Q_diag)
             #
             ekf_x_bar = ekf_x
