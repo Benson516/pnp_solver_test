@@ -1739,8 +1739,9 @@ class PNP_SOLVER_A2_M3(object):
         #
         ekf_G = np.eye(x_size)
         ekf_R_diag = np.ones((x_size,))
-        ekf_R_diag[:9] *= 10**-3
-        ekf_R_diag[9:] *= 10**-9
+        ekf_R_diag[:9] *= 10**0
+        ekf_R_diag[9:11] *= 10**-5
+        ekf_R_diag[11] = 10**-2
         ekf_R = np.diag(ekf_R_diag)
         #--------------------------------#
         self.lib_print("co_P = \n%s" % str(co_P))
@@ -1790,7 +1791,7 @@ class PNP_SOLVER_A2_M3(object):
         ekf_Sigma = np.eye(x_size) * 10**5
 
 
-        num_it = 3 # 100 # 14 # 3
+        num_it = 14 # 100 # 14 # 3
         #
         # Iteration
         k_it = 0
@@ -1819,11 +1820,13 @@ class PNP_SOLVER_A2_M3(object):
             # ekf_Q_diag = np.zeros(((2*n_point+5),))
             ekf_Q_diag = np.ones((z_size,))
             f_camera = 225.68
-            ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2) # f_camera ?
+            # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
+            # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2) # f_camera ?
+            ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2)
             # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
-            ekf_Q_diag[(2*n_point):(2*n_point+3)] = 10**-7
+            ekf_Q_diag[(2*n_point):(2*n_point+3)] = 10**-1
             # ekf_Q_diag[(2*n_point+3):] = 1.0
-            ekf_Q_diag[(2*n_point+3):] = 10**-7
+            ekf_Q_diag[(2*n_point+3):] = 10**-2
             ekf_Q = np.diag(ekf_Q_diag)
             #
             ekf_x_bar = ekf_x
@@ -2417,8 +2420,8 @@ class PNP_SOLVER_A2_M3(object):
         # Get the "value" of G
         gamma_est = ekf2_x[-1,0]
         self.lib_print("gamma_est = %f" % gamma_est)
-        # value_G = np.linalg.norm(np_Gamma_est, ord=2)
-        value_G = gamma_est
+        # value_G = gamma_est
+        value_G = np.linalg.norm(np_Gamma_est, ord=2) * gamma_est
         self.lib_print("value_G = %f" % value_G)
         #
         t3_est = 1.0 / value_G
@@ -2491,29 +2494,29 @@ class PNP_SOLVER_A2_M3(object):
         ekf_u_1 = ekf_x[0:3,:]
         ekf_u_2 = ekf_x[3:6,:]
         ekf_u_3 = ekf_x[6:9,:]
-        ekf_t_1 = ekf_x[9,0]
-        ekf_t_2 = ekf_x[10,0]
+        delta_1 = ekf_x[9,0]
+        delta_2 = ekf_x[10,0]
         ekf_gamma = ekf_x[11,0]
+        #
+        ekf_u_all = ekf_x[:9,:]
         #
         #
         zeros_nx3 = np.zeros((n_point,3))
         zeros_nx1 = np.zeros((n_point,1))
         ones_nx1 = np.ones((n_point,1))
-        H1_bar = np.hstack([P, zeros_nx3, (-B_x*P), ones_nx1, zeros_nx1, zeros_nx1])
-        H2_bar = np.hstack([zeros_nx3, P, (-B_y*P), zeros_nx1, ones_nx1, zeros_nx1])
-        hx1_bar = H1_bar @ ekf_x
-        hx2_bar = H2_bar @ ekf_x
+        Hu1_bar = np.hstack([P, zeros_nx3, (-B_x*P)])
+        Hu2_bar = np.hstack([zeros_nx3, P, (-B_y*P)])
+        hu1_bar = Hu1_bar @ ekf_u_all
+        hu2_bar = Hu2_bar @ ekf_u_all
         #
-        H1 = ekf_gamma * H1_bar
-        H1[:, -1:] = hx1_bar
-        H2 = ekf_gamma * H2_bar
-        H2[:, -1:] = hx2_bar
+        H1 = np.hstack([(ekf_gamma*Hu1_bar), ones_nx1, zeros_nx1, hu1_bar])
+        H2 = np.hstack([(ekf_gamma*Hu2_bar), zeros_nx1, ones_nx1, hu2_bar])
         #
 
         # hx
         hx = np.zeros((z_size, 1))
-        hx[:n_point,:]              = ekf_gamma * hx1_bar
-        hx[n_point:(2*n_point),:]   = ekf_gamma * hx2_bar
+        hx[:n_point,:]              = ekf_gamma * hu1_bar + ones_nx1 * delta_1
+        hx[n_point:(2*n_point),:]   = ekf_gamma * hu2_bar + ones_nx1 * delta_2
         hx[(2*n_point),0]   = ekf_u_1.T @ ekf_u_3
         hx[(2*n_point+1),0] = ekf_u_2.T @ ekf_u_3
         hx[(2*n_point+2),0] = ekf_u_1.T @ ekf_u_2
