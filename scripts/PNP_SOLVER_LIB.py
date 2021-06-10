@@ -1740,7 +1740,7 @@ class PNP_SOLVER_A2_M3(object):
         ekf_G = np.eye(x_size)
         ekf_R_diag = np.ones((x_size,))
         ekf_R_diag[:9] *= 10**-3
-        ekf_R_diag[9:] *= 10**-3
+        ekf_R_diag[9:] *= 10**-9
         ekf_R = np.diag(ekf_R_diag)
         #--------------------------------#
         self.lib_print("co_P = \n%s" % str(co_P))
@@ -1785,11 +1785,12 @@ class PNP_SOLVER_A2_M3(object):
         ekf_x[(3*0)+0, 0] = 1.0
         ekf_x[(3*1)+1, 0] = 1.0
         ekf_x[(3*2)+2, 0] = 1.0
+        ekf_x[11, 0] = 1.0 # gamma
         #
         ekf_Sigma = np.eye(x_size) * 10**5
 
 
-        num_it = 14 # 100 # 14 # 3
+        num_it = 3 # 100 # 14 # 3
         #
         # Iteration
         k_it = 0
@@ -1817,10 +1818,12 @@ class PNP_SOLVER_A2_M3(object):
             # ekf_Q /= 225.68
             # ekf_Q_diag = np.zeros(((2*n_point+5),))
             ekf_Q_diag = np.ones((z_size,))
-            # f_camera = 225.68
-            # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
+            f_camera = 225.68
+            ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2) # f_camera ?
             # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
+            ekf_Q_diag[(2*n_point):(2*n_point+3)] = 10**-7
             # ekf_Q_diag[(2*n_point+3):] = 1.0
+            ekf_Q_diag[(2*n_point+3):] = 10**-7
             ekf_Q = np.diag(ekf_Q_diag)
             #
             ekf_x_bar = ekf_x
