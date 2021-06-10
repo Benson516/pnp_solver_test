@@ -28,8 +28,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_stress_test = True
-# is_stress_test = False
+# is_stress_test = True
+is_stress_test = False
 
 # Data generation
 # is_random = True
