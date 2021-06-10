@@ -1735,7 +1735,8 @@ class PNP_SOLVER_A2_M3(object):
         co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
         n_point = co_P.shape[0]
         x_size = 12
-        z_size = 2*n_point + 6
+        # z_size = 2*n_point + 6
+        z_size = 2*n_point + 9
         #
         ekf_G = np.eye(x_size)
         ekf_R_diag = np.ones((x_size,))
@@ -1820,20 +1821,15 @@ class PNP_SOLVER_A2_M3(object):
             ekf_Q_diag = np.ones((z_size,))
             f_camera = 225.68
             # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
-            ekf_Q_diag[0:(2*n_point)] = ((3.0)**2) / (f_camera**2) # f_camera ?
+            ekf_Q_diag[0:(2*n_point)] = ((6.0)**2) / (f_camera**2) # f_camera ?
+            ekf_Q_diag[5] = ((12.0)**2) / (f_camera**2) # Nose
             # ekf_Q_diag[0:(2*n_point)] = 1.0/(100000)
             #
-            # # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
-            # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 10**-1
-            # # ekf_Q_diag[(2*n_point+3):] = 1.0
-            # ekf_Q_diag[(2*n_point+3):] = 10**-2
-            #
-            # ekf_Q_diag[-6:-3] = 1.0
-            ekf_Q_diag[-6:-3] = np.array([10**-1, 10**-1, 10**-3])
-            # ekf_Q_diag[-3:-1] = 1.0
-            ekf_Q_diag[-3:-1] = 10**-2
-            ekf_Q_diag[-1] = 1
-            # ekf_Q_diag[-1] = 10**-1
+            ekf_Q_diag[-9:-6] = 10**-1
+            # ekf_Q_diag[-9:-6] = np.array([10**-1, 10**-1, 10**-3])
+            ekf_Q_diag[-6:-3] = 10**-2
+            # ekf_Q_diag[-6:-3] = np.array([10**-1, 10**-1, 10**-3])
+            ekf_Q_diag[-3:] = 10**2
             #
             ekf_Q = np.diag(ekf_Q_diag)
 
@@ -2501,7 +2497,7 @@ class PNP_SOLVER_A2_M3(object):
         '''
         n_point = P.shape[0]
         x_size = ekf_x.shape[0]
-        z_size = 2*n_point + 6
+        z_size = 2*n_point + 9
         #
         ekf_u_1 = ekf_x[0:3,:]
         ekf_u_2 = ekf_x[3:6,:]
@@ -2529,16 +2525,19 @@ class PNP_SOLVER_A2_M3(object):
         hx = np.zeros((z_size, 1))
         hx[:n_point,:]              = ekf_gamma * hu1_bar + ones_nx1 * delta_1
         hx[n_point:(2*n_point),:]   = ekf_gamma * hu2_bar + ones_nx1 * delta_2
+        # hc0, 1~3
         hx[(2*n_point),0]   = ekf_u_1.T @ ekf_u_3
         hx[(2*n_point+1),0] = ekf_u_2.T @ ekf_u_3
         hx[(2*n_point+2),0] = ekf_u_1.T @ ekf_u_2
-        # hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1
-        # hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2
-        # hx[(2*n_point+5),0] = ekf_u_3.T @ ekf_u_3
+        # hc0, 4~6
         hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_3.T @ ekf_u_3
         hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2 - ekf_u_3.T @ ekf_u_3
-        # hx[(2*n_point+5),0] = ekf_u_3.T @ ekf_u_3
-        hx[(2*n_point+5),0] = ekf_u_2.T @ ekf_u_2
+        hx[(2*n_point+5),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_2.T @ ekf_u_2
+        # hc1, 1~3
+        hx[(2*n_point+6),0] = ekf_u_1.T @ ekf_u_1
+        hx[(2*n_point+7),0] = ekf_u_2.T @ ekf_u_2
+        hx[(2*n_point+8),0] = ekf_u_3.T @ ekf_u_3
+
         # Hx
         Hx = np.zeros( (z_size, x_size))
         Hx[:n_point, :] = H1
@@ -2552,22 +2551,22 @@ class PNP_SOLVER_A2_M3(object):
         # Hc0, 3
         Hx[(2*n_point+2),0:3] = ekf_u_2.T
         Hx[(2*n_point+2),3:6] = ekf_u_1.T
-        # # Hc1, 1
-        # Hx[(2*n_point+3),0:3] = ekf_u_1.T
-        # # Hc1, 2
-        # Hx[(2*n_point+4),3:6] = ekf_u_2.T
-        # # Hc1, 3
-        # Hx[(2*n_point+5),6:9] = ekf_u_3.T
-
         # Hc0, 4
         Hx[(2*n_point+3),0:3] = ekf_u_1.T
         Hx[(2*n_point+3),6:9] = -ekf_u_3.T
         # Hc0, 5
         Hx[(2*n_point+4),3:6] = ekf_u_2.T
         Hx[(2*n_point+4),6:9] = -ekf_u_3.T
+        # Hc0, 6
+        Hx[(2*n_point+5),0:3] = ekf_u_1.T
+        Hx[(2*n_point+5),3:6] = -ekf_u_2.T
+
+        # Hc1, 1
+        Hx[(2*n_point+6),0:3] = ekf_u_1.T
+        # Hc1, 2
+        Hx[(2*n_point+7),3:6] = ekf_u_2.T
         # Hc1, 3
-        # Hx[(2*n_point+5),6:9] = ekf_u_3.T
-        Hx[(2*n_point+5),6:9] = ekf_u_2.T
+        Hx[(2*n_point+8),6:9] = ekf_u_3.T
         #
         return (hx, Hx)
     #-------------------------------------------#
