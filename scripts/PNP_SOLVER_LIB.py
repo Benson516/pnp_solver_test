@@ -1740,10 +1740,10 @@ class PNP_SOLVER_A2_M3(object):
         #
         ekf_G = np.eye(x_size)
         ekf_R_diag = np.ones((x_size,))
-        ekf_R_diag[:9] *= 10**-3
-        ekf_R_diag[9:11] *= 10**-3
+        ekf_R_diag[:9] *= 10**-2
+        ekf_R_diag[9:11] *= 10**-2
         # ekf_R_diag[11] = 10**-5
-        ekf_R_diag[11] = 10**3
+        ekf_R_diag[11] = 10**-7
         ekf_R = np.diag(ekf_R_diag)
         #--------------------------------#
         self.lib_print("co_P = \n%s" % str(co_P))
@@ -1822,16 +1822,17 @@ class PNP_SOLVER_A2_M3(object):
             ekf_Q_diag = np.ones((z_size,))
             f_camera = 225.68
             # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
-            ekf_Q_diag[0:(2*n_point)] = ((6.0)**2) / (f_camera**2) # f_camera ?
+            ekf_Q_diag[0:(2*n_point)] = ((3.0)**2) / (f_camera**2) # f_camera ?
+            # ekf_Q_diag[0:(2*n_point)] = ((6.0)**2) / (f_camera**2) # f_camera ?
             # Nose's x and y
-            _nose_id = 5
-            ekf_Q_diag[ [_nose_id, (n_point+_nose_id)] ] = ((3.0)**2) / (f_camera**2)
+            # _nose_id = 5
+            # ekf_Q_diag[ [_nose_id, (n_point+_nose_id)] ] = ((3.0)**2) / (f_camera**2)
             #
-            ekf_Q_diag[-9:-6] = 10**-1
+            ekf_Q_diag[-9:-6] = 10**-2 # 10**-1
             # ekf_Q_diag[-9:-6] = np.array([10**-1, 10**-1, 10**-3])
-            ekf_Q_diag[-6:-3] = 10**-2
+            ekf_Q_diag[-6:-3] = (2.0)**2 * 10**-2 # 10**-2
             # ekf_Q_diag[-6:-3] = np.array([10**-1, 10**-1, 10**-3])
-            ekf_Q_diag[-3:] = 10**2
+            ekf_Q_diag[-3:] = 10**5
             #
             ekf_Q = np.diag(ekf_Q_diag)
 
