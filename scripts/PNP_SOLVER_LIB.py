@@ -1739,9 +1739,9 @@ class PNP_SOLVER_A2_M3(object):
         #
         ekf_G = np.eye(x_size)
         ekf_R_diag = np.ones((x_size,))
-        ekf_R_diag[:9] *= 10**0
-        ekf_R_diag[9:11] *= 10**-5
-        ekf_R_diag[11] = 10**-2
+        ekf_R_diag[:9] *= 10**-3
+        ekf_R_diag[9:11] *= 10**-3
+        ekf_R_diag[11] = 10**-5
         ekf_R = np.diag(ekf_R_diag)
         #--------------------------------#
         self.lib_print("co_P = \n%s" % str(co_P))
@@ -1765,8 +1765,11 @@ class PNP_SOLVER_A2_M3(object):
         ekf_z = np.zeros( (z_size, 1) )
         ekf_z[:n_point,:] = B_x
         ekf_z[n_point:(2*n_point),:] = B_y
-        # ekf_z[-6:-3,:] = 0.0 # 0 equalities
-        ekf_z[-3:,:] = 1.0 # 1 equalities
+        # # ekf_z[-6:-3,:] = 0.0 # 0 equalities
+        # ekf_z[-3:,:] = 1.0 # 1 equalities
+
+        # ekf_z[-6:-1,:] = 0.0 # 0 equalities
+        ekf_z[-1:,:] = 1.0 # 1 equalities
         #--------------------------------#
 
         # B
@@ -1817,14 +1820,20 @@ class PNP_SOLVER_A2_M3(object):
             ekf_Q_diag = np.ones((z_size,))
             f_camera = 225.68
             # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
-            # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2) # f_camera ?
-            ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2)
+            ekf_Q_diag[0:(2*n_point)] = ((3.0)**2) / (f_camera**2) # f_camera ?
+            # ekf_Q_diag[0:(2*n_point)] = 1.0/(100000)
             #
-            # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
-            ekf_Q_diag[(2*n_point):(2*n_point+3)] = 10**-1
+            # # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
+            # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 10**-1
+            # # ekf_Q_diag[(2*n_point+3):] = 1.0
+            # ekf_Q_diag[(2*n_point+3):] = 10**-2
             #
-            # ekf_Q_diag[(2*n_point+3):] = 1.0
-            ekf_Q_diag[(2*n_point+3):] = 10**-2
+            # ekf_Q_diag[-6:-3] = 1.0
+            ekf_Q_diag[-6:-3] = np.array([10**-1, 10**-1, 10**-3])
+            # ekf_Q_diag[-3:-1] = 1.0
+            ekf_Q_diag[-3:-1] = 10**-2
+            ekf_Q_diag[-1] = 1
+            # ekf_Q_diag[-1] = 10**-1
             #
             ekf_Q = np.diag(ekf_Q_diag)
 
@@ -1880,6 +1889,9 @@ class PNP_SOLVER_A2_M3(object):
             ekf_Sigma -= (ekf_K @ ekf_Hx) @ ekf_Sigma_bar
             self.lib_print("(new) ekf_x = \n%s" % str(ekf_x))
             #-----------------------------#
+
+            ekf_Sigma_u, ekf_Sigma_s, ekf_Sigma_vh = np.linalg.svd(ekf_Sigma)
+            self.lib_print("ekf_Sigma_s = \n%s" % str(ekf_Sigma_s))
 
 
             self.lib_print("---")
@@ -2520,9 +2532,13 @@ class PNP_SOLVER_A2_M3(object):
         hx[(2*n_point),0]   = ekf_u_1.T @ ekf_u_3
         hx[(2*n_point+1),0] = ekf_u_2.T @ ekf_u_3
         hx[(2*n_point+2),0] = ekf_u_1.T @ ekf_u_2
-        hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1
-        hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2
-        hx[(2*n_point+5),0] = ekf_u_3.T @ ekf_u_3
+        # hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1
+        # hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2
+        # hx[(2*n_point+5),0] = ekf_u_3.T @ ekf_u_3
+        hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_3.T @ ekf_u_3
+        hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2 - ekf_u_3.T @ ekf_u_3
+        # hx[(2*n_point+5),0] = ekf_u_3.T @ ekf_u_3
+        hx[(2*n_point+5),0] = ekf_u_2.T @ ekf_u_2
         # Hx
         Hx = np.zeros( (z_size, x_size))
         Hx[:n_point, :] = H1
@@ -2536,12 +2552,22 @@ class PNP_SOLVER_A2_M3(object):
         # Hc0, 3
         Hx[(2*n_point+2),0:3] = ekf_u_2.T
         Hx[(2*n_point+2),3:6] = ekf_u_1.T
-        # Hc1, 1
+        # # Hc1, 1
+        # Hx[(2*n_point+3),0:3] = ekf_u_1.T
+        # # Hc1, 2
+        # Hx[(2*n_point+4),3:6] = ekf_u_2.T
+        # # Hc1, 3
+        # Hx[(2*n_point+5),6:9] = ekf_u_3.T
+
+        # Hc0, 4
         Hx[(2*n_point+3),0:3] = ekf_u_1.T
-        # Hc1, 2
+        Hx[(2*n_point+3),6:9] = -ekf_u_3.T
+        # Hc0, 5
         Hx[(2*n_point+4),3:6] = ekf_u_2.T
+        Hx[(2*n_point+4),6:9] = -ekf_u_3.T
         # Hc1, 3
-        Hx[(2*n_point+5),6:9] = ekf_u_3.T
+        # Hx[(2*n_point+5),6:9] = ekf_u_3.T
+        Hx[(2*n_point+5),6:9] = ekf_u_2.T
         #
         return (hx, Hx)
     #-------------------------------------------#
