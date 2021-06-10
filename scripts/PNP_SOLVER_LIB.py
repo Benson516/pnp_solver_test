@@ -1814,20 +1814,20 @@ class PNP_SOLVER_A2_M3(object):
 
             # Calculate K
             #-----------------------------#
-            # ekf_Q = np.eye((2*n_point+5))
-            # ekf_Q[-5:, -5:] *= 225.68 # f_camera # 2.3*10**2
-            # ekf_Q /= 225.68
-            # ekf_Q_diag = np.zeros(((2*n_point+5),))
             ekf_Q_diag = np.ones((z_size,))
             f_camera = 225.68
             # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
             # ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2) # f_camera ?
             ekf_Q_diag[0:(2*n_point)] = 1.0/(f_camera**2)
+            #
             # ekf_Q_diag[(2*n_point):(2*n_point+3)] = 1.0
             ekf_Q_diag[(2*n_point):(2*n_point+3)] = 10**-1
+            #
             # ekf_Q_diag[(2*n_point+3):] = 1.0
             ekf_Q_diag[(2*n_point+3):] = 10**-2
+            #
             ekf_Q = np.diag(ekf_Q_diag)
+
             #
             ekf_x_bar = ekf_x
             ekf_Sigma_bar = ekf_G @ ekf_Sigma @ ekf_G.T + ekf_R
