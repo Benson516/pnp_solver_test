@@ -1470,7 +1470,7 @@ class PNP_SOLVER_A2_M3(object):
         # # Get the whole residual
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
-        res_norm = 0.0
+        res_norm = delta_z_norm
         # #-----------------------------#
 
 
@@ -1710,7 +1710,7 @@ class PNP_SOLVER_A2_M3(object):
         # # Get the whole residual
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
-        res_norm = 0.0
+        res_norm = delta_z_norm
         # #-----------------------------#
 
 
@@ -1927,7 +1927,7 @@ class PNP_SOLVER_A2_M3(object):
         # # Get the whole residual
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
-        res_norm = 0.0
+        res_norm = delta_z_norm
         # #-----------------------------#
 
 
