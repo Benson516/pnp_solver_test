@@ -1995,9 +1995,12 @@ class PNP_SOLVER_A2_M3(object):
         np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
         B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
         #
-        eif_z = np.zeros( ((2*n_point+5), 1) )
+        eif_z = np.zeros( (z_size, 1) )
         eif_z[:n_point,:] = B_x
         eif_z[n_point:(2*n_point),:] = B_y
+        #
+        # eif_z[-9:-3,:] = 0.0 # 0 equalities
+        eif_z[-3:,:] = 1.0 # 1 equalities
         #--------------------------------#
 
         # B
@@ -2012,17 +2015,40 @@ class PNP_SOLVER_A2_M3(object):
         # Solve by iteration (EKF)
         #--------------------------------------#
         # Initial guess
-        eif_x = np.zeros((11,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
+        eif_x = np.zeros((x_size,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
         # Set the initial scaled rotation matrix (Gamma) to be an identidy matrix
         eif_x[(3*0)+0, 0] = 1.0
         eif_x[(3*1)+1, 0] = 1.0
         eif_x[(3*2)+2, 0] = 1.0
+        eif_x[11, 0] = 1.0
         #
         # eif_Omega = np.zeros((11,11)) # No information, all zeros
-        eif_Omega = np.eye(11) * 10**-5 # No information, close to zeros
+        eif_Omega = np.eye(x_size) * 10**-5 # No information, close to zeros
         eif_Omega_pinv = np.linalg.pinv(eif_Omega) # <-- Later will be replaced by incremental updating algorithm
         #
         eif_zeta = eif_Omega @ eif_x
+
+
+        # Q and Q_pinv (The uncnanged part)
+        #---------------------------------#
+        eif_Q_diag = np.ones((z_size,))
+        f_camera = 225.68
+        eif_Q_diag[0:(2*n_point)] = ((3.0)**2) / (f_camera**2) # f_camera ?
+        # Nose's x and y
+        # _nose_id = 5
+        # eif_Q_diag[ [_nose_id, (n_point+_nose_id)] ] = ((3.0)**2) / (f_camera**2)
+        #
+        eif_Q_diag[-9:-6] = 10**-2 # 10**-1
+        eif_Q_diag[-6:-3] = (2.0)**2 * 10**-2 # 10**-2
+        eif_Q_diag[-9:-3] *= 20
+        #
+        eif_Q_diag[-3:] = 10**5
+        #
+        eif_Q = np.diag(eif_Q_diag)
+        #---------------------------------#
+        eif_Q_pinv = np.linalg.pinv(eif_Q)
+
+
 
 
         num_it = 14 # 100 # 14 # 3
@@ -2037,59 +2063,15 @@ class PNP_SOLVER_A2_M3(object):
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
 
-            phi_1 = eif_x[0:3]
-            phi_2 = eif_x[3:6]
-            phi_3 = eif_x[6:9]
-            phi_1_norm = np.linalg.norm(phi_1)
-            phi_2_norm = np.linalg.norm(phi_2)
-            phi_3_norm = np.linalg.norm(phi_3)
-            gamma_est = (phi_1_norm + phi_2_norm + phi_3_norm)/3.0
-            self.lib_print("phi_1_norm = %f" % phi_1_norm)
-            self.lib_print("phi_2_norm = %f" % phi_2_norm)
-            self.lib_print("phi_3_norm = %f" % phi_3_norm)
-            self.lib_print("gamma_est = %f" % gamma_est)
-
-
-            eif_Q_pinv_diag = np.ones(((2*n_point+5),))
-            f_camera = 225.68
-            eif_Q_pinv_diag[0:(2*n_point)] = f_camera # f_camera ?
-            #
-            eif_Q_pinv_diag[(2*n_point):(2*n_point+3)] = 1.0
-            # eif_Q_pinv_diag[(2*n_point):] = 10*-5
-            # eif_Q_pinv_diag[(2*n_point):] = 10*12
-            # eif_Q_pinv_diag[(2*n_point):] = 1.0/gamma_est
-            # eif_Q_pinv_diag[(2*n_point):] = 1.0/gamma_est**4
-            #
-            # eif_Q_pinv_diag[(2*n_point+3):] = 1.0
-            # eif_Q_pinv_diag[(2*n_point+3):] = 10**-5
-            eif_Q_pinv_diag[(2*n_point+3):] = 1.0/ gamma_est**4
-            eif_Q_pinv = np.diag(eif_Q_pinv_diag)
-            #
-            # eif_Q_pinv = np.linalg.pinv(eif_Q)
-
-
-            # # Predict
-            # #-----------------------------#
-            # # The following will be replaced by incremental updating algorithm
-            # eif_Omega_bar = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
-            # #
-            # eif_x_bar = eif_x # x is not changing in the model
-            # eif_zeta_bar = eif_Omega_bar @ eif_x_bar
-            # #
-            # # eif_Omega_bar = eif_Omega
-            # # eif_x_bar = eif_x
-            # # eif_zeta_bar = eif_zeta
-            # #-----------------------------#
-            #
-            # # Update
-            # #-----------------------------#
-            # eif_hx, eif_Hx = self.EKF_get_hx_H(eif_x_bar, B_x, B_y, co_P)
-            # _eif_HTQpinv = eif_Hx.T @ eif_Q_pinv
-            # eif_Omega = eif_Omega_bar + _eif_HTQpinv @ eif_Hx
-            # eif_zeta = eif_zeta_bar + _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x_bar) )
-            # # The following will be replaced by incremental updating algorithm
-            # eif_Omega_pinv = np.linalg.pinv(eif_Omega)
-            # #-----------------------------#
+            eif_u_1 = eif_x[0:3]
+            eif_u_2 = eif_x[3:6]
+            eif_u_3 = eif_x[6:9]
+            eif_u_1_norm = np.linalg.norm(eif_u_1)
+            eif_u_2_norm = np.linalg.norm(eif_u_2)
+            eif_u_3_norm = np.linalg.norm(eif_u_3)
+            self.lib_print("eif_u_1_norm = %f" % eif_u_1_norm)
+            self.lib_print("eif_u_2_norm = %f" % eif_u_2_norm)
+            self.lib_print("eif_u_3_norm = %f" % eif_u_3_norm)
 
 
             # Predict
@@ -2103,7 +2085,7 @@ class PNP_SOLVER_A2_M3(object):
             for _i in range(num_it_inner):
                 # Update
                 #-----------------------------#
-                eif_hx, eif_Hx = self.EKF_get_hx_H(eif_x, B_x, B_y, co_P)
+                eif_hx, eif_Hx = self.EKF2_get_hx_H(eif_x, B_x, B_y, co_P)
                 _eif_HTQpinv = eif_Hx.T @ eif_Q_pinv
                 eif_Omega += _eif_HTQpinv @ eif_Hx
                 eif_zeta += _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x) )
@@ -2166,7 +2148,7 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print()
         # Reconstruct (R, t)
         #--------------------------------------------------------#
-        np_R_est, np_t_est, t3_est = self.co_reconstruct_R_t_m1(eif_x)
+        np_R_est, np_t_est, t3_est = self.EKF2_reconstruct_R_t_m1(eif_x)
 
         # test, pre-transfer
         #---------------------------#
