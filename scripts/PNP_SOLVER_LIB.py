@@ -1770,8 +1770,11 @@ class PNP_SOLVER_A2_M3(object):
         # # ekf_z[-6:-3,:] = 0.0 # 0 equalities
         # ekf_z[-3:,:] = 1.0 # 1 equalities
 
-        # ekf_z[-6:-1,:] = 0.0 # 0 equalities
-        ekf_z[-1:,:] = 1.0 # 1 equalities
+        # # ekf_z[-6:-1,:] = 0.0 # 0 equalities
+        # ekf_z[-1:,:] = 1.0 # 1 equalities
+
+        # ekf_z[-9:-3,:] = 0.0 # 0 equalities
+        ekf_z[-3:,:] = 1.0 # 1 equalities
         #--------------------------------#
 
         # B
