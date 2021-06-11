@@ -1332,6 +1332,7 @@ class PNP_SOLVER_A2_M3(object):
         k_it = 0
         self.lib_print("---")
         delta_z_norm_old = 10**-7
+        res_norm = 10**5
         while k_it < num_it:
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
@@ -1394,6 +1395,7 @@ class PNP_SOLVER_A2_M3(object):
             ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
             delta_z = (ekf_z - ekf_hx)
             delta_z_norm = np.linalg.norm(delta_z)
+            res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
             #
             self.lib_print("diag(ekf_Q) = \n%s" % str(np.diag(ekf_Q)))
             # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
@@ -1405,6 +1407,7 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
             self.lib_print("delta_z = (ekf_z-ekf_hx) = \n%s" % str(delta_z))
             self.lib_print("delta_z_norm = %f" % delta_z_norm)
+            self.lib_print("res_norm = %f" % res_norm)
             #-----------------------------#
 
             # # Experiment with optimal iteration number
@@ -1470,7 +1473,7 @@ class PNP_SOLVER_A2_M3(object):
         # # Get the whole residual
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
-        res_norm = delta_z_norm
+        # res_norm = delta_z_norm
         # #-----------------------------#
 
 
@@ -1554,6 +1557,7 @@ class PNP_SOLVER_A2_M3(object):
         k_it = 0
         self.lib_print("---")
         delta_z_norm_old = 10**-7
+        res_norm = 10**5
         while k_it < num_it:
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
@@ -1641,6 +1645,7 @@ class PNP_SOLVER_A2_M3(object):
             eif_Omega_u, eif_Omega_s, eif_Omega_vh = np.linalg.svd(eif_Omega)
             delta_z = (eif_z - eif_hx)
             delta_z_norm = np.linalg.norm(delta_z)
+            res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
             #
             self.lib_print("diag(eif_Q_pinv) = \n%s" % str(np.diag(eif_Q_pinv)))
             self.lib_print("eif_Omega_s = \n%s" % str(eif_Omega_s))
@@ -1648,6 +1653,7 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("eif_hx = \n%s" % str(eif_hx))
             self.lib_print("delta_z = (eif_z-eif_hx) = \n%s" % str(delta_z))
             self.lib_print("delta_z_norm = %f" % delta_z_norm)
+            self.lib_print("res_norm = %f" % res_norm)
             #-----------------------------#
 
             # # Experiment with optimal iteration number
@@ -1710,7 +1716,7 @@ class PNP_SOLVER_A2_M3(object):
         # # Get the whole residual
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
-        res_norm = delta_z_norm
+        # res_norm = delta_z_norm
         # #-----------------------------#
 
 
@@ -1805,6 +1811,7 @@ class PNP_SOLVER_A2_M3(object):
         k_it = 0
         self.lib_print("---")
         delta_z_norm_old = 10**-7
+        res_norm = 10**5
         while k_it < num_it:
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
@@ -1854,6 +1861,7 @@ class PNP_SOLVER_A2_M3(object):
             ekf_K = ekf_Sigma_bar @ (ekf_Hx.T) @ ekf_S_pinv
             delta_z = (ekf_z - ekf_hx)
             delta_z_norm = np.linalg.norm(delta_z)
+            res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
             #
             self.lib_print("diag(ekf_Q) = \n%s" % str(np.diag(ekf_Q)))
             # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
@@ -1865,6 +1873,7 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
             self.lib_print("delta_z = (ekf_z-ekf_hx) = \n%s" % str(delta_z))
             self.lib_print("delta_z_norm = %f" % delta_z_norm)
+            self.lib_print("res_norm = %f" % res_norm)
             #-----------------------------#
 
             # # Experiment with optimal iteration number
@@ -1933,7 +1942,7 @@ class PNP_SOLVER_A2_M3(object):
         # # Get the whole residual
         # #-----------------------------#
         # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
-        res_norm = delta_z_norm
+        # res_norm = delta_z_norm
         # #-----------------------------#
 
 
