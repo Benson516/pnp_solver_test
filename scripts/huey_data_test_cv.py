@@ -152,31 +152,65 @@ print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split
 # is_classified_by_label = True
 is_classified_by_label = False
 
-# class label and bins
-# Depth
-class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
-class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
-class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
-print("class_depth_label = %s" % class_depth_label)
-print("class_depth_bins = %s" % class_depth_bins)
-# Roll
-class_roll_nominal_value = np.array([-45, -25, 0, 25, 45]) # Note: the length of label should be one element longer than the bin
-class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
-class_roll_bins = [-35, -15, 15, 35] # Only the middle bound values
-print("class_roll_label = %s" % class_roll_label)
-print("class_roll_bins = %s" % class_roll_bins)
-# Pitch
-class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
-class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
-class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
-print("class_pitch_label = %s" % class_pitch_label)
-print("class_pitch_bins = %s" % class_pitch_bins)
-# Yaw
-class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
-class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
-class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
-print("class_yaw_label = %s" % class_yaw_label)
-print("class_yaw_bins = %s" % class_yaw_bins)
+# Formate
+# drpy_class_format = "drpy_expand"
+drpy_class_format = "HMI_inspection"
+
+if drpy_class_format == "drpy_expand":
+    # class label and bins
+    # Depth
+    class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
+    class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
+    class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
+    print("class_depth_label = %s" % class_depth_label)
+    print("class_depth_bins = %s" % class_depth_bins)
+    # Roll
+    class_roll_nominal_value = np.array([-45, -25, 0, 25, 45]) # Note: the length of label should be one element longer than the bin
+    class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
+    class_roll_bins = [-35, -15, 15, 35] # Only the middle bound values
+    print("class_roll_label = %s" % class_roll_label)
+    print("class_roll_bins = %s" % class_roll_bins)
+    # Pitch
+    class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
+    class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
+    class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
+    print("class_pitch_label = %s" % class_pitch_label)
+    print("class_pitch_bins = %s" % class_pitch_bins)
+    # Yaw
+    class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
+    class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
+    class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
+    print("class_yaw_label = %s" % class_yaw_label)
+    print("class_yaw_bins = %s" % class_yaw_bins)
+    #
+elif drpy_class_format == "HMI_inspection":
+    # class label and bins
+    # Depth
+    class_depth_label = ["0", "100", "200"] # Using lower bound as the label
+    class_depth_bins = [100, 200] # Only the middle bound values
+    print("class_depth_label = %s" % class_depth_label)
+    print("class_depth_bins = %s" % class_depth_bins)
+    # Roll
+    class_roll_nominal_value = np.array([0]) # Note: the length of label should be one element longer than the bin
+    class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
+    class_roll_bins = [] # Only the middle bound values
+    print("class_roll_label = %s" % class_roll_label)
+    print("class_roll_bins = %s" % class_roll_bins)
+    # Pitch
+    class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
+    class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
+    class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
+    print("class_pitch_label = %s" % class_pitch_label)
+    print("class_pitch_bins = %s" % class_pitch_bins)
+    # Yaw
+    class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
+    class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
+    class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
+    print("class_yaw_label = %s" % class_yaw_label)
+    print("class_yaw_bins = %s" % class_yaw_bins)
+    #
+else:
+    is_classified_by_label = True
 #-------------------------------#
 
 # Convert the original data to structured data_list
