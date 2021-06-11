@@ -978,7 +978,7 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     error_stddev = error_variance**0.5
     MAE_2_GT = np.linalg.norm(_np_data_error_vec, ord=1)/(_np_data_error_vec.shape[0])
     MAE_2_mean = np.linalg.norm((_np_data_error_vec - error_mean), ord=1)/(_np_data_error_vec.shape[0])
-    max_dev = np.linalg.norm(np.squeeze(_np_data_error_vec - error_mean), ord=float('inf'))
+    max_dev = np.linalg.norm((_np_data_error_vec - error_mean), ord=float('inf'))
     #
     if verbose:
         print("class: [%s], class_label: [%s], n_data=[%d]" % (class_name, class_label, n_data) )
