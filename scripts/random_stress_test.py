@@ -230,9 +230,9 @@ elif drpy_class_format == "HMI_inspection":
     print("class_depth_label = %s" % class_depth_label)
     print("class_depth_bins = %s" % class_depth_bins)
     # Roll
-    class_roll_nominal_value = np.array([0]) # Note: the length of label should be one element longer than the bin
+    class_roll_nominal_value = np.array([-30, 0, 30]) # Note: the length of label should be one element longer than the bin
     class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
-    class_roll_bins = [] # Only the middle bound values
+    class_roll_bins = [-15, 15] # Only the middle bound values
     print("class_roll_label = %s" % class_roll_label)
     print("class_roll_bins = %s" % class_roll_bins)
     # Pitch
