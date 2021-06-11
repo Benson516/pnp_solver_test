@@ -269,8 +269,8 @@ for _idx in range( DATA_COUNT ):
         _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
         _yaw = random_gen.uniform( (-_angle_range), _angle_range, None)
         #
-        _depth = random_gen.uniform(20, 220, None)/100.0 # m
-        _FOV_max = 1.0 # 45.0 # deg.
+        _depth = random_gen.uniform(20, 300, None)/100.0 # m
+        _FOV_max = 45.0 # 1.0 # 45.0 # deg.
         _FOV_x = random_gen.uniform((-_FOV_max), _FOV_max, None)
         _FOV_y = random_gen.uniform((-_FOV_max), _FOV_max, None)
         _np_t_GT = np.zeros((3,1))
