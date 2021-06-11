@@ -979,12 +979,14 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     error_stddev = error_variance**0.5
     MAE_2_GT = np.linalg.norm(_np_data_error_vec, ord=1)/(_np_data_error_vec.shape[0])
     MAE_2_mean = np.linalg.norm((_np_data_error_vec - error_mean), ord=1)/(_np_data_error_vec.shape[0])
+    max_dev = np.linalg.norm(np.squeeze(_np_data_error_vec - error_mean), ord=float('inf'))
     #
     if verbose:
         print("class: [%s], class_label: [%s], n_data=[%d]" % (class_name, class_label, n_data) )
         print("ratio_mean (estimated/actual) = %f" % ratio_mean)
         print("error_mean = %f %s" % (error_mean*unit_scale, unit))
         print("error_stddev = %f %s" % (error_stddev*unit_scale, unit))
+        print("max_dev = %f %s" % (max_dev*unit_scale, unit))
         print("MAE_2_GT = %f %s" % (MAE_2_GT*unit_scale, unit))
         print("MAE_2_mean = %f %s" % (MAE_2_mean*unit_scale, unit))
         print("\n")
@@ -996,6 +998,7 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     statis_dict['m_ratio'] = ratio_mean
     statis_dict['mean(%s)' % unit] = error_mean * unit_scale
     statis_dict['stddev(%s)' % unit] = error_stddev * unit_scale
+    statis_dict['max_dev(%s)' % unit] = max_dev * unit_scale
     statis_dict['MAE_2_GT(%s)' % unit] = MAE_2_GT * unit_scale
     statis_dict['MAE_2_mean(%s)' % unit] = MAE_2_mean * unit_scale
     return statis_dict
