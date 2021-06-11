@@ -2040,7 +2040,7 @@ class PNP_SOLVER_A2_M3(object):
         #
         eif_Q_diag[-9:-6] = 10**-2 # 10**-1
         eif_Q_diag[-6:-3] = (2.0)**2 * 10**-2 # 10**-2
-        eif_Q_diag[-9:-3] *= 20
+        eif_Q_diag[-9:-3] *= 20 # 0.1 # 20
         #
         eif_Q_diag[-3:] = 10**5
         #
@@ -2741,7 +2741,7 @@ class PNP_SOLVER_A2_M3(object):
         #
         return (hx, Hx)
 
-    def EKF2_get_hx_H(self, ekf_x, B_x, B_y, P):
+    def EKF2_get_hx_H(self, ekf_x, B_x, B_y, P, is_hc0_4_6_linear=False, is_hc1_linear=True):
         '''
         '''
         n_point = P.shape[0]
@@ -2771,6 +2771,7 @@ class PNP_SOLVER_A2_M3(object):
         #
 
         # hx
+        #-------------------------------------#
         hx = np.zeros((z_size, 1))
         hx[:n_point,:]              = ekf_gamma * hu1_bar + ones_nx1 * delta_1
         hx[n_point:(2*n_point),:]   = ekf_gamma * hu2_bar + ones_nx1 * delta_2
@@ -2778,19 +2779,33 @@ class PNP_SOLVER_A2_M3(object):
         hx[(2*n_point),0]   = ekf_u_1.T @ ekf_u_3
         hx[(2*n_point+1),0] = ekf_u_2.T @ ekf_u_3
         hx[(2*n_point+2),0] = ekf_u_1.T @ ekf_u_2
-        # hc0, 4~6
-        hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_3.T @ ekf_u_3
-        hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2 - ekf_u_3.T @ ekf_u_3
-        hx[(2*n_point+5),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_2.T @ ekf_u_2
-        # hc1, 1~3
-        # hx[(2*n_point+6),0] = ekf_u_1.T @ ekf_u_1
-        # hx[(2*n_point+7),0] = ekf_u_2.T @ ekf_u_2
-        # hx[(2*n_point+8),0] = ekf_u_3.T @ ekf_u_3
-        hx[(2*n_point+6),0] = np.sqrt(ekf_u_1.T @ ekf_u_1)
-        hx[(2*n_point+7),0] = np.sqrt(ekf_u_2.T @ ekf_u_2)
-        hx[(2*n_point+8),0] = np.sqrt(ekf_u_3.T @ ekf_u_3)
+
+        if is_hc0_4_6_linear:
+            # hc0, 4~6
+            hx[(2*n_point+3),0] = np.linalg.norm(ekf_u_1) - np.linalg.norm(ekf_u_3)
+            hx[(2*n_point+4),0] = np.linalg.norm(ekf_u_2) - np.linalg.norm(ekf_u_3)
+            hx[(2*n_point+5),0] = np.linalg.norm(ekf_u_1) - np.linalg.norm(ekf_u_2)
+        else:
+            # hc0, 4~6
+            hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_3.T @ ekf_u_3
+            hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2 - ekf_u_3.T @ ekf_u_3
+            hx[(2*n_point+5),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_2.T @ ekf_u_2
+
+        if is_hc1_linear:
+            # hc1, 1~3
+            hx[(2*n_point+6),0] = np.sqrt(ekf_u_1.T @ ekf_u_1)
+            hx[(2*n_point+7),0] = np.sqrt(ekf_u_2.T @ ekf_u_2)
+            hx[(2*n_point+8),0] = np.sqrt(ekf_u_3.T @ ekf_u_3)
+        else:
+            # hc1, 1~3
+            hx[(2*n_point+6),0] = ekf_u_1.T @ ekf_u_1
+            hx[(2*n_point+7),0] = ekf_u_2.T @ ekf_u_2
+            hx[(2*n_point+8),0] = ekf_u_3.T @ ekf_u_3
+        #-------------------------------------#
+
 
         # Hx
+        #-------------------------------------#
         Hx = np.zeros( (z_size, x_size))
         Hx[:n_point, :] = H1
         Hx[n_point:(2*n_point), :] = H2
@@ -2803,30 +2818,46 @@ class PNP_SOLVER_A2_M3(object):
         # Hc0, 3
         Hx[(2*n_point+2),0:3] = ekf_u_2.T
         Hx[(2*n_point+2),3:6] = ekf_u_1.T
-        # Hc0, 4
-        Hx[(2*n_point+3),0:3] = ekf_u_1.T
-        Hx[(2*n_point+3),6:9] = -ekf_u_3.T
-        # Hc0, 5
-        Hx[(2*n_point+4),3:6] = ekf_u_2.T
-        Hx[(2*n_point+4),6:9] = -ekf_u_3.T
-        # Hc0, 6
-        Hx[(2*n_point+5),0:3] = ekf_u_1.T
-        Hx[(2*n_point+5),3:6] = -ekf_u_2.T
 
-        # # Hc1, 1
-        # Hx[(2*n_point+6),0:3] = ekf_u_1.T
-        # # Hc1, 2
-        # Hx[(2*n_point+7),3:6] = ekf_u_2.T
-        # # Hc1, 3
-        # Hx[(2*n_point+8),6:9] = ekf_u_3.T
-
-        # Hc1, 1
-        Hx[(2*n_point+6),0:3] = ekf_u_1.T / (2.0 * np.linalg.norm(ekf_u_1))
-        # Hc1, 2
-        Hx[(2*n_point+7),3:6] = ekf_u_2.T / (2.0 * np.linalg.norm(ekf_u_2))
-        # Hc1, 3
-        Hx[(2*n_point+8),6:9] = ekf_u_3.T / (2.0 * np.linalg.norm(ekf_u_3))
-
+        if is_hc0_4_6_linear:
+            # Hc0, 4
+            Hx[(2*n_point+3),0:3] = ekf_u_1.T / (2.0 * np.linalg.norm(ekf_u_1))
+            Hx[(2*n_point+3),6:9] = -ekf_u_3.T / (2.0 * np.linalg.norm(ekf_u_3))
+            # Hc0, 5
+            Hx[(2*n_point+4),3:6] = ekf_u_2.T / (2.0 * np.linalg.norm(ekf_u_2))
+            Hx[(2*n_point+4),6:9] = -ekf_u_3.T / (2.0 * np.linalg.norm(ekf_u_3))
+            # Hc0, 6
+            Hx[(2*n_point+5),0:3] = ekf_u_1.T / (2.0 * np.linalg.norm(ekf_u_1))
+            Hx[(2*n_point+5),3:6] = -ekf_u_2.T / (2.0 * np.linalg.norm(ekf_u_2))
+        else:
+            # Hc0, 4
+            Hx[(2*n_point+3),0:3] = ekf_u_1.T
+            Hx[(2*n_point+3),6:9] = -ekf_u_3.T
+            # Hc0, 5
+            Hx[(2*n_point+4),3:6] = ekf_u_2.T
+            Hx[(2*n_point+4),6:9] = -ekf_u_3.T
+            # Hc0, 6
+            Hx[(2*n_point+5),0:3] = ekf_u_1.T
+            Hx[(2*n_point+5),3:6] = -ekf_u_2.T
+        #
+        if is_hc1_linear:
+            # Hc1, 1
+            Hx[(2*n_point+6),0:3] = ekf_u_1.T / (2.0 * np.linalg.norm(ekf_u_1))
+            # Hc1, 2
+            Hx[(2*n_point+7),3:6] = ekf_u_2.T / (2.0 * np.linalg.norm(ekf_u_2))
+            # Hc1, 3
+            Hx[(2*n_point+8),6:9] = ekf_u_3.T / (2.0 * np.linalg.norm(ekf_u_3))
+            pass
+        else:
+            # Hc1, 1
+            Hx[(2*n_point+6),0:3] = ekf_u_1.T
+            # Hc1, 2
+            Hx[(2*n_point+7),3:6] = ekf_u_2.T
+            # Hc1, 3
+            Hx[(2*n_point+8),6:9] = ekf_u_3.T
+            pass
+        #
+        #-------------------------------------#
         #
         return (hx, Hx)
     #-------------------------------------------#
