@@ -35,8 +35,11 @@ is_stress_test = False
 # is_random = True
 is_random = False
 #
-# is_quantized = True
-is_quantized = False
+is_quantized = True
+# is_quantized = False
+
+# stop_at_fail_cases = True
+stop_at_fail_cases = False
 
 #
 # DATA_COUNT = 3
@@ -64,8 +67,11 @@ is_statistic_csv_horizontal = True # class --> (right)
 if is_stress_test:
     is_random = True
     is_showing_image = False
+    if not stop_at_fail_cases:
+        verbose = False
 if not is_random:
     DATA_COUNT = 1
+
 #
 
 # Parameters of the data
@@ -185,31 +191,66 @@ pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_list, patter
 # Ground truth classification
 #-------------------------------#
 
-# class label and bins
-# Depth
-class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
-class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
-class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
-print("class_depth_label = %s" % class_depth_label)
-print("class_depth_bins = %s" % class_depth_bins)
-# Roll
-class_roll_nominal_value = np.array([-45, -25, 0, 25, 45]) # Note: the length of label should be one element longer than the bin
-class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
-class_roll_bins = [-35, -15, 15, 35] # Only the middle bound values
-print("class_roll_label = %s" % class_roll_label)
-print("class_roll_bins = %s" % class_roll_bins)
-# Pitch
-class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
-class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
-class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
-print("class_pitch_label = %s" % class_pitch_label)
-print("class_pitch_bins = %s" % class_pitch_bins)
-# Yaw
-class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
-class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
-class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
-print("class_yaw_label = %s" % class_yaw_label)
-print("class_yaw_bins = %s" % class_yaw_bins)
+# Formate
+# drpy_class_format = "drpy_expand"
+drpy_class_format = "HMI_inspection"
+
+if drpy_class_format == "drpy_expand":
+    # class label and bins
+    # Depth
+    class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
+    class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
+    class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
+    print("class_depth_label = %s" % class_depth_label)
+    print("class_depth_bins = %s" % class_depth_bins)
+    # Roll
+    class_roll_nominal_value = np.array([-45, -25, 0, 25, 45]) # Note: the length of label should be one element longer than the bin
+    class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
+    class_roll_bins = [-35, -15, 15, 35] # Only the middle bound values
+    print("class_roll_label = %s" % class_roll_label)
+    print("class_roll_bins = %s" % class_roll_bins)
+    # Pitch
+    class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
+    class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
+    class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
+    print("class_pitch_label = %s" % class_pitch_label)
+    print("class_pitch_bins = %s" % class_pitch_bins)
+    # Yaw
+    class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
+    class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
+    class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
+    print("class_yaw_label = %s" % class_yaw_label)
+    print("class_yaw_bins = %s" % class_yaw_bins)
+    #
+elif drpy_class_format == "HMI_inspection":
+    # class label and bins
+    # Depth
+    class_depth_label = ["0", "100", "200"] # Using lower bound as the label
+    class_depth_bins = [100, 200] # Only the middle bound values
+    print("class_depth_label = %s" % class_depth_label)
+    print("class_depth_bins = %s" % class_depth_bins)
+    # Roll
+    class_roll_nominal_value = np.array([-30, 0, 30]) # Note: the length of label should be one element longer than the bin
+    class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
+    class_roll_bins = [-15, 15] # Only the middle bound values
+    print("class_roll_label = %s" % class_roll_label)
+    print("class_roll_bins = %s" % class_roll_bins)
+    # Pitch
+    class_pitch_nominal_value = np.array([-30, -15, 0, 15, 30]) # Note: the length of label should be one element longer than the bin
+    class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
+    class_pitch_bins = [-23, -8, 8, 23] # Only the middle bound values
+    print("class_pitch_label = %s" % class_pitch_label)
+    print("class_pitch_bins = %s" % class_pitch_bins)
+    # Yaw
+    class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
+    class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
+    class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
+    print("class_yaw_label = %s" % class_yaw_label)
+    print("class_yaw_bins = %s" % class_yaw_bins)
+    #
+else:
+    pass
+#-------------------------------#
 #-------------------------------#
 
 # Convert the original data to structured data_list
@@ -231,8 +272,8 @@ for _idx in range( DATA_COUNT ):
         _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
         _yaw = random_gen.uniform( (-_angle_range), _angle_range, None)
         #
-        _depth = random_gen.uniform(20, 220, None)/100.0 # m
-        _FOV_max = 1.0 # 45.0 # deg.
+        _depth = random_gen.uniform(20, 300, None)/100.0 # m
+        _FOV_max = 45.0 # 1.0 # 45.0 # deg.
         _FOV_x = random_gen.uniform((-_FOV_max), _FOV_max, None)
         _FOV_y = random_gen.uniform((-_FOV_max), _FOV_max, None)
         _np_t_GT = np.zeros((3,1))
@@ -587,10 +628,11 @@ for _idx in range(len(data_list)):
 
     # Break the stress test
     #----------------------------#
-    if is_stress_test:
-        if pass_count < pass_count_treshold:
-            print("Fail, break the stress test!!")
-            is_continuing_to_next_sample = False
+    if stop_at_fail_cases:
+        if is_stress_test:
+            if pass_count < pass_count_treshold:
+                print("Fail, break the stress test!!")
+                is_continuing_to_next_sample = False
     #----------------------------#
 
 
@@ -936,12 +978,14 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     error_stddev = error_variance**0.5
     MAE_2_GT = np.linalg.norm(_np_data_error_vec, ord=1)/(_np_data_error_vec.shape[0])
     MAE_2_mean = np.linalg.norm((_np_data_error_vec - error_mean), ord=1)/(_np_data_error_vec.shape[0])
+    max_dev = np.linalg.norm((_np_data_error_vec - error_mean), ord=float('inf'))
     #
     if verbose:
         print("class: [%s], class_label: [%s], n_data=[%d]" % (class_name, class_label, n_data) )
         print("ratio_mean (estimated/actual) = %f" % ratio_mean)
         print("error_mean = %f %s" % (error_mean*unit_scale, unit))
         print("error_stddev = %f %s" % (error_stddev*unit_scale, unit))
+        print("max_dev = %f %s" % (max_dev*unit_scale, unit))
         print("MAE_2_GT = %f %s" % (MAE_2_GT*unit_scale, unit))
         print("MAE_2_mean = %f %s" % (MAE_2_mean*unit_scale, unit))
         print("\n")
@@ -953,6 +997,7 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     statis_dict['m_ratio'] = ratio_mean
     statis_dict['mean(%s)' % unit] = error_mean * unit_scale
     statis_dict['stddev(%s)' % unit] = error_stddev * unit_scale
+    statis_dict['max_dev(%s)' % unit] = max_dev * unit_scale
     statis_dict['MAE_2_GT(%s)' % unit] = MAE_2_GT * unit_scale
     statis_dict['MAE_2_mean(%s)' % unit] = MAE_2_mean * unit_scale
     return statis_dict
