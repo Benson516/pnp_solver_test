@@ -2138,6 +2138,11 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("(new) eif_x = \n%s" % str(eif_x))
             #-----------------------------#
 
+            # # Inspection about Sigma = eif_Omega_pinv
+            # eif_Sigma = eif_Omega_pinv
+            # eif_Sigma_u, eif_Sigma_s, eif_Sigma_vh = np.linalg.svd(eif_Sigma)
+            # self.lib_print("eif_Sigma_s = \n%s" % str(eif_Sigma_s))
+
 
             self.lib_print("---")
 
