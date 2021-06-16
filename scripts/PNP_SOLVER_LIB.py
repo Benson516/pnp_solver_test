@@ -2184,7 +2184,7 @@ class PNP_SOLVER_A2_M3(object):
         # res_norm = np.linalg.norm(delta_z[:(2*n_point),:], ord=float('inf'))
         # res_norm = np.linalg.norm(eif_Omega_pinv[0:9,0:9], ord=2) # Note: Sigma = eif_Omega_pinv
         # res_norm = np.linalg.norm(eif_Omega_pinv, ord=2) # Note: Sigma = eif_Omega_pinv
-        res_norm = 1.0/np.linalg.norm(eif_Omega[0:9,0:9], ord=-2) # Note: Sigma = eif_Omega_pinv
+        # res_norm = 1.0/np.linalg.norm(eif_Omega[0:9,0:9], ord=-2) # Note: Sigma = eif_Omega_pinv
         self.lib_print("res_norm = %f" % res_norm)
         # #-----------------------------#
 
