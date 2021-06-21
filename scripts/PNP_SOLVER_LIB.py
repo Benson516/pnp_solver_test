@@ -135,7 +135,8 @@ class PNP_SOLVER_A2_M3(object):
             # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EKF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_UKF2_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -2198,6 +2199,294 @@ class PNP_SOLVER_A2_M3(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
+    def solve_pnp_UKF2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+        '''
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        '''
+
+        # Form the problem for solving
+        # Constant, only changed when golden pattern changed
+        #--------------------------------#
+        co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
+        n_point = co_P.shape[0]
+        x_size = 12
+        # z_size = 2*n_point + 6
+        z_size = 2*n_point + 9
+        #
+        ukf_G = np.eye(x_size)
+        ukf_R_diag = np.ones((x_size,))
+        ukf_R_diag[:9] *= 10**-2
+        ukf_R_diag[9:11] *= 10**-2
+        # ukf_R_diag[11] = 10**-5
+        ukf_R_diag[11] = 10**-7
+        ukf_R = np.diag(ukf_R_diag)
+        #--------------------------------#
+        self.lib_print("co_P = \n%s" % str(co_P))
+        self.lib_print("ukf_R_diag = \n%s" % str(ukf_R_diag))
+        #
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
+
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _stamp_s = time.time()
+        #-------------------------------------#
+
+
+        # Change with sample, constant in iteration
+        #--------------------------------#
+        np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
+        B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
+        #
+        ukf_z = np.zeros( (z_size, 1) )
+        ukf_z[:n_point,:] = B_x
+        ukf_z[n_point:(2*n_point),:] = B_y
+        #
+        # ukf_z[-9:-3,:] = 0.0 # 0 equalities
+        ukf_z[-3:,:] = 1.0 # 1 equalities
+        #--------------------------------#
+
+        # B
+        self.lib_print("B_x = \n%s" % str(B_x))
+        self.lib_print("B_y = \n%s" % str(B_y))
+        self.lib_print("B_x.shape = %s" % str(B_x.shape))
+        self.lib_print("B_y.shape = %s" % str(B_y.shape))
+        #
+        self.lib_print("ukf_z = \n%s" % str(ukf_z))
+
+
+        # Solve by iteration (EKF)
+        #--------------------------------------#
+        # Initial guess
+        ukf_x = np.zeros((x_size,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
+        # Set the initial scaled rotation matrix (Gamma) to be an identidy matrix
+        ukf_x[(3*0)+0, 0] = 1.0
+        ukf_x[(3*1)+1, 0] = 1.0
+        ukf_x[(3*2)+2, 0] = 1.0
+        ukf_x[11, 0] = 1.0 # gamma
+        #
+        ukf_Sigma = np.eye(x_size) * 10**5
+
+        # The parameters related to sigma points
+        #---------------------------------#
+        _alpha = 10**-3
+        _kappa = 0.0
+        _beta = 2.0
+        _lambda = _alpha**2 * (x_size + _kappa) - x_size
+        _x_size_lambda = x_size + _lambda
+        _x_size_lambda_sqrt = np.sqrt(_x_size_lambda)
+        self.lib_print("_lambda = %f" % _lambda)
+        self.lib_print("_x_size_lambda = %f" % _x_size_lambda)
+        self.lib_print("_x_size_lambda_sqrt = %f" % _x_size_lambda_sqrt)
+        #---------------------------------#
+
+        # The weights of sigma points
+        #---------------------------------#
+        _w_m0 = _lambda/_x_size_lambda
+        _w_c0 = _w_m0 + (1.0 - _alpha**2 + _beta)
+        ukf_weight_m = np.ones( ((2*x_size + 1),) ) * (0.5 / _x_size_lambda)
+        ukf_weight_c = np.ones( ((2*x_size + 1),) ) * (0.5 / _x_size_lambda)
+        ukf_weight_m[0] = _w_m0
+        ukf_weight_c[0] = _w_c0
+        self.lib_print("ukf_weight_m = \n%s" % ukf_weight_m)
+        self.lib_print("ukf_weight_c = \n%s" % ukf_weight_c)
+        #---------------------------------#
+
+
+        num_it = 14 # 100 # 14 # 3
+        #
+        # Iteration
+        k_it = 0
+        self.lib_print("---")
+        delta_z_norm_old = 10**-7
+        res_norm = 10**5
+        while k_it < num_it:
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            ukf_u_1 = ukf_x[0:3]
+            ukf_u_2 = ukf_x[3:6]
+            ukf_u_3 = ukf_x[6:9]
+            ukf_u_1_norm = np.linalg.norm(ukf_u_1)
+            ukf_u_2_norm = np.linalg.norm(ukf_u_2)
+            ukf_u_3_norm = np.linalg.norm(ukf_u_3)
+            self.lib_print("ukf_u_1_norm = %f" % ukf_u_1_norm)
+            self.lib_print("ukf_u_2_norm = %f" % ukf_u_2_norm)
+            self.lib_print("ukf_u_3_norm = %f" % ukf_u_3_norm)
+
+            # Calculate Q
+            #-----------------------------#
+            ukf_Q_diag = np.ones((z_size,))
+            f_camera = 225.68
+            # ukf_Q_diag[0:(2*n_point)] = 1.0/(f_camera) # f_camera ?
+            ukf_Q_diag[0:(2*n_point)] = ((3.0)**2) / (f_camera**2) # f_camera ?
+            # ukf_Q_diag[0:(2*n_point)] = ((6.0)**2) / (f_camera**2) # f_camera ?
+            # Nose's x and y
+            # _nose_id = 5
+            # ukf_Q_diag[ [_nose_id, (n_point+_nose_id)] ] = ((3.0)**2) / (f_camera**2)
+            #
+            ukf_Q_diag[-9:-6] = 10**-2 # 10**-1
+            # ukf_Q_diag[-9:-6] = np.array([10**-1, 10**-1, 10**-3])
+            ukf_Q_diag[-6:-3] = (2.0)**2 * 10**-2 # 10**-2
+            # ukf_Q_diag[-6:-3] = np.array([10**-1, 10**-1, 10**-3])
+            #
+            ukf_Q_diag[-9:-3] *= 20
+            #
+            ukf_Q_diag[-3:] = 10**5
+            #
+            ukf_Q = np.diag(ukf_Q_diag)
+
+
+
+            # Prediction
+            #---------------------------#
+            # ukf_x = ukf_x
+            # ukf_Sigma = ukf_G @ ukf_Sigma @ ukf_G.T + ukf_R
+            ukf_Sigma += ukf_R # Note: ukf_G is identity
+            #---------------------------#
+
+
+            # UKF: Generate sigma point set
+            #---------------------------#
+            ukf_Sigma_sqrt = np.linalg.cholesky(ukf_Sigma)
+            ukf_Sigma_sqrt_weighted = _x_size_lambda_sqrt * ukf_Sigma_sqrt
+            # Generate the sigma point set (each column is a aigma point)
+            ukf_sigma_point_set_x = np.hstack([ukf_x, (ukf_x+ukf_Sigma_sqrt_weighted), (ukf_x-ukf_Sigma_sqrt_weighted)])
+            #---------------------------#
+
+            # Predict the output for each sigma point
+            #---------------------------#
+            ukf_sigma_point_set_hx_list = list()
+            for _idx in range(ukf_sigma_point_set_x.shape[1]):
+                ukf_sigma_point_set_hx_list.append( self.UKF2_get_hx(ukf_sigma_point_set_x[:,_idx:(_idx+1)], B_x, B_y, co_P) )
+            ukf_sigma_point_set_hx = np.hstack(ukf_sigma_point_set_hx_list)
+            # Mean of hx
+            ukf_hx_mean = ukf_weight_m[0] * ukf_sigma_point_set_hx[:,0:1]
+            for _idx in range(1, ukf_sigma_point_set_x.shape[1]):
+                ukf_hx_mean += ukf_weight_m[_idx] * ukf_sigma_point_set_hx[:,_idx:(_idx+1)]
+            #---------------------------#
+
+            # Calculate the UKF gain
+            #---------------------------#
+            _ukf_hx_dev_i = (ukf_sigma_point_set_hx[:,0:1] - ukf_hx_mean)
+            ukf_T_xz = ukf_weight_c[0] * (ukf_sigma_point_set_x[:,0:1] - ukf_x) @ _ukf_hx_dev_i.T
+            ukf_S_zz = ukf_Q + ukf_weight_c[0] * _ukf_hx_dev_i @ _ukf_hx_dev_i.T # Note: Plus Q
+            for _idx in range(1, ukf_sigma_point_set_x.shape[1]):
+                _ukf_hx_dev_i = (ukf_sigma_point_set_hx[:,_idx:(_idx+1)] - ukf_hx_mean)
+                ukf_T_xz += ukf_weight_c[_idx] * (ukf_sigma_point_set_x[:,_idx:(_idx+1)] - ukf_x) @ _ukf_hx_dev_i.T
+                ukf_S_zz += ukf_weight_c[_idx] * _ukf_hx_dev_i @ _ukf_hx_dev_i.T
+            #
+            ukf_S_u, ukf_S_s, ukf_S_vh = np.linalg.svd(ukf_S_zz)
+            # ukf_S_pinv = np.linalg.pinv(ukf_S_zz)
+            ukf_S_pinv = np.linalg.inv(ukf_S_zz)
+            ukf_K = ukf_T_xz @ ukf_S_pinv
+            #---------------------------#
+
+            # Get delta_z
+            #---------------------------#
+            delta_z = (ukf_z - ukf_hx_mean)
+            delta_z_norm = np.linalg.norm(delta_z)
+            res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
+            #---------------------------#
+
+
+            #-----------------------------#
+            self.lib_print("diag(ukf_Q) = \n%s" % str(np.diag(ukf_Q)))
+            # self.lib_print("ekf_Hx = \n%s" % str(ekf_Hx))
+            # self.lib_print("ukf_S_zz = \n%s" % str(ukf_S_zz))
+            self.lib_print("ukf_S_s = \n%s" % str(ukf_S_s))
+            # self.lib_print("ukf_S_pinv = \n%s" % str(ukf_S_pinv))
+            # self.lib_print("ukf_K = \n%s" % str(ukf_K))
+            self.lib_print("ukf_z = \n%s" % str(ukf_z))
+            self.lib_print("ukf_hx_mean = \n%s" % ukf_hx_mean)
+            self.lib_print("delta_z = (ukf_z-ekf_hx) = \n%s" % str(delta_z))
+            self.lib_print("delta_z_norm = %f" % delta_z_norm)
+            self.lib_print("res_norm = %f" % res_norm)
+            #-----------------------------#
+
+            # # Experiment with optimal iteration number
+            # #-----------------------------#
+            # # Update delta_z_norm_old
+            # delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
+            # delta_z_norm_old = delta_z_norm
+            # self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
+            # # Test the slow changing
+            # if (abs(delta_z_ratio) < (5*10**-2)):
+            #     # 10^-1     -> 5~8
+            #     # 5 * 10^-2 -> 9~12
+            #     # 2 * 10^-2 -> 17~21
+            #     # 10^-2     -> 25~30
+            #     break
+            # # # Test if the delta_z_norm will increase --> No
+            # # if (delta_z_ratio >= 0.0) and (k_it > 3):
+            # #     break
+            # #-----------------------------#
+
+            # Update x
+            #-----------------------------#
+            self.lib_print("(old) ukf_x = \n%s" % str(ukf_x))
+            ukf_x += ukf_K @ delta_z
+            ukf_Sigma -= (ukf_K @ ukf_S_zz @ ukf_K.T)
+            ukf_Sigma = 0.5 * (ukf_Sigma + ukf_Sigma.T)
+            self.lib_print("(new) ukf_x = \n%s" % str(ukf_x))
+            # self.lib_print("ukf_Sigma - ukf_Sigma.T = \n%s" % (ukf_Sigma - ukf_Sigma.T))
+            #-----------------------------#
+
+            ukf_Sigma_u, ukf_Sigma_s, ukf_Sigma_vh = np.linalg.svd(ukf_Sigma)
+            self.lib_print("ukf_Sigma_s = \n%s" % str(ukf_Sigma_s))
+
+            ukf_Sigma_w, ukf_Sigma_v = np.linalg.eig(ukf_Sigma)
+            self.lib_print("ukf_Sigma_w = \n%s" % str(ukf_Sigma_w))
+
+
+            self.lib_print("---")
+
+        #--------------------------------------#
+
+        self.lib_print()
+        self.lib_print("k_it = %d" % k_it)
+        self.lib_print()
+        # Reconstruct (R, t)
+        #--------------------------------------------------------#
+        np_R_est, np_t_est, t3_est = self.EKF2_reconstruct_R_t_m1(ukf_x)
+
+        # test, pre-transfer
+        #---------------------------#
+        self.np_R_c_a_est = copy.deepcopy(np_R_est)
+        self.np_t_c_a_est = copy.deepcopy(np_t_est)
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = copy.deepcopy(np_R_c_h_est)
+            np_t_est = copy.deepcopy(np_t_c_h)
+            t3_est = np_t_est[2,0]
+        #---------------------------#
+
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
+        roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------------------------------#
+
+        # # Get the whole residual
+        # #-----------------------------#
+        # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        # res_norm = delta_z_norm
+        # #-----------------------------#
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _duration = time.time() - _stamp_s
+        self.lib_print("\n*** _duration = %f ms ***\n" % (_duration*1000.0))
+        #-------------------------------------#
+
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
     #-----------------------------------------------------------#
 
     # Components of the solution
@@ -2872,6 +3161,70 @@ class PNP_SOLVER_A2_M3(object):
         #-------------------------------------#
         #
         return (hx, Hx)
+
+    def UKF2_get_hx(self, ekf_x, B_x, B_y, P, is_hc0_4_6_linear=False, is_hc1_linear=True):
+        '''
+        '''
+        n_point = P.shape[0]
+        x_size = ekf_x.shape[0]
+        z_size = 2*n_point + 9
+        #
+        ekf_u_1 = ekf_x[0:3,:]
+        ekf_u_2 = ekf_x[3:6,:]
+        ekf_u_3 = ekf_x[6:9,:]
+        delta_1 = ekf_x[9,0]
+        delta_2 = ekf_x[10,0]
+        ekf_gamma = ekf_x[11,0]
+        #
+        ekf_u_all = ekf_x[:9,:]
+        #
+        #
+        zeros_nx3 = np.zeros((n_point,3))
+        zeros_nx1 = np.zeros((n_point,1))
+        ones_nx1 = np.ones((n_point,1))
+        Hu1_bar = np.hstack([P, zeros_nx3, (-B_x*P)])
+        Hu2_bar = np.hstack([zeros_nx3, P, (-B_y*P)])
+        hu1_bar = Hu1_bar @ ekf_u_all
+        hu2_bar = Hu2_bar @ ekf_u_all
+        #
+        # H1 = np.hstack([(ekf_gamma*Hu1_bar), ones_nx1, zeros_nx1, hu1_bar])
+        # H2 = np.hstack([(ekf_gamma*Hu2_bar), zeros_nx1, ones_nx1, hu2_bar])
+        #
+
+        # hx
+        #-------------------------------------#
+        hx = np.zeros((z_size, 1))
+        hx[:n_point,:]              = ekf_gamma * hu1_bar + ones_nx1 * delta_1
+        hx[n_point:(2*n_point),:]   = ekf_gamma * hu2_bar + ones_nx1 * delta_2
+        # hc0, 1~3
+        hx[(2*n_point),0]   = ekf_u_1.T @ ekf_u_3
+        hx[(2*n_point+1),0] = ekf_u_2.T @ ekf_u_3
+        hx[(2*n_point+2),0] = ekf_u_1.T @ ekf_u_2
+
+        if is_hc0_4_6_linear:
+            # hc0, 4~6
+            hx[(2*n_point+3),0] = np.linalg.norm(ekf_u_1) - np.linalg.norm(ekf_u_3)
+            hx[(2*n_point+4),0] = np.linalg.norm(ekf_u_2) - np.linalg.norm(ekf_u_3)
+            hx[(2*n_point+5),0] = np.linalg.norm(ekf_u_1) - np.linalg.norm(ekf_u_2)
+        else:
+            # hc0, 4~6
+            hx[(2*n_point+3),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_3.T @ ekf_u_3
+            hx[(2*n_point+4),0] = ekf_u_2.T @ ekf_u_2 - ekf_u_3.T @ ekf_u_3
+            hx[(2*n_point+5),0] = ekf_u_1.T @ ekf_u_1 - ekf_u_2.T @ ekf_u_2
+
+        if is_hc1_linear:
+            # hc1, 1~3
+            hx[(2*n_point+6),0] = np.sqrt(ekf_u_1.T @ ekf_u_1)
+            hx[(2*n_point+7),0] = np.sqrt(ekf_u_2.T @ ekf_u_2)
+            hx[(2*n_point+8),0] = np.sqrt(ekf_u_3.T @ ekf_u_3)
+        else:
+            # hc1, 1~3
+            hx[(2*n_point+6),0] = ekf_u_1.T @ ekf_u_1
+            hx[(2*n_point+7),0] = ekf_u_2.T @ ekf_u_2
+            hx[(2*n_point+8),0] = ekf_u_3.T @ ekf_u_3
+        #-------------------------------------#
+        #
+        return hx
     #-------------------------------------------#
 
 
