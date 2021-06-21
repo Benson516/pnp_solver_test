@@ -2267,7 +2267,8 @@ class PNP_SOLVER_A2_M3(object):
         ukf_x[(3*2)+2, 0] = 1.0
         ukf_x[11, 0] = 1.0 # gamma
         #
-        ukf_Sigma = np.eye(x_size) * 10**5
+        # ukf_Sigma = np.eye(x_size) * 10**5
+        ukf_Sigma = np.eye(x_size) * 0.5
 
         # The parameters related to sigma points
         #---------------------------------#
