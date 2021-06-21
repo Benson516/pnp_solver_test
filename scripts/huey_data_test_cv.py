@@ -54,9 +54,14 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy["pitch"] = "-30"
 # specific_drpy["yaw"] = "40"
 # specific_drpy = {"distance":"40", "roll":"-25", "pitch":"0", "yaw":"0"}
-# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"0"}
+# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"40"}
 # specific_drpy = {"distance":"100", "roll":"-45", "pitch":"-15", "yaw":"0"} # The "flipping" case
-# specific_drpy = {"distance":"120", "roll":"45", "pitch":"-15", "yaw":"40"} # The "flipping" case
+# specific_drpy = {"distance":"120", "roll":"45", "pitch":"-15", "yaw":"40"}
+# specific_drpy = {"distance":"20", "roll":"0", "pitch":"-30", "yaw":"-40"}
+# specific_drpy = {"distance":"20", "roll":"-45", "pitch":"30", "yaw":"40"}
+# specific_drpy = {"distance":"160", "roll":"25", "pitch":"-30", "yaw":"-40"} # Error type LM
+# specific_drpy = {"distance":"100", "roll":"45", "pitch":"-30", "yaw":"-40"} # Error type LM
+# specific_drpy = {"distance":"160", "roll":"-25", "pitch":"0", "yaw":"-40"} # Error type fitting
 specific_drpy = None
 #
 DATA_COUNT = 3
@@ -153,8 +158,9 @@ print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split
 is_classified_by_label = False
 
 # Formate
-# drpy_class_format = "drpy_expand"
-drpy_class_format = "HMI_inspection"
+drpy_class_format = "drpy_expand"
+# drpy_class_format = "drpy_expand_zoom_in"
+# drpy_class_format = "HMI_inspection"
 
 if drpy_class_format == "drpy_expand":
     # class label and bins
@@ -183,17 +189,18 @@ if drpy_class_format == "drpy_expand":
     print("class_yaw_label = %s" % class_yaw_label)
     print("class_yaw_bins = %s" % class_yaw_bins)
     #
-elif drpy_class_format == "HMI_inspection":
+elif drpy_class_format == "drpy_expand_zoom_in":
     # class label and bins
     # Depth
-    class_depth_label = ["0", "100", "200"] # Using lower bound as the label
-    class_depth_bins = [100, 200] # Only the middle bound values
+    class_depth_nominal_value = np.arange(20.0, 240.1, 20) # Note: the length of label should be one element longer than the bin
+    class_depth_label = [str(int(_e)) for _e in class_depth_nominal_value] # Using nominal value as class label
+    class_depth_bins = list( class_depth_nominal_value[:-1] + 10.0 ) # Note: Keep the last label. Calculate the upper bound, since the np.digitize() return the index of ubber bound bin
     print("class_depth_label = %s" % class_depth_label)
     print("class_depth_bins = %s" % class_depth_bins)
     # Roll
-    class_roll_nominal_value = np.array([-30, 0, 30]) # Note: the length of label should be one element longer than the bin
+    class_roll_nominal_value = np.array([-20, -10, 0, 10, 20]) # Note: the length of label should be one element longer than the bin
     class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
-    class_roll_bins = [-15, 15] # Only the middle bound values
+    class_roll_bins = [-20, -10, 10, 20] # Only the middle bound values
     print("class_roll_label = %s" % class_roll_label)
     print("class_roll_bins = %s" % class_roll_bins)
     # Pitch
@@ -206,6 +213,32 @@ elif drpy_class_format == "HMI_inspection":
     class_yaw_nominal_value = np.array([-40, -20, 0, 20, 40]) # Note: the length of label should be one element longer than the bin
     class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
     class_yaw_bins = [-30, -10, 10, 30] # Only the middle bound values
+    print("class_yaw_label = %s" % class_yaw_label)
+    print("class_yaw_bins = %s" % class_yaw_bins)
+    #
+elif drpy_class_format == "HMI_inspection":
+    # class label and bins
+    # Depth
+    class_depth_label = ["0", "100", "200"] # Using lower bound as the label
+    class_depth_bins = [100, 200] # Only the middle bound values
+    print("class_depth_label = %s" % class_depth_label)
+    print("class_depth_bins = %s" % class_depth_bins)
+    # Roll
+    class_roll_nominal_value = np.array([-15, 0, 15]) # Note: the length of label should be one element longer than the bin
+    class_roll_label = [str(int(_e)) for _e in class_roll_nominal_value] # Using nominal value as class label
+    class_roll_bins = [-15, 15] # Only the middle bound values
+    print("class_roll_label = %s" % class_roll_label)
+    print("class_roll_bins = %s" % class_roll_bins)
+    # Pitch
+    class_pitch_nominal_value = np.array([-20, -10, 0, 10, 20]) # Note: the length of label should be one element longer than the bin
+    class_pitch_label = [str(int(_e)) for _e in class_pitch_nominal_value] # Using nominal value as class label
+    class_pitch_bins = [-20, -10, 10, 20] # Only the middle bound values
+    print("class_pitch_label = %s" % class_pitch_label)
+    print("class_pitch_bins = %s" % class_pitch_bins)
+    # Yaw
+    class_yaw_nominal_value = np.array([-20, -10, 0, 10, 20]) # Note: the length of label should be one element longer than the bin
+    class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
+    class_yaw_bins = [-20, -10, 10, 20] # Only the middle bound values
     print("class_yaw_label = %s" % class_yaw_label)
     print("class_yaw_bins = %s" % class_yaw_bins)
     #
@@ -322,7 +355,7 @@ point_3d_dict = dict()
 # Note: the Landmark definition in the pitcture in reversed
 point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
 point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+point_3d_dict["eye_c_51"] = [0.0, 0.0, -0.015]
 point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
 point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
