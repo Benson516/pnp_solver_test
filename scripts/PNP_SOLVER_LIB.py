@@ -135,8 +135,8 @@ class PNP_SOLVER_A2_M3(object):
             # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EKF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_UKF2_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_UKF2_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
