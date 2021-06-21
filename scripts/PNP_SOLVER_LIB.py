@@ -2554,7 +2554,7 @@ class PNP_SOLVER_A2_M3(object):
 
         # LM's parameters
         #--------------------------#
-        LM_lambda = 10**-3
+        LM_lambda = 10**-5 # 10**-3
         #--------------------------#
 
 
@@ -2589,7 +2589,10 @@ class PNP_SOLVER_A2_M3(object):
             ekf_hx, LM_Jx = self.EKF2_get_hx_H(LM_x, B_x, B_y, co_P)
 
             # Calculate the damped square matrix in LM
-            LM_JTJ_lambda = LM_Jx.T @ LM_Jx + LM_lambda * np.eye(x_size)
+            LM_JTJ = LM_Jx.T @ LM_Jx
+            LM_JTJ_lambda = LM_JTJ + LM_lambda * np.eye(x_size)
+            # LM_JTJ_diag = np.diag(np.diag(LM_JTJ))
+            # LM_JTJ_lambda = LM_JTJ + LM_lambda * LM_JTJ_diag
 
             # Inspection, (not needed in production)
             LM_JTJ_lambda_u, LM_JTJ_lambda_s, LM_JTJ_lambda_vh = np.linalg.svd(LM_JTJ_lambda)
@@ -2618,23 +2621,6 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("LM_delta_x = \n%s" % str(LM_delta_x))
             #-----------------------------#
 
-            # Experiment with optimal iteration number
-            #-----------------------------#
-            # Update delta_z_norm_old
-            delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
-            delta_z_norm_old = delta_z_norm
-            self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
-            # Test the slow changing
-            if (abs(delta_z_ratio) < (2*10**-2)):
-                # 10^-1     -> 5~8
-                # 5 * 10^-2 -> 9~12
-                # 2 * 10^-2 -> 17~21
-                # 10^-2     -> 25~30
-                break
-            # # Test if the delta_z_norm will increase --> No
-            # if (delta_z_ratio >= 0.0) and (k_it > 3):
-            #     break
-            #-----------------------------#
 
             # Update x
             #-----------------------------#
@@ -2643,6 +2629,23 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("(new) LM_x = \n%s" % str(LM_x))
             #-----------------------------#
 
+            # # Experiment with optimal iteration number
+            # #-----------------------------#
+            # # Update delta_z_norm_old
+            # delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
+            # delta_z_norm_old = delta_z_norm
+            # self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
+            # # Test the slow changing
+            # if (abs(delta_z_ratio) < (5*10**-2)):
+            #     # 10^-1     -> 5~8
+            #     # 5 * 10^-2 -> 9~12
+            #     # 2 * 10^-2 -> 17~21
+            #     # 10^-2     -> 25~30
+            #     break
+            # # # Test if the delta_z_norm will increase --> No
+            # # if (delta_z_ratio >= 0.0) and (k_it > 3):
+            # #     break
+            # #-----------------------------#
 
             self.lib_print("---")
 
