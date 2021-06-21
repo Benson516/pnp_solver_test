@@ -135,8 +135,9 @@ class PNP_SOLVER_A2_M3(object):
             # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EKF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_UKF2_single_pattern(np_point_image_dict, _point_3d_dict)
+            _result = self.solve_pnp_LM_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -2488,6 +2489,208 @@ class PNP_SOLVER_A2_M3(object):
 
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
+    def solve_pnp_LM_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+        '''
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        '''
+
+        # Form the problem for solving
+        # Constant, only changed when golden pattern changed
+        #--------------------------------#
+        co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
+        n_point = co_P.shape[0]
+        x_size = 12
+        # z_size = 2*n_point + 6
+        z_size = 2*n_point + 9
+        #--------------------------------#
+        self.lib_print("co_P = \n%s" % str(co_P))
+        #
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
+
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _stamp_s = time.time()
+        #-------------------------------------#
+
+
+        # Change with sample, constant in iteration
+        #--------------------------------#
+        np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
+        B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
+        #
+        LM_z = np.zeros( (z_size, 1) )
+        LM_z[:n_point,:] = B_x
+        LM_z[n_point:(2*n_point),:] = B_y
+        #
+        # LM_z[-9:-3,:] = 0.0 # 0 equalities
+        LM_z[-3:,:] = 1.0 # 1 equalities
+        #--------------------------------#
+
+        # B
+        self.lib_print("B_x = \n%s" % str(B_x))
+        self.lib_print("B_y = \n%s" % str(B_y))
+        self.lib_print("B_x.shape = %s" % str(B_x.shape))
+        self.lib_print("B_y.shape = %s" % str(B_y.shape))
+        #
+        self.lib_print("LM_z = \n%s" % str(LM_z))
+
+
+        # Solve by iteration (EKF)
+        #--------------------------------------#
+        # Initial guess
+        LM_x = np.zeros((x_size,1)) # [phi_1; phi_2; phi_3; delta_1; delta_2]
+        # Set the initial scaled rotation matrix (Gamma) to be an identidy matrix
+        LM_x[(3*0)+0, 0] = 1.0
+        LM_x[(3*1)+1, 0] = 1.0
+        LM_x[(3*2)+2, 0] = 1.0
+        LM_x[11, 0] = 1.0 # gamma
+        #
+
+
+
+        # LM's parameters
+        #--------------------------#
+        LM_lambda = 10**-3
+        #--------------------------#
+
+
+        num_it = 14 # 100 # 14 # 3
+        #
+        # Iteration
+        k_it = 0
+        self.lib_print("---")
+        delta_z_norm_old = 10**-7
+        res_norm = 10**5
+        while k_it < num_it:
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            LM_u_1 = LM_x[0:3]
+            LM_u_2 = LM_x[3:6]
+            LM_u_3 = LM_x[6:9]
+            LM_u_1_norm = np.linalg.norm(LM_u_1)
+            LM_u_2_norm = np.linalg.norm(LM_u_2)
+            LM_u_3_norm = np.linalg.norm(LM_u_3)
+            self.lib_print("LM_u_1_norm = %f" % LM_u_1_norm)
+            self.lib_print("LM_u_2_norm = %f" % LM_u_2_norm)
+            self.lib_print("LM_u_3_norm = %f" % LM_u_3_norm)
+
+            # Calculate K
+            #-----------------------------#
+
+            #
+            LM_x_bar = LM_x
+
+            # Get the observation and the Jocobian
+            ekf_hx, LM_Jx = self.EKF2_get_hx_H(LM_x, B_x, B_y, co_P)
+
+            # Calculate the damped square matrix in LM
+            LM_JTJ_lambda = LM_Jx.T @ LM_Jx + LM_lambda * np.eye(x_size)
+
+            # Inspection, (not needed in production)
+            LM_JTJ_lambda_u, LM_JTJ_lambda_s, LM_JTJ_lambda_vh = np.linalg.svd(LM_JTJ_lambda)
+
+            # Inverse
+            LM_JTJ_lambda_pinv = np.linalg.pinv(LM_JTJ_lambda)
+
+
+            # delta_z
+            delta_z = (LM_z - ekf_hx)
+            delta_z_norm = np.linalg.norm(delta_z)
+            res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
+
+            # delta_x
+            LM_delta_x = LM_JTJ_lambda_pinv @ LM_Jx.T @ delta_z
+
+
+            #
+            # self.lib_print("LM_Jx = \n%s" % str(LM_Jx))
+            self.lib_print("LM_JTJ_lambda_s = \n%s" % str(LM_JTJ_lambda_s))
+            self.lib_print("LM_z = \n%s" % str(LM_z))
+            self.lib_print("ekf_hx = \n%s" % str(ekf_hx))
+            self.lib_print("delta_z = (LM_z-ekf_hx) = \n%s" % str(delta_z))
+            self.lib_print("delta_z_norm = %f" % delta_z_norm)
+            self.lib_print("res_norm = %f" % res_norm)
+            self.lib_print("LM_delta_x = \n%s" % str(LM_delta_x))
+            #-----------------------------#
+
+            # Experiment with optimal iteration number
+            #-----------------------------#
+            # Update delta_z_norm_old
+            delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
+            delta_z_norm_old = delta_z_norm
+            self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
+            # Test the slow changing
+            if (abs(delta_z_ratio) < (2*10**-2)):
+                # 10^-1     -> 5~8
+                # 5 * 10^-2 -> 9~12
+                # 2 * 10^-2 -> 17~21
+                # 10^-2     -> 25~30
+                break
+            # # Test if the delta_z_norm will increase --> No
+            # if (delta_z_ratio >= 0.0) and (k_it > 3):
+            #     break
+            #-----------------------------#
+
+            # Update x
+            #-----------------------------#
+            self.lib_print("(old) LM_x = \n%s" % str(LM_x))
+            LM_x += LM_delta_x
+            self.lib_print("(new) LM_x = \n%s" % str(LM_x))
+            #-----------------------------#
+
+
+            self.lib_print("---")
+
+        #--------------------------------------#
+
+        self.lib_print()
+        self.lib_print("k_it = %d" % k_it)
+        self.lib_print()
+        # Reconstruct (R, t)
+        #--------------------------------------------------------#
+        np_R_est, np_t_est, t3_est = self.EKF2_reconstruct_R_t_m1(LM_x)
+
+        # test, pre-transfer
+        #---------------------------#
+        self.np_R_c_a_est = copy.deepcopy(np_R_est)
+        self.np_t_c_a_est = copy.deepcopy(np_t_est)
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = copy.deepcopy(np_R_c_h_est)
+            np_t_est = copy.deepcopy(np_t_c_h)
+            t3_est = np_t_est[2,0]
+        #---------------------------#
+
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
+        roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------------------------------#
+
+        # # Get the whole residual
+        # #-----------------------------#
+        # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        # res_norm = delta_z_norm
+        # #-----------------------------#
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _duration = time.time() - _stamp_s
+        self.lib_print("\n*** _duration = %f ms ***\n" % (_duration*1000.0))
+        #-------------------------------------#
+
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
     #-----------------------------------------------------------#
 
     # Components of the solution
