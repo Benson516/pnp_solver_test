@@ -2059,8 +2059,12 @@ class PNP_SOLVER_A2_M3(object):
         # Iteration
         k_it = 0
         self.lib_print("---")
-        delta_z_norm_old = 10**-7
+        error_norm_old = 10**-7
         res_norm = 10**5
+        #
+        is_error_growing = False
+        is_error_growing_old = is_error_growing
+        #
         while k_it < num_it:
             k_it += 1
             self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
@@ -2075,6 +2079,16 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("eif_u_2_norm = %f" % eif_u_2_norm)
             self.lib_print("eif_u_3_norm = %f" % eif_u_3_norm)
 
+            # if k_it == 5:
+            #     eif_Omega_pinv *= 10**2
+
+            # # Re-gain the power (covariance) when first reaching the vicinity after passing the mountain
+            # if not is_error_growing:
+            #     if is_error_growing_old:
+            #         # eif_Omega_pinv *= 10**2
+            #         eif_Omega_pinv += 10**1 * np.eye(x_size)
+            #         self.lib_print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Amplify the state covariance")
+            # is_error_growing_old = is_error_growing
 
             # Predict
             #-----------------------------#
@@ -2095,7 +2109,7 @@ class PNP_SOLVER_A2_M3(object):
                 eif_Omega_pinv = np.linalg.pinv(eif_Omega)
                 # Update x
                 eif_x = eif_Omega_pinv @ eif_zeta
-                self.lib_print("(new) eif_x = \n%s" % str(eif_x))
+                # self.lib_print("(new) eif_x = \n%s" % str(eif_x))
                 #-----------------------------#
 
             # Inspections
@@ -2106,7 +2120,7 @@ class PNP_SOLVER_A2_M3(object):
             delta_z_norm = np.linalg.norm(delta_z)
             res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
             #
-            self.lib_print("diag(eif_Q_pinv) = \n%s" % str(np.diag(eif_Q_pinv)))
+            # self.lib_print("diag(eif_Q_pinv) = \n%s" % str(np.diag(eif_Q_pinv)))
             self.lib_print("eif_Omega_s = \n%s" % str(eif_Omega_s))
             self.lib_print("eif_z = \n%s" % str(eif_z))
             self.lib_print("eif_hx = \n%s" % str(eif_hx))
@@ -2115,23 +2129,6 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("res_norm = %f" % res_norm)
             #-----------------------------#
 
-            # # Experiment with optimal iteration number
-            # #-----------------------------#
-            # # Update delta_z_norm_old
-            # delta_z_ratio = (delta_z_norm-delta_z_norm_old)/delta_z_norm_old
-            # delta_z_norm_old = delta_z_norm
-            # self.lib_print("delta_z_ratio = %f" % delta_z_ratio)
-            # # Test the slow changing
-            # if (abs(delta_z_ratio) < (5*10**-2)):
-            #     # 10^-1     -> 5~8
-            #     # 5 * 10^-2 -> 9~12
-            #     # 2 * 10^-2 -> 17~21
-            #     # 10^-2     -> 25~30
-            #     break
-            # # # Test if the delta_z_norm will increase --> No
-            # # if (delta_z_ratio >= 0.0) and (k_it > 3):
-            # #     break
-            # #-----------------------------#
 
             # Update x
             #-----------------------------#
@@ -2140,10 +2137,44 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("(new) eif_x = \n%s" % str(eif_x))
             #-----------------------------#
 
-            # # Inspection about Sigma = eif_Omega_pinv
-            # eif_Sigma = eif_Omega_pinv
-            # eif_Sigma_u, eif_Sigma_s, eif_Sigma_vh = np.linalg.svd(eif_Sigma)
-            # self.lib_print("eif_Sigma_s = \n%s" % str(eif_Sigma_s))
+
+            # Inspection about Sigma = eif_Omega_pinv
+            eif_Sigma = eif_Omega_pinv
+            eif_Sigma_u, eif_Sigma_s, eif_Sigma_vh = np.linalg.svd(eif_Sigma)
+            self.lib_print("eif_Sigma_s = \n%s" % str(eif_Sigma_s))
+
+
+            # # Experiment with optimal iteration number
+            # #-----------------------------#
+            # # Update error_norm_old
+            # error_norm = delta_z_norm
+            # # error_norm = np.linalg.norm(eif_Sigma_s)
+            # erro_ratio = (error_norm - error_norm_old)/error_norm_old
+            # error_norm_old = error_norm
+            # self.lib_print("erro_ratio = %f" % erro_ratio)
+            # #
+            # is_error_growing = (erro_ratio > 0.0)
+            # #
+            # # Test the slow changing
+            # if (abs(erro_ratio) < (5*10**-2)):
+            #     # 10^-1     -> 5~8
+            #     # 5 * 10^-2 -> 9~12
+            #     # 2 * 10^-2 -> 17~21
+            #     # 10^-2     -> 25~30
+            #     break
+            #     # # Test if the delta_z_norm will increase --> No
+            #     # if (erro_ratio >= 0.0) and (k_it > 3):
+            #     #     break
+            # #-----------------------------#
+
+
+
+            # # Inspection
+            # #--------------------------------------------------------#
+            # self.lib_print("")
+            # np_R_est, np_t_est, t3_est = self.EKF2_reconstruct_R_t_m1(eif_x)
+            # self.lib_print("")
+            # #--------------------------------------------------------#
 
 
             self.lib_print("---")
