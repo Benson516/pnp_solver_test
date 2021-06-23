@@ -2120,10 +2120,13 @@ class PNP_SOLVER_A2_M3(object):
                 self.lib_print("eif_z = \n%s" % str(eif_z))
                 self.lib_print("eif_hx = \n%s" % str(eif_hx))
                 self.lib_print("delta_z = (eif_z-eif_hx) = \n%s" % str(delta_z))
+                # self.lib_print("eif_Omega = \n%s" % eif_Omega)
+                # self.lib_print("eif_zeta = \n%s" % eif_zeta)
+                #
                 self.lib_print("delta_z_norm = %f" % delta_z_norm)
                 self.lib_print("res_norm = %f" % res_norm)
                 #-----------------------------#
-                
+
                 # Update x
                 #-----------------------------#
                 self.lib_print("(old) eif_x = \n%s" % str(eif_x))
