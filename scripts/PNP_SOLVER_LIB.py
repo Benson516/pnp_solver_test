@@ -2106,36 +2106,34 @@ class PNP_SOLVER_A2_M3(object):
                 eif_Omega += _eif_HTQpinv @ eif_Hx
                 eif_zeta += _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x) )
                 # The following will be replaced by incremental updating algorithm
-                eif_Omega_pinv = np.linalg.pinv(eif_Omega)
+
+                # Inspections
+                #-----------------------------#
+                #
+                eif_Omega_u, eif_Omega_s, eif_Omega_vh = np.linalg.svd(eif_Omega)
+                delta_z = (eif_z - eif_hx)
+                delta_z_norm = np.linalg.norm(delta_z)
+                res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
+                #
+                # self.lib_print("diag(eif_Q_pinv) = \n%s" % str(np.diag(eif_Q_pinv)))
+                self.lib_print("eif_Omega_s = \n%s" % str(eif_Omega_s))
+                self.lib_print("eif_z = \n%s" % str(eif_z))
+                self.lib_print("eif_hx = \n%s" % str(eif_hx))
+                self.lib_print("delta_z = (eif_z-eif_hx) = \n%s" % str(delta_z))
+                self.lib_print("delta_z_norm = %f" % delta_z_norm)
+                self.lib_print("res_norm = %f" % res_norm)
+                #-----------------------------#
+                
                 # Update x
+                #-----------------------------#
+                self.lib_print("(old) eif_x = \n%s" % str(eif_x))
+                eif_Omega_pinv = np.linalg.pinv(eif_Omega)
                 eif_x = eif_Omega_pinv @ eif_zeta
-                # self.lib_print("(new) eif_x = \n%s" % str(eif_x))
+                self.lib_print("(new) eif_x = \n%s" % str(eif_x))
                 #-----------------------------#
 
-            # Inspections
-            #-----------------------------#
-            #
-            eif_Omega_u, eif_Omega_s, eif_Omega_vh = np.linalg.svd(eif_Omega)
-            delta_z = (eif_z - eif_hx)
-            delta_z_norm = np.linalg.norm(delta_z)
-            res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
-            #
-            # self.lib_print("diag(eif_Q_pinv) = \n%s" % str(np.diag(eif_Q_pinv)))
-            self.lib_print("eif_Omega_s = \n%s" % str(eif_Omega_s))
-            self.lib_print("eif_z = \n%s" % str(eif_z))
-            self.lib_print("eif_hx = \n%s" % str(eif_hx))
-            self.lib_print("delta_z = (eif_z-eif_hx) = \n%s" % str(delta_z))
-            self.lib_print("delta_z_norm = %f" % delta_z_norm)
-            self.lib_print("res_norm = %f" % res_norm)
-            #-----------------------------#
+                #-----------------------------#
 
-
-            # Update x
-            #-----------------------------#
-            self.lib_print("(old) eif_x = \n%s" % str(eif_x))
-            eif_x = eif_Omega_pinv @ eif_zeta
-            self.lib_print("(new) eif_x = \n%s" % str(eif_x))
-            #-----------------------------#
 
 
             # Inspection about Sigma = eif_Omega_pinv
