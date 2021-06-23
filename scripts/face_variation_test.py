@@ -7,6 +7,9 @@ import cv2
 #
 import PNP_SOLVER_LIB as PNPS
 
+# ctrl+c
+from signal import signal, SIGINT
+
 
 #---------------------------#
 # Landmark (LM) dataset
@@ -28,8 +31,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_stress_test = True
-is_stress_test = False
+is_stress_test = True
+# is_stress_test = False
 
 # Data generation
 # is_random = True
@@ -303,6 +306,17 @@ def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_lis
     drpy_pass_list = [ (np.abs( drpy_est_list[_i] - drpy_GT_list[_i] ) < drpy_error_bound_list[_i]) for _i in range(len(drpy_est_list))]
     pass_count = len([ _e for _e in drpy_pass_list if _e])
     return (drpy_pass_list, pass_count)
+
+# SIGINT
+received_SIGINT = False
+def SIGINT_handler(signal_received, frame):
+    global received_SIGINT
+    # Handle any cleanup here
+    print('SIGINT or CTRL-C detected. Exiting gracefully')
+    received_SIGINT = True
+
+# Tell Python to run the handler() function when SIGINT is recieved
+signal(SIGINT, SIGINT_handler)
 #-------------------------------#
 
 
@@ -350,12 +364,12 @@ s_stamp = time.time()
 # Loop, stress test
 is_continuing_to_next_sample = True
 sample_count = 0
-while (sample_count < DATA_COUNT):
+while (sample_count < DATA_COUNT) and (not received_SIGINT):
     #
     if not is_continuing_to_next_sample:
         break
     sample_count += 1
-    # The idx for reference into the data list 
+    # The idx for reference into the data list
     _idx = sample_count-1
     #
 
