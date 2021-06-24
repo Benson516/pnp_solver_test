@@ -7,9 +7,6 @@ import cv2
 #
 import PNP_SOLVER_LIB as PNPS
 
-# ctrl+c
-from signal import signal, SIGINT
-
 
 #---------------------------#
 # Landmark (LM) dataset
@@ -31,8 +28,8 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-is_stress_test = True
-# is_stress_test = False
+# is_stress_test = True
+is_stress_test = False
 
 # Data generation
 # is_random = True
@@ -254,127 +251,13 @@ elif drpy_class_format == "HMI_inspection":
 else:
     pass
 #-------------------------------#
-
-
-
-#-------------------------------#
-def solving_center_point(p1,p2,p3,p4):
-    '''
-    p1   p2
-       \/
-       pc
-       /\
-    p4   p3
-    '''
-    # Transform to 2D arrays
-    _n = np.array(p1).size
-    _p1_shape = np.array(p1).shape
-    _p1 = np.array(p1).reshape( (_n,1) )
-    _p2 = np.array(p2).reshape( (_n,1) )
-    _p3 = np.array(p3).reshape( (_n,1) )
-    _p4 = np.array(p4).reshape( (_n,1) )
-    #
-    _d13 = _p3 - _p1
-    _d24 = _p4 - _p2
-    _A = np.hstack([_d13, _d24])
-    _b = _p2 - _p1
-    _uv = np.linalg.pinv(_A) @ _b
-    _pc = _p1 + _uv[0,0] * _d13
-    # reshape
-    pc = _pc.reshape( _p1_shape )
-    if type(p1) == type(list()):
-        pc = list(pc)
-    return pc
-
-def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
-    '''
-    pixel_xy: np array, shape=(2,)
-    '''
-    if mirrored:
-        pixel_center_x = 320/2.0
-        pixel_xy_mirrored = copy.deepcopy(pixel_xy)
-        pixel_xy_mirrored[0] = -1.0 * (pixel_xy[0] - pixel_center_x) + pixel_center_x
-        return np.array([pixel_xy_mirrored[0], pixel_xy_mirrored[1], 1.0]).reshape((3,1))
-    else:
-        return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
-
-def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
-    '''
-    output
-    [depth-passed, roll-passed, pitch-passed, yaw-passed], how many criterion passed
-    '''
-    drpy_pass_list = [ (np.abs( drpy_est_list[_i] - drpy_GT_list[_i] ) < drpy_error_bound_list[_i]) for _i in range(len(drpy_est_list))]
-    pass_count = len([ _e for _e in drpy_pass_list if _e])
-    return (drpy_pass_list, pass_count)
-
-# SIGINT
-received_SIGINT = False
-def SIGINT_handler(signal_received, frame):
-    global received_SIGINT
-    # Handle any cleanup here
-    print('SIGINT or CTRL-C detected. Exiting gracefully')
-    received_SIGINT = True
-
-# Tell Python to run the handler() function when SIGINT is recieved
-signal(SIGINT, SIGINT_handler)
 #-------------------------------#
 
-
-
+# Convert the original data to structured data_list
 #-------------------------------------------------------#
-# Parameters and data
-# Camera intrinsic matrix (Estimated)
-#----------------------------------------#
-f_camera = 225.68717584155982
-#
-fx_camera = f_camera
-# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
-fy_camera = f_camera
-xo_camera = 320/2.0
-yo_camera = 240/2.0
-np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
-print("np_K_camera_est = \n%s" % str(np_K_camera_est))
-#----------------------------------------#
-
-# Create the solver
-#----------------------------------------#
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
-#-------------------------------------------------------#
-
-
-
-
-# ============= Start testing ================
-# Loop through data
-#-------------------------------------------------------#
-# Random generator
 random_gen = np.random.default_rng()
-
-# Collect the result
-#--------------------------#
 data_list = list()
-result_list = list()
-failed_sample_filename_list = list()
-failed_sample_count = 0
-failed_sample_fit_error_count = 0
-#--------------------------#
-
-s_stamp = time.time()
-
-# Loop, stress test
-is_continuing_to_next_sample = True
-sample_count = 0
-while (sample_count < DATA_COUNT) and (not received_SIGINT):
-    #
-    if not is_continuing_to_next_sample:
-        break
-    sample_count += 1
-    # The idx for reference into the data list
-    _idx = sample_count-1
-    #
-
-    # Convert the original data to structured data_list
-    #-------------------------------------------------------#
+for _idx in range( DATA_COUNT ):
     data_id_dict = dict()
     # File info
     data_id_dict['idx'] = _idx # data_idx_list[_idx]
@@ -441,16 +324,114 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     data_id_dict['file_name'] = "random_drpy_%s_%s_%s_%s" % (_class_dict['distance'], _class_dict['roll'], _class_dict['pitch'], _class_dict['yaw'])
     #----------------------------------------------#
 
+    # # Get only the specified data
+    # #----------------------------------#
+    # if (specific_drpy is not None) and (specific_drpy != _class_dict):
+    #     continue
+    # #----------------------------------#
 
     # Sppend to the total data list
     data_list.append(data_id_dict)
-    #
-    # print(data_list[0])
-    #-------------------------------------------------------#
+#
+# print(data_list[0])
+#-------------------------------------------------------#
 
+def solving_center_point(p1,p2,p3,p4):
+    '''
+    p1   p2
+       \/
+       pc
+       /\
+    p4   p3
+    '''
+    # Transform to 2D arrays
+    _n = np.array(p1).size
+    _p1_shape = np.array(p1).shape
+    _p1 = np.array(p1).reshape( (_n,1) )
+    _p2 = np.array(p2).reshape( (_n,1) )
+    _p3 = np.array(p3).reshape( (_n,1) )
+    _p4 = np.array(p4).reshape( (_n,1) )
+    #
+    _d13 = _p3 - _p1
+    _d24 = _p4 - _p2
+    _A = np.hstack([_d13, _d24])
+    _b = _p2 - _p1
+    _uv = np.linalg.pinv(_A) @ _b
+    _pc = _p1 + _uv[0,0] * _d13
+    # reshape
+    pc = _pc.reshape( _p1_shape )
+    if type(p1) == type(list()):
+        pc = list(pc)
+    return pc
+
+# ============= Start testing ================
+#-------------------------------------------------------#
+# Parameters and data
+# Camera intrinsic matrix (Estimated)
+#----------------------------------------#
+f_camera = 225.68717584155982
+#
+fx_camera = f_camera
+# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
+fy_camera = f_camera
+xo_camera = 320/2.0
+yo_camera = 240/2.0
+np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
+print("np_K_camera_est = \n%s" % str(np_K_camera_est))
+#----------------------------------------#
+
+# Create the solver
+#----------------------------------------#
+pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
+
+
+
+
+def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
+    '''
+    pixel_xy: np array, shape=(2,)
+    '''
+    if mirrored:
+        pixel_center_x = 320/2.0
+        pixel_xy_mirrored = copy.deepcopy(pixel_xy)
+        pixel_xy_mirrored[0] = -1.0 * (pixel_xy[0] - pixel_center_x) + pixel_center_x
+        return np.array([pixel_xy_mirrored[0], pixel_xy_mirrored[1], 1.0]).reshape((3,1))
+    else:
+        return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
+
+
+def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
+    '''
+    output
+    [depth-passed, roll-passed, pitch-passed, yaw-passed], how many criterion passed
+    '''
+    drpy_pass_list = [ (np.abs( drpy_est_list[_i] - drpy_GT_list[_i] ) < drpy_error_bound_list[_i]) for _i in range(len(drpy_est_list))]
+    pass_count = len([ _e for _e in drpy_pass_list if _e])
+    return (drpy_pass_list, pass_count)
+
+
+# Loop through data
+#-------------------------------------------------------#
+
+# Collect the result
+#--------------------------#
+result_list = list()
+failed_sample_filename_list = list()
+failed_sample_count = 0
+failed_sample_fit_error_count = 0
+#--------------------------#
+
+s_stamp = time.time()
+
+# Loop thrugh data
+is_continuing_to_next_sample = True
+for _idx in range(len(data_list)):
+    #
+    if not is_continuing_to_next_sample:
+        break
 
     print("\n-------------- data_idx = %d (process idx = %d)--------------\n" % (data_list[_idx]['idx'], _idx))
-    # print('file file_name: [%s]' % data_list[_idx]['file_name'])
+    print('file file_name: [%s]' % data_list[_idx]['file_name'])
 
     # LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
     # np_point_image_dict = dict()
