@@ -180,10 +180,35 @@ pattern_scale_list.append(pattern_scale)
 # # print(np_point_3d_dict)
 #----------------------------------------#
 
-# Create the PnP class for generating the LMs by projecting the golden patterns
-#----------------------------------------#
-pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
 
+# Create the GT PnP class for generating the LMs by projecting the golden patterns
+#----------------------------------------#
+# Golden pattern (simply copy the GT one)
+point_3d_dict_GT_list = copy.deepcopy(point_3d_dict_list)
+pattern_scale_GT_list = copy.deepcopy(pattern_scale_list)
+pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_GT_list, pattern_scale_list=pattern_scale_GT_list, verbose=verbose)
+#----------------------------------------#
+
+
+#-------------------------------------------------------#
+# Parameters and data
+# Camera intrinsic matrix (Estimated)
+#----------------------------------------#
+f_camera = 225.68717584155982
+#
+fx_camera = f_camera
+# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
+fy_camera = f_camera
+xo_camera = 320/2.0
+yo_camera = 240/2.0
+np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
+print("np_K_camera_est = \n%s" % str(np_K_camera_est))
+#----------------------------------------#
+
+# Create the solver
+#----------------------------------------#
+pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=pattern_scale_list, verbose=verbose)
+#-------------------------------------------------------#
 
 
 
@@ -193,7 +218,6 @@ pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_list, patter
 
 # Ground truth classification
 #-------------------------------#
-
 # Formate
 drpy_class_format = "drpy_expand"
 # drpy_class_format = "HMI_inspection"
@@ -321,28 +345,6 @@ signal(SIGINT, SIGINT_handler)
 
 
 
-#-------------------------------------------------------#
-# Parameters and data
-# Camera intrinsic matrix (Estimated)
-#----------------------------------------#
-f_camera = 225.68717584155982
-#
-fx_camera = f_camera
-# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
-fy_camera = f_camera
-xo_camera = 320/2.0
-yo_camera = 240/2.0
-np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
-print("np_K_camera_est = \n%s" % str(np_K_camera_est))
-#----------------------------------------#
-
-# Create the solver
-#----------------------------------------#
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
-#-------------------------------------------------------#
-
-
-
 
 # ============= Start testing ================
 # Loop through data
@@ -427,6 +429,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     data_id_dict['np_R_GT'] = np_R_GT
     data_id_dict['np_t_GT'] = np_t_GT
     # Test inputs
+    pnp_solver_GT.set_golden_pattern_id(0) # Use the number 0 pattern to generate the LM
     data_id_dict['LM_pixel_dict'] = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, is_pretrans_points=False, is_returning_homogeneous_vec=True) # Homogeneous coordinate
 
     # Classify ground truth data! (drpy class)
