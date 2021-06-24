@@ -104,10 +104,10 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("-"*35)
         self.lib_print("3D points in local coordinate:")
         self.lib_print("pattern_scale = %f" % pattern_scale)
+        np.set_printoptions(suppress=True, precision=4)
         for _k in _np_point_3d_dict:
             # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_dict[_k])))
             # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_pretransfer_dict[_k])))
-            np.set_printoptions(suppress=True, precision=2)
             print("%s:%sp_3D=%s.T | p_3D_pretrans=%s.T" %
                 (   _k,
                     " "*(12-len(_k)),
@@ -115,7 +115,7 @@ class PNP_SOLVER_A2_M3(object):
                     str(_np_point_3d_pretransfer_dict[_k].T)
                 )
             )
-            np.set_printoptions(suppress=False, precision=8)
+        np.set_printoptions(suppress=False, precision=8)
         self.lib_print("-"*35)
         #---------------------------#
 
@@ -125,10 +125,10 @@ class PNP_SOLVER_A2_M3(object):
         '''
         '''
         self.pattern_scale_list[id] = pattern_scale
-        self.point_3d_dict_list[id] = point_3d_dict
+        self.point_3d_dict_list[id] = copy.deepcopy(point_3d_dict)
         # Generating the internal used golden patterns
         #---------------------------#
-        _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(point_3d_dict, pattern_scale, self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
+        _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(self.point_3d_dict_list[id], self.pattern_scale_list[id], self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
         self.np_point_3d_dict_list[id] = _np_point_3d_dict
         self.np_point_3d_pretransfer_dict_list[id] = _np_point_3d_pretransfer_dict
         #---------------------------#
@@ -4172,8 +4172,9 @@ class PNP_SOLVER_A2_M3(object):
 
     def unit_vec(self, vec_in):
         _norm = np.linalg.norm(vec_in)
+        _eps = 10**-7
         if np.abs(_norm) <= 10**-7:
-             _norm_inv = 1.0
+             _norm_inv = 1/_eps
              self.lib_print("_norm = %f" % _norm)
              self.lib_print("_norm approaches zeros!!")
         else:
