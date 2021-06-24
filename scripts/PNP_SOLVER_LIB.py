@@ -22,7 +22,7 @@ class PNP_SOLVER_A2_M3(object):
             self.pattern_scale_list += [1.0 for _i in range(len(self.point_3d_dict_list) - len(self.pattern_scale_list))]
 
 
-        # test, pre-transfer
+        # test, pre-transfer, parameters
         #---------------------------#
         self.is_using_pre_transform = False
         # self.is_using_pre_transform = True
@@ -30,10 +30,17 @@ class PNP_SOLVER_A2_M3(object):
         self.pre_trans_t_a_h = np.array([[0.0, 0.0, -0.5]]).T
         # self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
         # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
+        #---------------------------#
 
+        # test, pretransfer, variables/results
+        #---------------------------#
         # For storing the estimated result of R_ca and t_ca
         self.np_R_c_a_est = np.eye(3)
         self.np_t_c_a_est = np.zeros((3,1))
+        #---------------------------#
+
+
+        # Generating the internal used golden patterns
         #---------------------------#
         self.np_point_3d_dict_list = list()
         self.np_point_3d_pretransfer_dict_list = list()
@@ -43,6 +50,10 @@ class PNP_SOLVER_A2_M3(object):
             _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(_point_3d_dict, _pattern_scale, self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
             self.np_point_3d_dict_list.append(_np_point_3d_dict)
             self.np_point_3d_pretransfer_dict_list.append(_np_point_3d_pretransfer_dict)
+        #---------------------------#
+
+
+
 
         # Setup the global variables
         self.set_golden_pattern_id(0)
@@ -109,6 +120,19 @@ class PNP_SOLVER_A2_M3(object):
         #---------------------------#
 
         return (_np_point_3d_dict, _np_point_3d_pretransfer_dict)
+
+    def update_the_selected_golden_pattern(self, id, point_3d_dict, pattern_scale):
+        '''
+        '''
+        self.pattern_scale_list[id] = pattern_scale
+        self.point_3d_dict_list[id] = point_3d_dict
+        # Generating the internal used golden patterns
+        #---------------------------#
+        _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(point_3d_dict, pattern_scale, self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
+        self.np_point_3d_dict_list[id] = _np_point_3d_dict
+        self.np_point_3d_pretransfer_dict_list[id] = _np_point_3d_pretransfer_dict
+        #---------------------------#
+        return True
 
 
     def lib_print(self, str=''):
