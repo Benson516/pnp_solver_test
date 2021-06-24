@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import time
 import csv
+import json
 #
 import cv2
 #
@@ -35,8 +36,13 @@ is_stress_test = True
 # is_stress_test = False
 
 # Data generation
+# Pose
 # is_random_pose = True
 is_random_pose = False
+# Pattern (face "shape")
+is_randomly_perturbing_pattern = True
+# is_randomly_perturbing_pattern = False
+
 #
 is_quantized = True
 # is_quantized = False
@@ -72,8 +78,8 @@ if is_stress_test:
     is_showing_image = False
     if not stop_at_fail_cases:
         verbose = False
-if not is_random_pose:
-    DATA_COUNT = 1
+# if not is_random_pose:
+#     DATA_COUNT = 1
 
 #
 
@@ -352,7 +358,8 @@ signal(SIGINT, SIGINT_handler)
 # Random generator
 random_seed = 42
 # random_seed = None
-random_gen = np.random.default_rng(seed=random_seed)
+random_gen_pose = np.random.default_rng(seed=random_seed)
+random_gen_pattern = np.random.default_rng(seed=random_seed)
 
 # Collect the result
 #--------------------------#
@@ -386,39 +393,98 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     # "Label" of classes, type: string
     data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
 
-    # Grund truth pose
+    # Generate grund-truth pose
+    #------------------------------------#
     if is_random_pose:
         _angle_range = 45.0 # deg
-        _roll = random_gen.uniform( (-_angle_range), _angle_range, None)
-        _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
-        _yaw = random_gen.uniform( (-_angle_range), _angle_range, None)
+        _roll = random_gen_pose.uniform( (-_angle_range), _angle_range, None)
+        _pitch = random_gen_pose.uniform( (-_angle_range), _angle_range, None)
+        _yaw = random_gen_pose.uniform( (-_angle_range), _angle_range, None)
         #
-        _depth = random_gen.uniform(20, 225, None)/100.0 # m
+        _depth = random_gen_pose.uniform(20, 225, None)/100.0 # m
         _FOV_max = 45.0 # 1.0 # 45.0 # deg.
-        _FOV_x = random_gen.uniform((-_FOV_max), _FOV_max, None)
-        _FOV_y = random_gen.uniform((-_FOV_max), _FOV_max, None)
+        _FOV_x = random_gen_pose.uniform((-_FOV_max), _FOV_max, None)
+        _FOV_y = random_gen_pose.uniform((-_FOV_max), _FOV_max, None)
         _np_t_GT = np.zeros((3,1))
         _np_t_GT[0,0] = _depth * np.tan( np.deg2rad(_FOV_x) )
         _np_t_GT[1,0] = _depth * np.tan( np.deg2rad(_FOV_y) )
         _np_t_GT[2,0] = _depth
     else:
-        _roll = 15.0 # deg.
-        _pitch = -15.0 # deg.
-        _yaw = 45.0 # deg.
+        _roll = 0.0 # deg.
+        _pitch = 0.0 # deg.
+        _yaw = 0.0 # deg.
+        # _roll = 15.0 # deg.
+        # _pitch = -15.0 # deg.
+        # _yaw = 45.0 # deg.
         # _roll = 40.0 # deg.
         # _pitch = -60.0 # deg.
         # _yaw = 67.0 # deg.
         #
         _np_t_GT = np.zeros((3,1))
-        _np_t_GT[0,0] = 0.35 # m
-        _np_t_GT[1,0] = 0.35 # m
-        _np_t_GT[2,0] = 0.5 # m
+        _np_t_GT[0,0] = 0.0 # m
+        _np_t_GT[1,0] = 0.0 # m
+        _np_t_GT[2,0] = 1.0 # m
+        # _np_t_GT[0,0] = 0.35 # m
+        # _np_t_GT[1,0] = 0.35 # m
+        # _np_t_GT[2,0] = 0.5 # m
         # _np_t_GT[0,0] = 3.5 # m
         # _np_t_GT[1,0] = -3.5 # m
         # _np_t_GT[2,0] = 0.1 # m
         # _np_t_GT[0,0] = 0.0 # m
         # _np_t_GT[1,0] = 0.0 # m
         # _np_t_GT[2,0] = 1.2 # m
+    #------------------------------------#
+
+    # Perturb the pattern (variate the face shape)
+    #------------------------------------#
+    GT_golden_pattern_id = 0
+    np_pattern_perturbation_dict = dict()
+    fixed_pattern_key = "eye_c_51"
+    perturb_radius_point = 0.02 # m, currently uniform in all direction
+    #
+    if is_randomly_perturbing_pattern:
+        _new_point_3d_dict = copy.deepcopy(point_3d_dict_GT_list[GT_golden_pattern_id])
+        _new_pattern_scale = pattern_scale_GT_list[GT_golden_pattern_id]
+
+        # Generate and normalize the perturbation
+        #-------------------------------------#
+        # (we want all the perturbation to have exactly the same
+        #  magnitude for easy comparison)
+        _perturnb_size = len(_new_point_3d_dict) - 1
+        _perturb_matrix = random_gen_pattern.multivariate_normal( np.zeros((3,)), np.eye(3), _perturnb_size)
+        # Normalization
+        _perturb_flattened_vec = _perturb_matrix.reshape((_perturnb_size*3,))
+        _perturb_flattened_unit_vec = pnp_solver_GT.unit_vec(_perturb_flattened_vec)
+        _norm = np.linalg.norm(_perturb_flattened_unit_vec, ord=2)
+        print("_norm = %f" % _norm)
+        # Let each point to have the standard deviation of perturb_radius_point (we have _perturnb_size points)
+        # _perturb_normalized_matrix_T = (perturb_radius_point*_perturnb_size) * ( _perturb_flattened_unit_vec.reshape((3,_perturnb_size)) )  # <-- wrong
+        _perturb_normalized_matrix_T = perturb_radius_point * ( _perturb_flattened_unit_vec.reshape((3,_perturnb_size)) ) # Note: the extreme case will be point to a single axis of a point, thus only multiply 1x of radius.
+        print("_perturb_normalized_matrix_T = \n%s" % _perturb_normalized_matrix_T)
+        #-------------------------------------#
+        # Add and store the perturbation
+        _perturb_id = 0
+        print("")
+        for _key in _new_point_3d_dict:
+            if _key == fixed_pattern_key:
+                np_pattern_perturbation_dict[_key] = np.zeros((3,1))
+            else:
+                np_pattern_perturbation_dict[_key] = _perturb_normalized_matrix_T[:, _perturb_id:(_perturb_id+1)]
+                _new_point_3d_dict[_key] = list(np.array(_new_point_3d_dict[_key]).reshape((3,1)) + np_pattern_perturbation_dict[_key])
+                _perturb_id += 1
+            print("np_pattern_perturbation_dict[%s].T = %s" % (_key, np_pattern_perturbation_dict[_key].T))
+            # print("_new_point_3d_dict[%s] = %s" % (_key, _new_point_3d_dict[_key]))
+        print("")
+        # print("np_pattern_perturbation_dict = \n%s" % np_pattern_perturbation_dict)
+        # Update the selected pattern
+        pnp_solver_GT.update_the_selected_golden_pattern(GT_golden_pattern_id, _new_point_3d_dict, _new_pattern_scale)
+    else:
+        # pnp_solver_GT.update_the_selected_golden_pattern(GT_golden_pattern_id, point_3d_dict_GT_list[GT_golden_pattern_id], pattern_scale_GT_list[GT_golden_pattern_id])
+        pass
+    # time.sleep(10)
+    #------------------------------------#
+
+
     #
     np_R_GT = pnp_solver_GT.get_rotation_matrix_from_Euler(_roll, _yaw, _pitch, is_degree=True)
     np_t_GT = _np_t_GT
@@ -431,7 +497,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     data_id_dict['np_R_GT'] = np_R_GT
     data_id_dict['np_t_GT'] = np_t_GT
     # Test inputs
-    pnp_solver_GT.set_golden_pattern_id(0) # Use the number 0 pattern to generate the LM
+    pnp_solver_GT.set_golden_pattern_id(GT_golden_pattern_id) # Use the number 0 pattern to generate the LM
     data_id_dict['LM_pixel_dict'] = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, is_pretrans_points=False, is_returning_homogeneous_vec=True) # Homogeneous coordinate
 
     # Classify ground truth data! (drpy class)
