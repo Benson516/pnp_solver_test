@@ -77,8 +77,8 @@ is_showing_image = True
 # Fail cases investigation
 is_storing_fail_case_image = True
 # is_storing_fail_case_image = False
-# Note: pass_count >= pass_count_treshold --> passed!!
-pass_count_treshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_treshold pass items, store the image
+# Note: pass_count >= pass_count_threshold --> passed!!
+pass_count_threshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_threshold pass items, store the image
 #
 # Statistic CSV file
 is_statistic_csv_horizontal = True # class --> (right)
@@ -661,7 +661,7 @@ for _idx in range(len(data_list)):
 
     # Determin if we want to further investigate this sample
     is_storing_case_image = False
-    if pass_count < pass_count_treshold: # Note: pass_count >= pass_count_treshold --> passed!!
+    if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
         failed_sample_count += 1
         if fitting_error > 1.5:
             failed_sample_fit_error_count += 1

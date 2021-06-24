@@ -35,8 +35,8 @@ is_stress_test = True
 # is_stress_test = False
 
 # Data generation
-# is_random = True
-is_random = False
+# is_random_pose = True
+is_random_pose = False
 #
 is_quantized = True
 # is_quantized = False
@@ -58,8 +58,8 @@ is_showing_image = True
 # Fail cases investigation
 is_storing_fail_case_image = True
 # is_storing_fail_case_image = False
-# Note: pass_count >= pass_count_treshold --> passed!!
-pass_count_treshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_treshold pass items, store the image
+# Note: pass_count >= pass_count_threshold --> passed!!
+pass_count_threshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_threshold pass items, store the image
 #
 # Statistic CSV file
 is_statistic_csv_horizontal = True # class --> (right)
@@ -68,11 +68,11 @@ is_statistic_csv_horizontal = True # class --> (right)
 
 # Not to flush the screen
 if is_stress_test:
-    is_random = True
+    is_random_pose = True
     is_showing_image = False
     if not stop_at_fail_cases:
         verbose = False
-if not is_random:
+if not is_random_pose:
     DATA_COUNT = 1
 
 #
@@ -218,7 +218,7 @@ pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_
 
 # Ground truth classification
 #-------------------------------#
-# Formate
+# Format
 drpy_class_format = "drpy_expand"
 # drpy_class_format = "HMI_inspection"
 
@@ -350,7 +350,9 @@ signal(SIGINT, SIGINT_handler)
 # Loop through data
 #-------------------------------------------------------#
 # Random generator
-random_gen = np.random.default_rng()
+random_seed = 42
+# random_seed = None
+random_gen = np.random.default_rng(seed=random_seed)
 
 # Collect the result
 #--------------------------#
@@ -384,8 +386,8 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     # "Label" of classes, type: string
     data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
 
-    # Grund truth
-    if is_random:
+    # Grund truth pose
+    if is_random_pose:
         _angle_range = 45.0 # deg
         _roll = random_gen.uniform( (-_angle_range), _angle_range, None)
         _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
@@ -634,7 +636,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
 
     # Determin if we want to further investigate this sample
     is_storing_case_image = False
-    if pass_count < pass_count_treshold: # Note: pass_count >= pass_count_treshold --> passed!!
+    if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
         failed_sample_count += 1
         if fitting_error > 1.5:
             failed_sample_fit_error_count += 1
@@ -652,7 +654,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     #----------------------------#
     if stop_at_fail_cases:
         if is_stress_test:
-            if pass_count < pass_count_treshold:
+            if pass_count < pass_count_threshold:
                 print("Fail, break the stress test!!")
                 is_continuing_to_next_sample = False
     #----------------------------#
