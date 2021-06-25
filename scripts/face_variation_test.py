@@ -3,6 +3,7 @@ import copy
 import time
 import csv
 import json
+import heapq
 #
 import cv2
 #
@@ -15,7 +16,7 @@ from signal import signal, SIGINT
 #---------------------------#
 # Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'random.txt'
+data_file_str = 'face_variation.txt'
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -39,6 +40,7 @@ is_stress_test = True
 # Pose
 # is_random_pose = True
 is_random_pose = False
+
 # Pattern (face "shape")
 is_randomly_perturbing_pattern = True
 # is_randomly_perturbing_pattern = False
@@ -74,7 +76,8 @@ is_statistic_csv_horizontal = True # class --> (right)
 
 # Not to flush the screen
 if is_stress_test:
-    is_random_pose = True
+    # is_random_pose = True
+    is_randomly_perturbing_pattern = True
     is_showing_image = False
     if not stop_at_fail_cases:
         verbose = False
@@ -358,13 +361,18 @@ signal(SIGINT, SIGINT_handler)
 # Random generator
 random_seed = 42
 # random_seed = None
-random_gen_pose = np.random.default_rng(seed=random_seed)
-random_gen_pattern = np.random.default_rng(seed=random_seed)
+random_gen = np.random.default_rng(seed=random_seed)
 
 # Collect the result
 #--------------------------#
 data_list = list()
 result_list = list()
+# Min heaps (priority queue)
+heap_neg_abs_depth_err = list()
+heap_neg_abs_roll_err = list()
+heap_neg_abs_pitch_err = list()
+heap_neg_abs_yaw_err = list()
+#
 failed_sample_filename_list = list()
 failed_sample_count = 0
 failed_sample_fit_error_count = 0
@@ -397,14 +405,14 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     #------------------------------------#
     if is_random_pose:
         _angle_range = 45.0 # deg
-        _roll = random_gen_pose.uniform( (-_angle_range), _angle_range, None)
-        _pitch = random_gen_pose.uniform( (-_angle_range), _angle_range, None)
-        _yaw = random_gen_pose.uniform( (-_angle_range), _angle_range, None)
+        _roll = random_gen.uniform( (-_angle_range), _angle_range, None)
+        _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
+        _yaw = random_gen.uniform( (-_angle_range), _angle_range, None)
         #
-        _depth = random_gen_pose.uniform(20, 225, None)/100.0 # m
+        _depth = random_gen.uniform(20, 225, None)/100.0 # m
         _FOV_max = 45.0 # 1.0 # 45.0 # deg.
-        _FOV_x = random_gen_pose.uniform((-_FOV_max), _FOV_max, None)
-        _FOV_y = random_gen_pose.uniform((-_FOV_max), _FOV_max, None)
+        _FOV_x = random_gen.uniform((-_FOV_max), _FOV_max, None)
+        _FOV_y = random_gen.uniform((-_FOV_max), _FOV_max, None)
         _np_t_GT = np.zeros((3,1))
         _np_t_GT[0,0] = _depth * np.tan( np.deg2rad(_FOV_x) )
         _np_t_GT[1,0] = _depth * np.tan( np.deg2rad(_FOV_y) )
@@ -451,7 +459,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
         # (we want all the perturbation to have exactly the same
         #  magnitude for easy comparison)
         _perturnb_size = len(_new_point_3d_dict) - 1
-        _perturb_matrix = random_gen_pattern.multivariate_normal( np.zeros((3,)), np.eye(3), _perturnb_size)
+        _perturb_matrix = random_gen.multivariate_normal( np.zeros((3,)), np.eye(3), _perturnb_size)
         # Normalization
         _perturb_flattened_vec = _perturb_matrix.reshape((_perturnb_size*3,))
         _perturb_flattened_unit_vec = pnp_solver_GT.unit_vec(_perturb_flattened_vec)
@@ -496,6 +504,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     #
     data_id_dict['np_R_GT'] = np_R_GT
     data_id_dict['np_t_GT'] = np_t_GT
+    data_id_dict['np_pattern_perturbation_dict'] = np_pattern_perturbation_dict
     # Test inputs
     pnp_solver_GT.set_golden_pattern_id(GT_golden_pattern_id) # Use the number 0 pattern to generate the LM
     data_id_dict['LM_pixel_dict'] = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, is_pretrans_points=False, is_returning_homogeneous_vec=True) # Homogeneous coordinate
@@ -794,9 +803,22 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     _result_idx_dict["predict_GT_error_average_normalize"] = predict_GT_error_average * distance_GT
     _result_idx_dict["predict_GT_error_max_normalize"] = predict_GT_error_max * distance_GT
     _result_idx_dict["predict_GT_error_max_key"] = predict_GT_error_max_key
+
+    # Pattern Perturbation
+    _result_idx_dict["np_pattern_perturbation_dict"] = data_list[_idx]['np_pattern_perturbation_dict']
     #
     result_list.append(_result_idx_dict)
     #----------------------------#
+
+    # Min heaps (priority queue)
+    #----------------------------#
+    # Push the element: (priority, _idx)
+    heapq.heappush(heap_neg_abs_depth_err, (-_result_idx_dict["abs_depth_err"], _idx ))
+    heapq.heappush(heap_neg_abs_roll_err, (-_result_idx_dict["abs_roll_err"], _idx ))
+    heapq.heappush(heap_neg_abs_pitch_err, (-_result_idx_dict["abs_pitch_err"], _idx ))
+    heapq.heappush(heap_neg_abs_yaw_err, (-_result_idx_dict["abs_yaw_err"], _idx ))
+    #----------------------------#
+
 
 
     # Image Display
@@ -1593,3 +1615,58 @@ unit = "deg."
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
 write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+
+
+
+
+
+# Min heaps (priority queue)
+#----------------------------#
+# # Push the element: (priority, _idx)
+# heapq.heappush(heap_neg_abs_depth_err, (-_result_idx_dict["abs_depth_err"], _idx ))
+# heapq.heappush(heap_neg_abs_roll_err, (-_result_idx_dict["abs_roll_err"], _idx ))
+# heapq.heappush(heap_neg_abs_pitch_err, (-_result_idx_dict["abs_pitch_err"], _idx ))
+# heapq.heappush(heap_neg_abs_yaw_err, (-_result_idx_dict["abs_yaw_err"], _idx ))
+#----------------------------#
+ratio_most_significant_part = 0.1 # 10%
+num_top_element = int(len(result_list) * ratio_most_significant_part)
+#
+abs_depth_err_top_idx_list = list()
+abs_roll_err_top_idx_list = list()
+abs_pitch_err_top_idx_list = list()
+abs_yaw_err_top_idx_list = list()
+# Store the top indexes as lists
+for _idx in range(num_top_element):
+    abs_depth_err_top_idx_list.append( heapq.heappop(heap_neg_abs_depth_err)[1] )
+    abs_roll_err_top_idx_list.append( heapq.heappop(heap_neg_abs_roll_err)[1] )
+    abs_pitch_err_top_idx_list.append( heapq.heappop(heap_neg_abs_pitch_err)[1] )
+    abs_yaw_err_top_idx_list.append( heapq.heappop(heap_neg_abs_yaw_err)[1] )
+
+# Find the most fargial/sensible pattern point and the perturbation direction on each point
+depth_sensible_point_count_dict = dict()
+roll_sensible_point_count_dict = dict()
+pitch_sensible_point_count_dict = dict()
+yaw_sensible_point_count_dict = dict()
+# Initialize the count of each key to be zero
+for _key in point_3d_dict_GT_list[0]:
+    depth_sensible_point_count_dict[_key] = 0
+    roll_sensible_point_count_dict[_key] = 0
+    pitch_sensible_point_count_dict[_key] = 0
+    yaw_sensible_point_count_dict[_key] = 0
+
+# 
+for _idx in abs_depth_err_top_idx_list:
+    _result_idx_dict = result_list[_idx]
+    np_pattern_perturbation_dict = _result_idx_dict["np_pattern_perturbation_dict"]
+    _point_norm_dict = dict()
+    _norm_max = -1.0 # Note: every norm must be non negative, thus this value will at least be replaced by the first item in the dict
+    _norm_max_key = None
+    for _key in np_pattern_perturbation_dict:
+        _perturb_i = np_pattern_perturbation_dict[_key]
+        _norm_i = np.linalg.norm(_perturb_i)
+        _point_norm_dict[_key] = _norm_i
+        if _norm_i > _norm_max:
+            _norm_max = _norm_i
+            _norm_max_id = _key
+    print("Most fragial point: [%s]" % _norm_max_key)
