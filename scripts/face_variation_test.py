@@ -1653,7 +1653,7 @@ for _idx in range(num_top_element):
 
 
 # Find the most fragile/sensible pattern point and the perturbation direction on each point
-def get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT, result_list, top_value_idx_list, k_top_direction=1):
+def get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT, result_list, top_value_idx_list, k_top_direction=5):
     fragile_point_count_dict = dict()
     _key_list = list(point_3d_dict_GT.keys())
     # Initialize the count of each key to be zero
