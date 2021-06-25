@@ -1643,30 +1643,110 @@ for _idx in range(num_top_element):
     abs_pitch_err_top_idx_list.append( heapq.heappop(heap_neg_abs_pitch_err)[1] )
     abs_yaw_err_top_idx_list.append( heapq.heappop(heap_neg_abs_yaw_err)[1] )
 
-# Find the most fargial/sensible pattern point and the perturbation direction on each point
-depth_sensible_point_count_dict = dict()
-roll_sensible_point_count_dict = dict()
-pitch_sensible_point_count_dict = dict()
-yaw_sensible_point_count_dict = dict()
-# Initialize the count of each key to be zero
-for _key in point_3d_dict_GT_list[0]:
-    depth_sensible_point_count_dict[_key] = 0
-    roll_sensible_point_count_dict[_key] = 0
-    pitch_sensible_point_count_dict[_key] = 0
-    yaw_sensible_point_count_dict[_key] = 0
 
-# 
-for _idx in abs_depth_err_top_idx_list:
-    _result_idx_dict = result_list[_idx]
-    np_pattern_perturbation_dict = _result_idx_dict["np_pattern_perturbation_dict"]
-    _point_norm_dict = dict()
-    _norm_max = -1.0 # Note: every norm must be non negative, thus this value will at least be replaced by the first item in the dict
-    _norm_max_key = None
-    for _key in np_pattern_perturbation_dict:
-        _perturb_i = np_pattern_perturbation_dict[_key]
-        _norm_i = np.linalg.norm(_perturb_i)
-        _point_norm_dict[_key] = _norm_i
-        if _norm_i > _norm_max:
-            _norm_max = _norm_i
-            _norm_max_id = _key
-    print("Most fragial point: [%s]" % _norm_max_key)
+
+
+# Find the most fragile/sensible pattern point and the perturbation direction on each point
+def get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT, result_list, top_idx_list, k_top_direction=1):
+    fragile_point_count_dict = dict()
+    _key_list = list(point_3d_dict_GT.keys())
+    # Initialize the count of each key to be zero
+    for _key in _key_list:
+        fragile_point_count_dict[_key] = 0
+    #
+    # point_norm_dict_list = list()
+    perturb_vec_list = list()
+    for _idx in top_idx_list:
+        _result_idx_dict = result_list[_idx]
+        np_pattern_perturbation_dict = _result_idx_dict["np_pattern_perturbation_dict"]
+        # Loop through the dict by key
+        _point_norm_dict = dict()
+        _norm_max = -1.0 # Note: every norm must be non negative, thus this value will at least be replaced by the first item in the dict
+        _norm_max_key = None
+        _perturb_list = list()
+        for _key in np_pattern_perturbation_dict:
+            _perturb_i = np_pattern_perturbation_dict[_key]
+            _perturb_list.append(_perturb_i)
+            #
+            _norm_i = np.linalg.norm(_perturb_i)
+            _point_norm_dict[_key] = _norm_i
+            if _norm_i > _norm_max:
+                _norm_max = _norm_i
+                _norm_max_key = _key
+        # print("Most fragile point: [%s], _norm_max = %f" % (_norm_max_key, _norm_max))
+        fragile_point_count_dict[_norm_max_key] += 1
+        # point_norm_dict_list.append(_point_norm_dict)
+        #
+        _perturb_vec = np.vstack(_perturb_list) # 3n x 1 vector for n LMs
+        perturb_vec_list.append(_perturb_vec)
+    #---------------------------#
+    perturb_matrix = np.hstack(perturb_vec_list).T # m x 3n matrix, where m is the number of perturbation
+    #---------------------------#
+
+    # Get the sorted list of the most significant point
+    #---------------------------#
+    fragile_point_sorted_list = [(fragile_point_count_dict[_k], _k) for _k in fragile_point_count_dict]
+    fragile_point_sorted_list.sort(reverse=True)
+
+    # Calculate the top k significant direction of perturbation
+    #---------------------------#
+    perturb_matrix_u, perturb_matrix_s, perturb_matrix_vh = np .linalg.svd(perturb_matrix)
+    # print("perturb_matrix_s = \n%s" % perturb_matrix_s)
+    # print("Top 5 significant direction: perturb_matrix_vh[:5,:] = \n%s" % perturb_matrix_vh[:5,:])
+    #
+    top_perturbation_list = list()
+    for _i in range(k_top_direction):
+        __perturb_direction_dict = dict()
+        _perturb_vec_i = perturb_matrix_vh[_i,:]
+        _j = 0
+        for _key in _key_list:
+            __perturb_direction_dict[_key] = _perturb_vec_i[_j:(_j+3)].reshape((3,1))
+            _j += 3
+        top_perturbation_list.append(__perturb_direction_dict)
+    return (fragile_point_count_dict, fragile_point_sorted_list, top_perturbation_list)
+
+def print_point_3D_key(np_point_3D_dict_list):
+    # Logging
+    #---------------------------#
+    str_out = ""
+    np.set_printoptions(suppress=True, precision=4)
+    for _key in np_point_3D_dict_list[0]:
+        str_out += "%s:%s" % (   _key, " "*(12-len(_key)) )
+        for _idx, _np_p_3D_dict in enumerate(np_point_3D_dict_list):
+            str_out += "| p[%d]=%s.T " % (_idx, str(_np_p_3D_dict[_key].T) )
+        str_out += "\n"
+    np.set_printoptions(suppress=False, precision=8)
+    #
+    print("-"*35)
+    print(str_out)
+    print("-"*35)
+    return str_out
+    #---------------------------#
+
+
+#
+perturb_result_depth = get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT_list[0], result_list, abs_depth_err_top_idx_list)
+perturb_result_roll = get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT_list[0], result_list, abs_roll_err_top_idx_list)
+perturb_result_pitch = get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT_list[0], result_list, abs_pitch_err_top_idx_list)
+perturb_result_yaw = get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT_list[0], result_list, abs_yaw_err_top_idx_list)
+
+print("-"*70)
+print("Depth: fragile_point_count_dict = \n%s" % perturb_result_depth[0])
+print("Roll: fragile_point_count_dict = \n%s" % perturb_result_roll[0])
+print("Pitch: fragile_point_count_dict = \n%s" % perturb_result_pitch[0])
+print("Yaw: fragile_point_count_dict = \n%s" % perturb_result_yaw[0])
+print("-"*70)
+print("Depth: fragile_point_sorted_list = \n%s" % perturb_result_depth[1])
+print("Roll: fragile_point_sorted_list = \n%s" % perturb_result_roll[1])
+print("Pitch: fragile_point_sorted_list = \n%s" % perturb_result_pitch[1])
+print("Yaw: fragile_point_sorted_list = \n%s" % perturb_result_yaw[1])
+print("-"*70)
+print("Depth: top_perturbation_list")
+print_point_3D_key(perturb_result_depth[2])
+print("Roll: top_perturbation_list")
+print_point_3D_key(perturb_result_pitch[2])
+print("Pitch: top_perturbation_list")
+print_point_3D_key(perturb_result_roll[2])
+print("Yaw: top_perturbation_list")
+print_point_3D_key(perturb_result_yaw[2])
+print("-"*70)
