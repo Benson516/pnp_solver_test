@@ -2116,6 +2116,7 @@ class PNP_SOLVER_A2_M3(object):
 
             # Predict
             #-----------------------------#
+            # eif_R = self.EKF2_get_process_covariance_R(eif_x)
             # The following will be replaced by incremental updating algorithm
             eif_Omega = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
             # eif_x = eif_G @ eif_x # x is not changing in the model
@@ -2172,6 +2173,7 @@ class PNP_SOLVER_A2_M3(object):
             # # Experiment with optimal iteration number
             # #-----------------------------#
             # # Update error_norm_old
+            # # error_norm = res_norm
             # error_norm = delta_z_norm
             # # error_norm = np.linalg.norm(eif_Sigma_s)
             # erro_ratio = (error_norm - error_norm_old)/error_norm_old
@@ -3304,6 +3306,56 @@ class PNP_SOLVER_A2_M3(object):
         Hx[(2*n_point+4),6:9] = -phi_3.T
         #
         return (hx, Hx)
+
+    def get_so3_matrix_from_vec3(self, vec3_in):
+        '''
+        '''
+        v3in = vec3_in.reshape((3,))
+        M_so3 = np.array([[0.0, -v3in[2], v3in[1]],[v3in[2], 0.0, -v3in[0]],[-v3in[1], v3in[0], 0.0]])
+        return M_so3
+
+    def EKF2_get_process_covariance_R(self, ekf_x):
+        '''
+        '''
+        x_size = ekf_x.shape[0]
+        #
+        ekf_u_1 = ekf_x[0:3,:]
+        ekf_u_2 = ekf_x[3:6,:]
+        ekf_u_3 = ekf_x[6:9,:]
+        delta_1 = ekf_x[9,0]
+        delta_2 = ekf_x[10,0]
+        ekf_gamma = ekf_x[11,0]
+        #
+        # sigma_delta_theta_i = (np.deg2rad(5.0))**2 # Change 5.0 degree every time?
+        # sigma_tj = (0.05)**2 # Move 5 cm every time?
+        sigma_delta_theta_i = (np.deg2rad(30.0))**2 # Change 30 degree every time?
+        sigma_tj = (0.5)**2 # Move 50 cm every time?
+
+        # R_delta_u_all
+        so3_u1 = self.get_so3_matrix_from_vec3(ekf_u_1)
+        so3_u2 = self.get_so3_matrix_from_vec3(ekf_u_2)
+        so3_u3 = self.get_so3_matrix_from_vec3(ekf_u_3)
+        Ck = np.vstack([-so3_u1, -so3_u2, -so3_u3])
+        # self.lib_print("so3_u1 = \n%s" % so3_u1)
+        # self.lib_print("so3_u2 = \n%s" % so3_u2)
+        # self.lib_print("so3_u3 = \n%s" % so3_u3)
+        # self.lib_print("Ck = \n%s" % Ck)
+        R_delta_theta = np.eye(3) * sigma_delta_theta_i
+        R_delta_u_all = Ck @ R_delta_theta @ Ck.T
+
+        # R_delta_j
+        R_delta_12 = np.eye(2) * (ekf_gamma*sigma_tj)
+        R_delta_3 = (ekf_gamma**2) * sigma_tj
+
+        # Rk
+        Rk = np.zeros((x_size, x_size))
+        Rk[0:9,0:9] = R_delta_u_all
+        Rk[9:11,9:11] = R_delta_12
+        Rk[11,11] = R_delta_3
+        # self.lib_print("Rk = \n%s" % Rk)
+
+        return Rk
+
 
     def EKF2_get_hx_H(self, ekf_x, B_x, B_y, P, is_hc0_4_6_linear=False, is_hc1_linear=True):
         '''
