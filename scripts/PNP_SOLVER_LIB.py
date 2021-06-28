@@ -2066,7 +2066,7 @@ class PNP_SOLVER_A2_M3(object):
         #
         eif_Q_diag[-9:-6] = 10**-2 # 10**-1
         eif_Q_diag[-6:-3] = (2.0)**2 * 10**-2 # 10**-2
-        eif_Q_diag[-9:-3] *= 20 # 0.1 # 20
+        eif_Q_diag[-9:-3] *= 16 # 4**2 # 16 # 25 # 20 # 0.1 # 20
         #
         eif_Q_diag[-3:] = 10**0 # 10**5
         #
@@ -2170,29 +2170,29 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("eif_Sigma_s = \n%s" % str(eif_Sigma_s))
 
 
-            # # Experiment with optimal iteration number
-            # #-----------------------------#
-            # # Update error_norm_old
-            # # error_norm = res_norm
+            # Experiment with optimal iteration number
+            #-----------------------------#
+            # Update error_norm_old
+            error_norm = res_norm
             # error_norm = delta_z_norm
-            # # error_norm = np.linalg.norm(eif_Sigma_s)
-            # erro_ratio = (error_norm - error_norm_old)/error_norm_old
-            # error_norm_old = error_norm
-            # self.lib_print("erro_ratio = %f" % erro_ratio)
-            # #
-            # is_error_growing = (erro_ratio > 0.0)
-            # #
-            # # Test the slow changing
-            # if (abs(erro_ratio) < (1*10**-2)):
-            #     # 10^-1     -> 5~8
-            #     # 5 * 10^-2 -> 9~12
-            #     # 2 * 10^-2 -> 17~21
-            #     # 10^-2     -> 25~30
-            #     break
-            #     # # Test if the delta_z_norm will increase --> No
-            #     # if (erro_ratio >= 0.0) and (k_it > 3):
-            #     #     break
-            # #-----------------------------#
+            # error_norm = np.linalg.norm(eif_Sigma_s)
+            erro_ratio = (error_norm - error_norm_old)/error_norm_old
+            error_norm_old = error_norm
+            self.lib_print("erro_ratio = %f" % erro_ratio)
+            #
+            is_error_growing = (erro_ratio > 0.0)
+            #
+            # Test the slow changing
+            if (abs(erro_ratio) < (1*10**-2)):
+                # 10^-1     -> 5~8
+                # 5 * 10^-2 -> 9~12
+                # 2 * 10^-2 -> 17~21
+                # 10^-2     -> 25~30
+                break
+                # # Test if the delta_z_norm will increase --> No
+                # if (erro_ratio >= 0.0) and (k_it > 3):
+                #     break
+            #-----------------------------#
 
 
 
