@@ -2068,7 +2068,7 @@ class PNP_SOLVER_A2_M3(object):
         eif_Q_diag[-6:-3] = (2.0)**2 * 10**-2 # 10**-2
         eif_Q_diag[-9:-3] *= 20 # 0.1 # 20
         #
-        eif_Q_diag[-3:] = 10**5
+        eif_Q_diag[-3:] = 10**0 # 10**5
         #
         eif_Q = np.diag(eif_Q_diag)
         #---------------------------------#
@@ -2116,7 +2116,7 @@ class PNP_SOLVER_A2_M3(object):
 
             # Predict
             #-----------------------------#
-            # eif_R = self.EKF2_get_process_covariance_R(eif_x)
+            eif_R = self.EKF2_get_process_covariance_R(eif_x, k_it)
             # The following will be replaced by incremental updating algorithm
             eif_Omega = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
             # eif_x = eif_G @ eif_x # x is not changing in the model
@@ -2183,7 +2183,7 @@ class PNP_SOLVER_A2_M3(object):
             # is_error_growing = (erro_ratio > 0.0)
             # #
             # # Test the slow changing
-            # if (abs(erro_ratio) < (5*10**-2)):
+            # if (abs(erro_ratio) < (1*10**-2)):
             #     # 10^-1     -> 5~8
             #     # 5 * 10^-2 -> 9~12
             #     # 2 * 10^-2 -> 17~21
@@ -3314,7 +3314,7 @@ class PNP_SOLVER_A2_M3(object):
         M_so3 = np.array([[0.0, -v3in[2], v3in[1]],[v3in[2], 0.0, -v3in[0]],[-v3in[1], v3in[0], 0.0]])
         return M_so3
 
-    def EKF2_get_process_covariance_R(self, ekf_x):
+    def EKF2_get_process_covariance_R(self, ekf_x, k_it):
         '''
         '''
         x_size = ekf_x.shape[0]
@@ -3327,9 +3327,14 @@ class PNP_SOLVER_A2_M3(object):
         ekf_gamma = ekf_x[11,0]
         #
         # sigma_delta_theta_i = (np.deg2rad(5.0))**2 # Change 5.0 degree every time?
-        # sigma_tj = (0.05)**2 # Move 5 cm every time?
-        sigma_delta_theta_i = (np.deg2rad(30.0))**2 # Change 30 degree every time?
-        sigma_tj = (0.5)**2 # Move 50 cm every time?
+        # sigma_t12 = (0.05)**2 # Move 5 cm every time?
+        # sigma_delta_theta_i = (np.deg2rad(30.0))**2 # Change 30 degree every time?
+        # sigma_t12 = (0.5)**2 # Move 50 cm every time?
+        sigma_delta_theta_i = (np.deg2rad(60.0))**2 # Change 30 degree every time?
+        sigma_t12 = (0.05)**2 # Move 50 cm every time?
+
+        #
+        sigma_t3 = (2.0)**2 # Move 50 cm every time?
 
         # R_delta_u_all
         so3_u1 = self.get_so3_matrix_from_vec3(ekf_u_1)
@@ -3343,9 +3348,12 @@ class PNP_SOLVER_A2_M3(object):
         R_delta_theta = np.eye(3) * sigma_delta_theta_i
         R_delta_u_all = Ck @ R_delta_theta @ Ck.T
 
+        # Add some random walk
+        # R_delta_u_all += np.eye(9)*10**-3
+
         # R_delta_j
-        R_delta_12 = np.eye(2) * (ekf_gamma*sigma_tj)
-        R_delta_3 = (ekf_gamma**2) * sigma_tj
+        R_delta_12 = np.eye(2) * (abs(ekf_gamma) * sigma_t12)
+        R_delta_3 = (ekf_gamma**2) * sigma_t3
 
         # Rk
         Rk = np.zeros((x_size, x_size))
