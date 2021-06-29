@@ -386,6 +386,7 @@ failed_sample_fit_error_count = 0
 #--------------------------#
 
 s_stamp = time.time()
+delta_time = 0.0
 
 # Loop, stress test
 is_continuing_to_next_sample = True
@@ -402,6 +403,7 @@ except Exception as e:
 #
 if workstate is not None:
     sample_count = workstate["sample_count"]
+    delta_time = workstate["delta_time"]
     data_list = workstate["data_list"]
     result_list = workstate["result_list"]
     heap_neg_abs_depth_err = workstate["heap_neg_abs_depth_err"]
@@ -1013,7 +1015,9 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
 
 #-------------------------------------------------------#
 
-delta_time = time.time() - s_stamp
+# delta_time = time.time() - s_stamp
+delta_time += time.time() - s_stamp # Add to the value of the previous workstate
+
 print()
 print("Time elapsed for %d data = %f" % (len(result_list), delta_time))
 print("Average processing time for single data = %f" % (delta_time / len(result_list)) )
@@ -1032,6 +1036,7 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
 # Save the latest workstate
 #--------------------------------------------------#
 workstate["sample_count"] = sample_count
+workstate["delta_time"] = delta_time
 workstate["data_list"] = data_list
 workstate["result_list"] = result_list
 workstate["heap_neg_abs_depth_err"] = heap_neg_abs_depth_err
