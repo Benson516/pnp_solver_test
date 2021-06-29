@@ -366,8 +366,8 @@ signal(SIGINT, SIGINT_handler)
 # Loop through data
 #-------------------------------------------------------#
 # Random generator
-random_seed = 42
-# random_seed = None
+# random_seed = 42
+random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 
 # Collect the result
