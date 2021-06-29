@@ -3330,11 +3330,11 @@ class PNP_SOLVER_A2_M3(object):
         # sigma_t12 = (0.05)**2 # Move 5 cm every time?
         # sigma_delta_theta_i = (np.deg2rad(30.0))**2 # Change 30 degree every time?
         # sigma_t12 = (0.5)**2 # Move 50 cm every time?
-        sigma_delta_theta_i = (np.deg2rad(60.0))**2 # Change 30 degree every time?
-        sigma_t12 = (0.05)**2 # Move 50 cm every time?
+        sigma_delta_theta_i = np.deg2rad(60.0) # Change 30 degree every time?
+        sigma_t12 = 0.05 # Move 50 cm every time?
 
         #
-        sigma_t3 = (2.0)**2 # Move 50 cm every time?
+        sigma_t3 = 2.0 # Move 50 cm every time?
 
         # R_delta_u_all
         so3_u1 = self.get_so3_matrix_from_vec3(ekf_u_1)
@@ -3345,15 +3345,15 @@ class PNP_SOLVER_A2_M3(object):
         # self.lib_print("so3_u2 = \n%s" % so3_u2)
         # self.lib_print("so3_u3 = \n%s" % so3_u3)
         # self.lib_print("Ck = \n%s" % Ck)
-        R_delta_theta = np.eye(3) * sigma_delta_theta_i
+        R_delta_theta = np.eye(3) * (sigma_delta_theta_i**2)
         R_delta_u_all = Ck @ R_delta_theta @ Ck.T
 
         # Add some random walk
         # R_delta_u_all += np.eye(9)*10**-3
 
         # R_delta_j
-        R_delta_12 = np.eye(2) * (abs(ekf_gamma) * sigma_t12)
-        R_delta_3 = (ekf_gamma**2) * sigma_t3
+        R_delta_12 = np.eye(2) * (abs(ekf_gamma) * (sigma_t12**2))
+        R_delta_3 = (ekf_gamma**2) * (sigma_t3**2)
 
         # Rk
         Rk = np.zeros((x_size, x_size))
