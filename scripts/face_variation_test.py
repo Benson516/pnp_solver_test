@@ -1810,3 +1810,86 @@ print("Roll(deg.):  value_max = %f, top_value_mean = %f" % (perturb_result_roll[
 print("Pitch(deg.): value_max = %f, top_value_mean = %f" % (perturb_result_pitch[3], perturb_result_pitch[4]))
 print("Yaw(deg.):   value_max = %f, top_value_mean = %f" % (perturb_result_yaw[3], perturb_result_yaw[4]))
 print("-"*70)
+
+
+
+def write_perturbation_result_to_csv(perturb_result, csv_path, inspected_value_name="depth", unit="m", unit_scale=1.0):
+    '''
+    perturb_result = (fragile_point_count_dict, fragile_point_sorted_list, top_perturbation_list, value_max, top_value_mean)
+
+    Head:
+        inspected_value_name
+        value_max
+        top_value_mean
+    Column: keys() of the point_3d_dict_GT, i.e. name of each point
+    Row:
+        - Top-fragile-point count
+        - rank
+        - top_perturbation_list
+            - x0
+            - y0
+            - z0
+            ...
+            - xn
+            - yn
+            - zn
+    '''
+    fragile_point_count_dict, fragile_point_sorted_list, top_perturbation_list, value_max, top_value_mean = perturb_result
+    #
+    header_0 = ("inspected prediction", inspected_value_name)
+    header_1 = (("value_max(%s)" % unit), (value_max*unit_scale) )
+    header_2 = (("top_value_mean(%s)" % unit), (top_value_mean*unit_scale) )
+    _key_list = list(fragile_point_count_dict.keys())
+    header_3 = [""] + _key_list
+    #
+    # row_0 = ["Top-fragile-point count"] + list(fragile_point_count_dict.values())
+    row_0 = ["Top-fragile-point count"] + [fragile_point_count_dict[_k] for _k in _key_list]
+    #
+    _rank_dict = dict()
+    for _idx, _t in enumerate(fragile_point_sorted_list):
+        _rank_dict[ _t[1] ] = _idx + 1
+    # row_1 = ["Rank of fragility"] + list(_rank_dict.values())
+    row_1 = ["Rank of fragility"] + [_rank_dict[_k] for _k in _key_list]
+
+
+    with open(csv_path, mode='w') as _csv_f:
+        _csv_w = csv.writer(_csv_f)
+        #
+        _csv_w.writerow(header_0)
+        _csv_w.writerow(header_1)
+        _csv_w.writerow(header_2)
+        _csv_w.writerow(header_3)
+        #
+        _csv_w.writerow(row_0)
+        _csv_w.writerow(row_1)
+        #
+        for _idx, __perturb_direction_dict in enumerate(top_perturbation_list):
+            _count = _idx+1
+            _row_idx_head = ["perturb_direction #%d" % _count]
+            _csv_w.writerow(_row_idx_head)
+            
+            # _row_x = ["x[%d]" % _count]
+            # _row_y = ["y[%d]" % _count]
+            # _row_z = ["z[%d]" % _count]
+            _row_x = ["x"]
+            _row_y = ["y"]
+            _row_z = ["z"]
+            for _key in _key_list:
+                _perturbation_i = __perturb_direction_dict[_key].reshape((3,))
+                _row_x += ["%f" % _perturbation_i[0]]
+                _row_y += ["%f" % _perturbation_i[1]]
+                _row_z += ["%f" % _perturbation_i[2]]
+            _csv_w.writerow(_row_x)
+            _csv_w.writerow(_row_y)
+            _csv_w.writerow(_row_z)
+
+
+        print("\n*** Wrote the results to the csv file:\n\t[%s]\n" % csv_path)
+
+
+
+
+
+inspected_value_name = 'Depth'
+perturbation_result_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_perturbation_to_%s" % (inspected_value_name) ) + '.csv'
+write_perturbation_result_to_csv(perturb_result_depth, perturbation_result_csv_path, inspected_value_name=inspected_value_name, unit="cm", unit_scale=100.0)
