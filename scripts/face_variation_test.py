@@ -8,6 +8,7 @@ import heapq
 import cv2
 #
 import PNP_SOLVER_LIB as PNPS
+import joblib
 
 # ctrl+c
 from signal import signal, SIGINT
@@ -30,6 +31,11 @@ image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landma
 result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
+#---------------------------#
+workstate_dir_str = '/home/benson516/test_PnP_solver/pnp_solver_test/scripts/workstate/'
+workstate_file_name_str = 'face_variation_work_state.pkl'
+workstate_path_str = workstate_dir_str + workstate_file_name_str
+#---------------------------#
 
 # Behavior of this program
 #---------------------------#
@@ -384,6 +390,29 @@ s_stamp = time.time()
 # Loop, stress test
 is_continuing_to_next_sample = True
 sample_count = 0
+
+# Load previous states
+#-------------------------------#
+workstate = None
+try:
+    workstate = joblib.load(workstate_path_str)
+except Exception as e:
+    print(e)
+    print("\nCreate new workstate\n")
+#
+if workstate is not None:
+    sample_count = workstate["sample_count"]
+    data_list = workstate["data_list"]
+    result_list = workstate["result_list"]
+    heap_neg_abs_depth_err = workstate["heap_neg_abs_depth_err"]
+    heap_neg_abs_roll_err = workstate["heap_neg_abs_roll_err"]
+    heap_neg_abs_pitch_err = workstate["heap_neg_abs_pitch_err"]
+    heap_neg_abs_yaw_err = workstate["heap_neg_abs_yaw_err"]
+else:
+    workstate = dict()
+print("\nsample_count = %d\n" % sample_count)
+# time.sleep(10)
+#-------------------------------#
 while (sample_count < DATA_COUNT) and (not received_SIGINT):
     #
     if not is_continuing_to_next_sample:
@@ -998,6 +1027,20 @@ print()
 failed_sample_filename_list_file_path = image_result_unflipped_dir_str + "fail_case_list.txt"
 with open(failed_sample_filename_list_file_path, "w") as _f:
     _f.writelines('\n'.join(failed_sample_filename_list) )
+
+
+# Save the latest workstate
+#--------------------------------------------------#
+workstate["sample_count"] = sample_count
+workstate["data_list"] = data_list
+workstate["result_list"] = result_list
+workstate["heap_neg_abs_depth_err"] = heap_neg_abs_depth_err
+workstate["heap_neg_abs_roll_err"] = heap_neg_abs_roll_err
+workstate["heap_neg_abs_pitch_err"] = heap_neg_abs_pitch_err
+workstate["heap_neg_abs_yaw_err"] = heap_neg_abs_yaw_err
+#
+joblib.dump(workstate, workstate_path_str)
+#--------------------------------------------------#
 
 # # Store the error for statistic
 # #----------------------------#
