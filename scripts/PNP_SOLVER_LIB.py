@@ -3353,13 +3353,13 @@ class PNP_SOLVER_A2_M3(object):
 
         # R_delta_j
         R_delta_12 = np.eye(2) * (abs(ekf_gamma) * (sigma_t12**2))
-        R_delta_3 = (ekf_gamma**2) * (sigma_t3**2)
+        R_gamma = (ekf_gamma**2) * (sigma_t3**2)
 
         # Rk
         Rk = np.zeros((x_size, x_size))
         Rk[0:9,0:9] = R_delta_u_all
         Rk[9:11,9:11] = R_delta_12
-        Rk[11,11] = R_delta_3
+        Rk[11,11] = R_gamma
         # self.lib_print("Rk = \n%s" % Rk)
 
         return Rk
