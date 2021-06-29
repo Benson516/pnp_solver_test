@@ -1867,7 +1867,7 @@ def write_perturbation_result_to_csv(perturb_result, csv_path, inspected_value_n
             _count = _idx+1
             _row_idx_head = ["perturb_direction #%d" % _count]
             _csv_w.writerow(_row_idx_head)
-            
+
             # _row_x = ["x[%d]" % _count]
             # _row_y = ["y[%d]" % _count]
             # _row_z = ["z[%d]" % _count]
@@ -1889,7 +1889,35 @@ def write_perturbation_result_to_csv(perturb_result, csv_path, inspected_value_n
 
 
 
-
-inspected_value_name = 'Depth'
+# Save the result of perturbation analysis
+inspected_value_name = 'depth'
+unit = "cm"
+unit_scale = 100.0
+perturb_result = perturb_result_depth
+#
 perturbation_result_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_perturbation_to_%s" % (inspected_value_name) ) + '.csv'
-write_perturbation_result_to_csv(perturb_result_depth, perturbation_result_csv_path, inspected_value_name=inspected_value_name, unit="cm", unit_scale=100.0)
+write_perturbation_result_to_csv(perturb_result, perturbation_result_csv_path, inspected_value_name=inspected_value_name, unit=unit, unit_scale=unit_scale)
+
+inspected_value_name = 'roll'
+unit = "deg."
+unit_scale = 1.0
+perturb_result = perturb_result_roll
+#
+perturbation_result_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_perturbation_to_%s" % (inspected_value_name) ) + '.csv'
+write_perturbation_result_to_csv(perturb_result, perturbation_result_csv_path, inspected_value_name=inspected_value_name, unit=unit, unit_scale=unit_scale)
+
+inspected_value_name = 'pitch'
+unit = "deg."
+unit_scale = 1.0
+perturb_result = perturb_result_pitch
+#
+perturbation_result_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_perturbation_to_%s" % (inspected_value_name) ) + '.csv'
+write_perturbation_result_to_csv(perturb_result, perturbation_result_csv_path, inspected_value_name=inspected_value_name, unit=unit, unit_scale=unit_scale)
+
+inspected_value_name = 'yaw'
+unit = "deg."
+unit_scale = 1.0
+perturb_result = perturb_result_yaw
+#
+perturbation_result_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_perturbation_to_%s" % (inspected_value_name) ) + '.csv'
+write_perturbation_result_to_csv(perturb_result, perturbation_result_csv_path, inspected_value_name=inspected_value_name, unit=unit, unit_scale=unit_scale)
