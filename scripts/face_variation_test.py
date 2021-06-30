@@ -62,7 +62,7 @@ stop_at_fail_cases = False
 # DATA_COUNT = 3
 # DATA_COUNT = 1000
 # DATA_COUNT = 10000 # 1000
-DATA_COUNT = 60000 # 1000 # Estimated 30 miniute to run
+DATA_COUNT = 120000 # 60000 # 1000 # Estimated 30 miniute to run
 #
 verbose = True
 # verbose = False
@@ -1763,7 +1763,17 @@ def get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT, result_l
             __perturb_direction_dict[_key] = _perturb_vec_i[_j:(_j+3)].reshape((3,1))
             _j += 3
         top_perturbation_list.append(__perturb_direction_dict)
-    return (fragile_point_count_dict, fragile_point_sorted_list, top_perturbation_list, value_max, top_value_mean)
+    #
+    top_similarity_list = list(perturb_matrix_s[:k_top_direction])
+    #
+    result_dict = dict()
+    result_dict["fragile_point_count_dict"] = fragile_point_count_dict
+    result_dict["fragile_point_sorted_list"] = fragile_point_sorted_list
+    result_dict["top_perturbation_list"] = top_perturbation_list
+    result_dict["top_similarity_list"] = top_similarity_list
+    result_dict["value_max"] = value_max
+    result_dict["top_value_mean"] = top_value_mean
+    return result_dict
 
 def print_point_3D_key(np_point_3D_dict_list):
     # Logging
@@ -1790,30 +1800,34 @@ perturb_result_roll = get_most_fragile_point_and_perturbation_direction(point_3d
 perturb_result_pitch = get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT_list[0], result_list, abs_pitch_err_top_value_idx_list)
 perturb_result_yaw = get_most_fragile_point_and_perturbation_direction(point_3d_dict_GT_list[0], result_list, abs_yaw_err_top_value_idx_list)
 
-# print("-"*70)
-# print("Depth: fragile_point_count_dict = \n%s" % perturb_result_depth[0])
-# print("Roll: fragile_point_count_dict = \n%s" % perturb_result_roll[0])
-# print("Pitch: fragile_point_count_dict = \n%s" % perturb_result_pitch[0])
-# print("Yaw: fragile_point_count_dict = \n%s" % perturb_result_yaw[0])
 print("-"*70)
-print("Depth: fragile_point_sorted_list = \n%s" % perturb_result_depth[1])
-print("Roll: fragile_point_sorted_list = \n%s" % perturb_result_roll[1])
-print("Pitch: fragile_point_sorted_list = \n%s" % perturb_result_pitch[1])
-print("Yaw: fragile_point_sorted_list = \n%s" % perturb_result_yaw[1])
+print("Depth: fragile_point_count_dict = \n%s" % perturb_result_depth["fragile_point_count_dict"])
+print("Roll: fragile_point_count_dict = \n%s" % perturb_result_roll["fragile_point_count_dict"])
+print("Pitch: fragile_point_count_dict = \n%s" % perturb_result_pitch["fragile_point_count_dict"])
+print("Yaw: fragile_point_count_dict = \n%s" % perturb_result_yaw["fragile_point_count_dict"])
+print("-"*70)
+print("Depth: fragile_point_sorted_list = \n%s" % perturb_result_depth["fragile_point_sorted_list"])
+print("Roll: fragile_point_sorted_list = \n%s" % perturb_result_roll["fragile_point_sorted_list"])
+print("Pitch: fragile_point_sorted_list = \n%s" % perturb_result_pitch["fragile_point_sorted_list"])
+print("Yaw: fragile_point_sorted_list = \n%s" % perturb_result_yaw["fragile_point_sorted_list"])
 print("-"*70)
 print("Depth: top_perturbation_list")
-print_point_3D_key(perturb_result_depth[2])
+print("top_similarity_list: %s" % perturb_result_depth["top_similarity_list"])
+print_point_3D_key(perturb_result_depth["top_perturbation_list"])
 print("Roll: top_perturbation_list")
-print_point_3D_key(perturb_result_roll[2])
+print("top_similarity_list: %s" % perturb_result_roll["top_similarity_list"])
+print_point_3D_key(perturb_result_roll["top_perturbation_list"])
 print("Pitch: top_perturbation_list")
-print_point_3D_key(perturb_result_pitch[2])
+print("top_similarity_list: %s" % perturb_result_pitch["top_similarity_list"])
+print_point_3D_key(perturb_result_pitch["top_perturbation_list"])
 print("Yaw: top_perturbation_list")
-print_point_3D_key(perturb_result_yaw[2])
+print("top_similarity_list: %s" % perturb_result_yaw["top_similarity_list"])
+print_point_3D_key(perturb_result_yaw["top_perturbation_list"])
 print("-"*70)
-print("Depth(cm):   value_max = %f, top_value_mean = %f" % (perturb_result_depth[3]*100, perturb_result_depth[4]*100))
-print("Roll(deg.):  value_max = %f, top_value_mean = %f" % (perturb_result_roll[3], perturb_result_roll[4]))
-print("Pitch(deg.): value_max = %f, top_value_mean = %f" % (perturb_result_pitch[3], perturb_result_pitch[4]))
-print("Yaw(deg.):   value_max = %f, top_value_mean = %f" % (perturb_result_yaw[3], perturb_result_yaw[4]))
+print("Depth(cm):   value_max = %f, top_value_mean = %f" % (perturb_result_depth["value_max"]*100, perturb_result_depth["top_value_mean"]*100))
+print("Roll(deg.):  value_max = %f, top_value_mean = %f" % (perturb_result_roll["value_max"], perturb_result_roll["top_value_mean"]))
+print("Pitch(deg.): value_max = %f, top_value_mean = %f" % (perturb_result_pitch["value_max"], perturb_result_pitch["top_value_mean"]))
+print("Yaw(deg.):   value_max = %f, top_value_mean = %f" % (perturb_result_yaw["value_max"], perturb_result_yaw["top_value_mean"]))
 print("-"*70)
 
 
@@ -1830,16 +1844,22 @@ def write_perturbation_result_to_csv(perturb_result, csv_path, inspected_value_n
     Row:
         - Top-fragile-point count
         - rank
-        - top_perturbation_list
-            - x0
-            - y0
-            - z0
+        - perturb_direction #1 | similarity
+            - x
+            - y
+            - z
             ...
-            - xn
-            - yn
-            - zn
+        - perturb_direction #n | similarity
+            - x
+            - y
+            - z
     '''
-    fragile_point_count_dict, fragile_point_sorted_list, top_perturbation_list, value_max, top_value_mean = perturb_result
+    fragile_point_count_dict = perturb_result["fragile_point_count_dict"]
+    fragile_point_sorted_list = perturb_result["fragile_point_sorted_list"]
+    top_perturbation_list = perturb_result["top_perturbation_list"]
+    top_similarity_list = perturb_result["top_similarity_list"]
+    value_max = perturb_result["value_max"]
+    top_value_mean = perturb_result["top_value_mean"]
     #
     header_0 = ("inspected prediction", inspected_value_name)
     header_1 = (("value_max(%s)" % unit), (value_max*unit_scale) )
@@ -1870,7 +1890,8 @@ def write_perturbation_result_to_csv(perturb_result, csv_path, inspected_value_n
         #
         for _idx, __perturb_direction_dict in enumerate(top_perturbation_list):
             _count = _idx+1
-            _row_idx_head = ["perturb_direction #%d" % _count]
+            _csv_w.writerow([])
+            _row_idx_head = [("perturb_direction #%d" % _count), "similarity", top_similarity_list[_idx]]
             _csv_w.writerow(_row_idx_head)
 
             # _row_x = ["x[%d]" % _count]
@@ -1881,9 +1902,12 @@ def write_perturbation_result_to_csv(perturb_result, csv_path, inspected_value_n
             _row_z = ["z"]
             for _key in _key_list:
                 _perturbation_i = __perturb_direction_dict[_key].reshape((3,))
-                _row_x += ["%f" % _perturbation_i[0]]
-                _row_y += ["%f" % _perturbation_i[1]]
-                _row_z += ["%f" % _perturbation_i[2]]
+                # _row_x += ["%f" % _perturbation_i[0]]
+                # _row_y += ["%f" % _perturbation_i[1]]
+                # _row_z += ["%f" % _perturbation_i[2]]
+                _row_x.append( _perturbation_i[0])
+                _row_y.append( _perturbation_i[1])
+                _row_z.append( _perturbation_i[2])
             _csv_w.writerow(_row_x)
             _csv_w.writerow(_row_y)
             _csv_w.writerow(_row_z)
