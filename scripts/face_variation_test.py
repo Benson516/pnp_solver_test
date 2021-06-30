@@ -71,8 +71,8 @@ is_showing_image = True
 # is_showing_image = False
 #
 # Fail cases investigation
-is_storing_fail_case_image = True
-# is_storing_fail_case_image = False
+# is_storing_fail_case_image = True
+is_storing_fail_case_image = False
 # Note: pass_count >= pass_count_threshold --> passed!!
 pass_count_threshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_threshold pass items, store the image
 #
@@ -1976,3 +1976,186 @@ perturb_result = perturb_result_yaw
 #
 perturbation_result_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_perturbation_to_%s" % (inspected_value_name) ) + '.csv'
 write_perturbation_result_to_csv(perturb_result, perturbation_result_csv_path, inspected_value_name=inspected_value_name, unit=unit, unit_scale=unit_scale)
+
+
+
+# Draw the perturbation on the image
+def draw_perturbation_on_image(np_perturbation_dict,
+                                point_3d_dict_list, pattern_scale_list, golden_pattern_id,
+                                image_dir_str, image_file_name, result_image_name_prefix,
+                                pnp_solver_in,
+                                Euler_GT_list, t_GT_list):
+    '''
+    Draw the perturbation on the image
+    '''
+    # Control parameters
+    #-----------------------#
+    is_mirrored_image = True
+    is_showing_image = True
+    #
+    fixed_pattern_key = "eye_c_51"
+    perturb_radius_point = 0.02 # m, currently uniform in all direction
+    #-----------------------#
+
+    #
+    _pnp_solver = copy.deepcopy(pnp_solver_in)
+    _pnp_solver.verbose = False
+    #
+
+    # Euler_GT_list = [roll, pitch, yaw]
+    np_R_GT = _pnp_solver.get_rotation_matrix_from_Euler(Euler_GT_list[0], Euler_GT_list[2], Euler_GT_list[1], is_degree=True)
+    np_t_GT = np.array(t_GT_list).reshape((3,1))
+
+    # Reprojections
+    #---------------------------------------------------#
+    # Get a copy of nominal pattern
+    #----------------------------#
+    _new_point_3d_dict = copy.deepcopy(point_3d_dict_list[golden_pattern_id])
+    _new_pattern_scale = pattern_scale_list[golden_pattern_id]
+    #----------------------------#
+
+    # Nominal, golden pattern
+    #----------------------------#
+    _pnp_solver.update_the_selected_golden_pattern(golden_pattern_id, _new_point_3d_dict, _new_pattern_scale)
+    np_point_image_dict_nominal = _pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=False, is_pretrans_points=False)
+    #----------------------------#
+
+    # Perturbed
+    #----------------------------#
+    # Add the perturbation to the golden pattern
+    for _key in _new_point_3d_dict:
+        if _key != fixed_pattern_key:
+            # Note: The perturbation vector (21 x 1) of np_perturbation_dict is normalized to length 1.0 (the direction)
+            #       To reconstruct the perturbed pattern, scale it by perturb_radius_point
+            _new_point_3d_dict[_key] = list(np.array(_new_point_3d_dict[_key]).reshape((3,1)) + perturb_radius_point * np_perturbation_dict[_key])
+    #
+    _pnp_solver.update_the_selected_golden_pattern(golden_pattern_id, _new_point_3d_dict, _new_pattern_scale)
+    np_point_image_dict_perturbed = _pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=False, is_pretrans_points=False)
+    #----------------------------#
+    #---------------------------------------------------#
+
+
+    # Get the file name of the image
+    #--------------------------------------------#
+    result_image_file_name = result_image_name_prefix + image_file_name
+    print('Image file name: [%s]' % image_file_name)
+    print('Result image file name: [%s]' % result_image_file_name)
+    #
+    _image_ori_path_str = image_dir_str + image_file_name
+    _image_result_unflipped_path_str = image_result_unflipped_dir_str + result_image_file_name
+    _image_result_path_str = image_result_dir_str + result_image_file_name
+    #--------------------------------------------#
+
+    # Load the original image
+    #--------------------------------------------#
+    _img = cv2.imread(_image_ori_path_str)
+    if _img is None:
+        print("!! Error occured while loading the image !!\n")
+        return
+    _img_shape = _img.shape
+    print("_img.shape = %s" % str(_img_shape))
+    LM_2_image_scale = _img_shape[1] / 320.0
+
+    # Flip the image if needed
+    #----------------------------------#
+    if is_mirrored_image:
+        _img_preprocessed = cv2.flip(_img, 1)
+    else:
+        _img_preprocessed = _img
+    #----------------------------------#
+
+    # Ploting LMs onto the image
+    _img_LM = copy.deepcopy(_img_preprocessed)
+    # Colors
+    _color_RED   = (0, 0, 255)
+    _color_GREEN = (0, 255, 0)
+    _color_BLUE  = (255, 0, 0)
+    # _color_RED   = np.array((0, 0, 255))
+    # _color_GREEN = np.array((0, 255, 0))
+    # _color_BLUE  = np.array((255, 0, 0))
+
+    # Landmarks
+    #----------------------------------#
+    # [[u,v,1]].T
+    for _k in np_point_image_dict:
+        # Reprojections of the golden pattern onto the image using estimated pose
+        _center_pixel = (np_point_image_dict_nominal[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _radius = 10
+        _color = (127, 127, 0) # BGR
+        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        # Reprojections of the golden pattern onto the image using estimated pose
+        _center_pixel = (np_point_image_dict_perturbed[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _radius = 12
+        _color = (0, 50, 200) # BGR
+        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    #----------------------------------#
+
+
+    # Dtermine the final image
+    #-------------------------#
+    # _img_result = _img
+    # _img_result = _img_preprocessed
+    _img_result = _img_LM
+    #-------------------------#
+
+    # Flip the result image if needed
+    #----------------------------------#
+    if is_mirrored_image:
+        _img_result_flipped = cv2.flip(_img_result, 1)
+    else:
+        _img_result_flipped = _img_result
+    #----------------------------------#
+
+    # Save the resulted image
+    #----------------------------------#
+    cv2.imwrite(_image_result_unflipped_path_str, _img_result )
+    cv2.imwrite(_image_result_path_str, _img_result_flipped )
+    #----------------------------------#
+
+    # Displaying the image
+    #----------------------------------#
+    if is_showing_image:
+        cv2.imshow(result_image_file_name, _img_result)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    #----------------------------------#
+
+
+
+#
+image_file_name = "left_000_030_pitch_u_000_yaw_000_image.png"
+Euler_GT_list = [0.0, 0.0, 0.0] # rpy
+t_GT_list = [0.00156207, 0.00977673, 0.3] # [x,y,z] m
+GT_golden_pattern_id = 0
+#
+np_perturbation_dict = perturb_result_depth["top_perturbation_list"][0]
+result_image_name_prefix = "depth_"
+draw_perturbation_on_image(np_perturbation_dict,
+                            point_3d_dict_GT_list, pattern_scale_GT_list, GT_golden_pattern_id,
+                            image_dir_str, image_file_name, result_image_name_prefix,
+                            pnp_solver_GT,
+                            Euler_GT_list, t_GT_list)
+
+np_perturbation_dict = perturb_result_roll["top_perturbation_list"][0]
+result_image_name_prefix = "roll_"
+draw_perturbation_on_image(np_perturbation_dict,
+                            point_3d_dict_GT_list, pattern_scale_GT_list, GT_golden_pattern_id,
+                            image_dir_str, image_file_name, result_image_name_prefix,
+                            pnp_solver_GT,
+                            Euler_GT_list, t_GT_list)
+
+np_perturbation_dict = perturb_result_pitch["top_perturbation_list"][0]
+result_image_name_prefix = "pitch_"
+draw_perturbation_on_image(np_perturbation_dict,
+                            point_3d_dict_GT_list, pattern_scale_GT_list, GT_golden_pattern_id,
+                            image_dir_str, image_file_name, result_image_name_prefix,
+                            pnp_solver_GT,
+                            Euler_GT_list, t_GT_list)
+
+np_perturbation_dict = perturb_result_yaw["top_perturbation_list"][0]
+result_image_name_prefix = "yaw_"
+draw_perturbation_on_image(np_perturbation_dict,
+                            point_3d_dict_GT_list, pattern_scale_GT_list, GT_golden_pattern_id,
+                            image_dir_str, image_file_name, result_image_name_prefix,
+                            pnp_solver_GT,
+                            Euler_GT_list, t_GT_list)

@@ -108,7 +108,7 @@ class PNP_SOLVER_A2_M3(object):
         for _k in _np_point_3d_dict:
             # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_dict[_k])))
             # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_pretransfer_dict[_k])))
-            print("%s:%sp_3D=%s.T | p_3D_pretrans=%s.T" %
+            self.lib_print("%s:%sp_3D=%s.T | p_3D_pretrans=%s.T" %
                 (   _k,
                     " "*(12-len(_k)),
                     str(_np_point_3d_dict[_k].T),
