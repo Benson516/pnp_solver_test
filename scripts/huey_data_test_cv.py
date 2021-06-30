@@ -907,8 +907,8 @@ for _idx in range(len(data_list)):
 
 delta_time = time.time() - s_stamp
 print()
-print("Time elapsed for %d data = %f" % (len(data_list), delta_time))
-print("Average processing time for single data = %f" % (delta_time / len(data_list)) )
+print("Time elapsed for %d data = %f" % (len(result_list), delta_time))
+print("Average processing time for single data = %f" % (delta_time / len(result_list)) )
 print()
 
 print("len(failed_sample_filename_list) = %d" % len(failed_sample_filename_list))
