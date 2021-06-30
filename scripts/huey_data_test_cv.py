@@ -997,14 +997,20 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
 #-------------------------------------------------------#
 def get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0, verbose=True):
     '''
+    If data_GT_key is None, we calculate the statistic property of that value;
+    whereas if the data_GT_key is given, we calculate the statistic of the error.
     '''
     n_data = len(result_list)
     if n_data == 0:
         return None
     data_est_vec = np.vstack( [ _d[ data_est_key ] for _d in result_list] )
-    data_GT_vec = np.vstack( [ _d[ data_GT_key ] for _d in result_list] )
-    _np_data_ratio_vec = data_est_vec / data_GT_vec
-    _np_data_error_vec = data_est_vec - data_GT_vec
+    if data_GT_key is not None:
+        data_GT_vec = np.vstack( [ _d[ data_GT_key ] for _d in result_list] )
+        _np_data_ratio_vec = data_est_vec / data_GT_vec
+        _np_data_error_vec = data_est_vec - data_GT_vec
+    else: # We just want to get the statistic of the value itself instead of the statistic of the error
+        _np_data_ratio_vec = data_est_vec
+        _np_data_error_vec = data_est_vec
 
     ratio_mean = np.average(_np_data_ratio_vec)
     error_mean = np.average(_np_data_error_vec)
@@ -1380,10 +1386,13 @@ drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = get_al
 
 # Get (distance) statistic of each data in the data subset of each class
 #-----------------------------#
+# drpy to drpy
 drpy_2_depth_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0)
 drpy_2_roll_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="roll", data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0)
 drpy_2_pitch_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="pitch", data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0)
 drpy_2_yaw_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="yaw", data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0)
+# drpy to other values
+drpy_2_LM_GT_error_average_normalize_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="LM_GT_error_average_normalize", data_est_key="LM_GT_error_average_normalize", data_GT_key=None, unit="px_m", unit_scale=1.0)
 #-----------------------------#
 
 
@@ -1469,6 +1478,7 @@ statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str +
 write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 
+
 # Statistic about bias
 #---------------------------------------------------#
 # Generate the drpy data
@@ -1499,6 +1509,14 @@ write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path,
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_yaw_statistic_dict
 unit = "deg."
+matric_label = "%s(%s)" % (matric_name, unit)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+# LM_GT_error_average_normalize
+statistic_data_name = "LM_GT_error_average_normalize" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_LM_GT_error_average_normalize_statistic_dict
+unit = "px_m"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
 write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
@@ -1534,6 +1552,14 @@ write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path,
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_yaw_statistic_dict
 unit = "deg."
+matric_label = "%s(%s)" % (matric_name, unit)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+# LM_GT_error_average_normalize
+statistic_data_name = "LM_GT_error_average_normalize" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_LM_GT_error_average_normalize_statistic_dict
+unit = "px_m"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
 write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
