@@ -2126,6 +2126,9 @@ def draw_perturbation_on_image(np_perturbation_dict,
 image_file_name = "left_000_030_pitch_u_000_yaw_000_image.png"
 Euler_GT_list = [0.0, 0.0, 0.0] # rpy
 t_GT_list = [0.00156207, 0.00977673, 0.3] # [x,y,z] m
+# image_file_name = "right_000_040_pitch_u_000_yaw_040_image.png"
+# Euler_GT_list = [0.0, 0.0, 40.0] # rpy
+# t_GT_list = [0.01556171, 0.010149, 0.4] # [x,y,z] m
 GT_golden_pattern_id = 0
 #
 np_perturbation_dict = perturb_result_depth["top_perturbation_list"][0]
