@@ -2012,6 +2012,7 @@ def draw_perturbation_on_image(np_perturbation_dict,
     #----------------------------#
     _new_point_3d_dict = copy.deepcopy(point_3d_dict_list[golden_pattern_id])
     _new_pattern_scale = pattern_scale_list[golden_pattern_id]
+    _key_list = list(_new_point_3d_dict.keys())
     #----------------------------#
 
     # Nominal, golden pattern
@@ -2023,7 +2024,7 @@ def draw_perturbation_on_image(np_perturbation_dict,
     # Perturbed
     #----------------------------#
     # Add the perturbation to the golden pattern
-    for _key in _new_point_3d_dict:
+    for _key in _key_list:
         if _key != fixed_pattern_key:
             # Note: The perturbation vector (21 x 1) of np_perturbation_dict is normalized to length 1.0 (the direction)
             #       To reconstruct the perturbed pattern, scale it by perturb_radius_point
@@ -2077,7 +2078,7 @@ def draw_perturbation_on_image(np_perturbation_dict,
     # Landmarks
     #----------------------------------#
     # [[u,v,1]].T
-    for _k in np_point_image_dict:
+    for _k in _key_list:
         # Reprojections of the golden pattern onto the image using estimated pose
         _center_pixel = (np_point_image_dict_nominal[_k][0:2,0] * LM_2_image_scale).astype('int')
         _radius = 10
