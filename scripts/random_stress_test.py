@@ -7,6 +7,9 @@ import cv2
 #
 import PNP_SOLVER_LIB as PNPS
 
+# ctrl+c
+from signal import signal, SIGINT
+
 
 #---------------------------#
 # Landmark (LM) dataset
@@ -28,12 +31,12 @@ result_statistic_txt_file_prefix_str = "statistic_"
 
 # Behavior of this program
 #---------------------------#
-# is_stress_test = True
-is_stress_test = False
+is_stress_test = True
+# is_stress_test = False
 
 # Data generation
-# is_random = True
-is_random = False
+# is_random_pose = True
+is_random_pose = False
 #
 is_quantized = True
 # is_quantized = False
@@ -55,8 +58,8 @@ is_showing_image = True
 # Fail cases investigation
 is_storing_fail_case_image = True
 # is_storing_fail_case_image = False
-# Note: pass_count >= pass_count_treshold --> passed!!
-pass_count_treshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_treshold pass items, store the image
+# Note: pass_count >= pass_count_threshold --> passed!!
+pass_count_threshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_threshold pass items, store the image
 #
 # Statistic CSV file
 is_statistic_csv_horizontal = True # class --> (right)
@@ -65,11 +68,11 @@ is_statistic_csv_horizontal = True # class --> (right)
 
 # Not to flush the screen
 if is_stress_test:
-    is_random = True
+    is_random_pose = True
     is_showing_image = False
     if not stop_at_fail_cases:
         verbose = False
-if not is_random:
+if not is_random_pose:
     DATA_COUNT = 1
 
 #
@@ -177,10 +180,35 @@ pattern_scale_list.append(pattern_scale)
 # # print(np_point_3d_dict)
 #----------------------------------------#
 
-# Create the PnP class for generating the LMs by projecting the golden patterns
-#----------------------------------------#
-pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
 
+# Create the GT PnP class for generating the LMs by projecting the golden patterns
+#----------------------------------------#
+# Golden pattern (simply copy the GT one)
+point_3d_dict_GT_list = copy.deepcopy(point_3d_dict_list)
+pattern_scale_GT_list = copy.deepcopy(pattern_scale_list)
+pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_GT_list, pattern_scale_list=pattern_scale_GT_list, verbose=verbose)
+#----------------------------------------#
+
+
+#-------------------------------------------------------#
+# Parameters and data
+# Camera intrinsic matrix (Estimated)
+#----------------------------------------#
+f_camera = 225.68717584155982
+#
+fx_camera = f_camera
+# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
+fy_camera = f_camera
+xo_camera = 320/2.0
+yo_camera = 240/2.0
+np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
+print("np_K_camera_est = \n%s" % str(np_K_camera_est))
+#----------------------------------------#
+
+# Create the solver
+#----------------------------------------#
+pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=pattern_scale_list, verbose=verbose)
+#-------------------------------------------------------#
 
 
 
@@ -190,8 +218,7 @@ pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_list, patter
 
 # Ground truth classification
 #-------------------------------#
-
-# Formate
+# Format
 drpy_class_format = "drpy_expand"
 # drpy_class_format = "HMI_inspection"
 
@@ -251,13 +278,107 @@ elif drpy_class_format == "HMI_inspection":
 else:
     pass
 #-------------------------------#
+
+
+
+#-------------------------------#
+def solving_center_point(p1,p2,p3,p4):
+    '''
+    p1   p2
+       \/
+       pc
+       /\
+    p4   p3
+    '''
+    # Transform to 2D arrays
+    _n = np.array(p1).size
+    _p1_shape = np.array(p1).shape
+    _p1 = np.array(p1).reshape( (_n,1) )
+    _p2 = np.array(p2).reshape( (_n,1) )
+    _p3 = np.array(p3).reshape( (_n,1) )
+    _p4 = np.array(p4).reshape( (_n,1) )
+    #
+    _d13 = _p3 - _p1
+    _d24 = _p4 - _p2
+    _A = np.hstack([_d13, _d24])
+    _b = _p2 - _p1
+    _uv = np.linalg.pinv(_A) @ _b
+    _pc = _p1 + _uv[0,0] * _d13
+    # reshape
+    pc = _pc.reshape( _p1_shape )
+    if type(p1) == type(list()):
+        pc = list(pc)
+    return pc
+
+def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
+    '''
+    pixel_xy: np array, shape=(2,)
+    '''
+    if mirrored:
+        pixel_center_x = 320/2.0
+        pixel_xy_mirrored = copy.deepcopy(pixel_xy)
+        pixel_xy_mirrored[0] = -1.0 * (pixel_xy[0] - pixel_center_x) + pixel_center_x
+        return np.array([pixel_xy_mirrored[0], pixel_xy_mirrored[1], 1.0]).reshape((3,1))
+    else:
+        return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
+
+def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
+    '''
+    output
+    [depth-passed, roll-passed, pitch-passed, yaw-passed], how many criterion passed
+    '''
+    drpy_pass_list = [ (np.abs( drpy_est_list[_i] - drpy_GT_list[_i] ) < drpy_error_bound_list[_i]) for _i in range(len(drpy_est_list))]
+    pass_count = len([ _e for _e in drpy_pass_list if _e])
+    return (drpy_pass_list, pass_count)
+
+# SIGINT
+received_SIGINT = False
+def SIGINT_handler(signal_received, frame):
+    global received_SIGINT
+    # Handle any cleanup here
+    print('SIGINT or CTRL-C detected. Exiting gracefully')
+    received_SIGINT = True
+
+# Tell Python to run the handler() function when SIGINT is recieved
+signal(SIGINT, SIGINT_handler)
 #-------------------------------#
 
-# Convert the original data to structured data_list
+
+
+
+# ============= Start testing ================
+# Loop through data
 #-------------------------------------------------------#
-random_gen = np.random.default_rng()
+# Random generator
+random_seed = 42
+# random_seed = None
+random_gen = np.random.default_rng(seed=random_seed)
+
+# Collect the result
+#--------------------------#
 data_list = list()
-for _idx in range( DATA_COUNT ):
+result_list = list()
+failed_sample_filename_list = list()
+failed_sample_count = 0
+failed_sample_fit_error_count = 0
+#--------------------------#
+
+s_stamp = time.time()
+
+# Loop, stress test
+is_continuing_to_next_sample = True
+sample_count = 0
+while (sample_count < DATA_COUNT) and (not received_SIGINT):
+    #
+    if not is_continuing_to_next_sample:
+        break
+    sample_count += 1
+    # The idx for reference into the data list
+    _idx = sample_count-1
+    #
+
+    # Convert the original data to structured data_list
+    #-------------------------------------------------------#
     data_id_dict = dict()
     # File info
     data_id_dict['idx'] = _idx # data_idx_list[_idx]
@@ -265,8 +386,8 @@ for _idx in range( DATA_COUNT ):
     # "Label" of classes, type: string
     data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
 
-    # Grund truth
-    if is_random:
+    # Grund truth pose
+    if is_random_pose:
         _angle_range = 45.0 # deg
         _roll = random_gen.uniform( (-_angle_range), _angle_range, None)
         _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
@@ -310,6 +431,7 @@ for _idx in range( DATA_COUNT ):
     data_id_dict['np_R_GT'] = np_R_GT
     data_id_dict['np_t_GT'] = np_t_GT
     # Test inputs
+    pnp_solver_GT.set_golden_pattern_id(0) # Use the number 0 pattern to generate the LM
     data_id_dict['LM_pixel_dict'] = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, is_pretrans_points=False, is_returning_homogeneous_vec=True) # Homogeneous coordinate
 
     # Classify ground truth data! (drpy class)
@@ -324,114 +446,16 @@ for _idx in range( DATA_COUNT ):
     data_id_dict['file_name'] = "random_drpy_%s_%s_%s_%s" % (_class_dict['distance'], _class_dict['roll'], _class_dict['pitch'], _class_dict['yaw'])
     #----------------------------------------------#
 
-    # # Get only the specified data
-    # #----------------------------------#
-    # if (specific_drpy is not None) and (specific_drpy != _class_dict):
-    #     continue
-    # #----------------------------------#
 
     # Sppend to the total data list
     data_list.append(data_id_dict)
-#
-# print(data_list[0])
-#-------------------------------------------------------#
-
-def solving_center_point(p1,p2,p3,p4):
-    '''
-    p1   p2
-       \/
-       pc
-       /\
-    p4   p3
-    '''
-    # Transform to 2D arrays
-    _n = np.array(p1).size
-    _p1_shape = np.array(p1).shape
-    _p1 = np.array(p1).reshape( (_n,1) )
-    _p2 = np.array(p2).reshape( (_n,1) )
-    _p3 = np.array(p3).reshape( (_n,1) )
-    _p4 = np.array(p4).reshape( (_n,1) )
     #
-    _d13 = _p3 - _p1
-    _d24 = _p4 - _p2
-    _A = np.hstack([_d13, _d24])
-    _b = _p2 - _p1
-    _uv = np.linalg.pinv(_A) @ _b
-    _pc = _p1 + _uv[0,0] * _d13
-    # reshape
-    pc = _pc.reshape( _p1_shape )
-    if type(p1) == type(list()):
-        pc = list(pc)
-    return pc
+    # print(data_list[0])
+    #-------------------------------------------------------#
 
-# ============= Start testing ================
-#-------------------------------------------------------#
-# Parameters and data
-# Camera intrinsic matrix (Estimated)
-#----------------------------------------#
-f_camera = 225.68717584155982
-#
-fx_camera = f_camera
-# fx_camera = (-f_camera) if is_mirrored_image else f_camera # Note: mirrored image LM features
-fy_camera = f_camera
-xo_camera = 320/2.0
-yo_camera = 240/2.0
-np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
-print("np_K_camera_est = \n%s" % str(np_K_camera_est))
-#----------------------------------------#
-
-# Create the solver
-#----------------------------------------#
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
-
-
-
-
-def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
-    '''
-    pixel_xy: np array, shape=(2,)
-    '''
-    if mirrored:
-        pixel_center_x = 320/2.0
-        pixel_xy_mirrored = copy.deepcopy(pixel_xy)
-        pixel_xy_mirrored[0] = -1.0 * (pixel_xy[0] - pixel_center_x) + pixel_center_x
-        return np.array([pixel_xy_mirrored[0], pixel_xy_mirrored[1], 1.0]).reshape((3,1))
-    else:
-        return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
-
-
-def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
-    '''
-    output
-    [depth-passed, roll-passed, pitch-passed, yaw-passed], how many criterion passed
-    '''
-    drpy_pass_list = [ (np.abs( drpy_est_list[_i] - drpy_GT_list[_i] ) < drpy_error_bound_list[_i]) for _i in range(len(drpy_est_list))]
-    pass_count = len([ _e for _e in drpy_pass_list if _e])
-    return (drpy_pass_list, pass_count)
-
-
-# Loop through data
-#-------------------------------------------------------#
-
-# Collect the result
-#--------------------------#
-result_list = list()
-failed_sample_filename_list = list()
-failed_sample_count = 0
-failed_sample_fit_error_count = 0
-#--------------------------#
-
-s_stamp = time.time()
-
-# Loop thrugh data
-is_continuing_to_next_sample = True
-for _idx in range(len(data_list)):
-    #
-    if not is_continuing_to_next_sample:
-        break
 
     print("\n-------------- data_idx = %d (process idx = %d)--------------\n" % (data_list[_idx]['idx'], _idx))
-    print('file file_name: [%s]' % data_list[_idx]['file_name'])
+    # print('file file_name: [%s]' % data_list[_idx]['file_name'])
 
     # LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
     # np_point_image_dict = dict()
@@ -612,7 +636,7 @@ for _idx in range(len(data_list)):
 
     # Determin if we want to further investigate this sample
     is_storing_case_image = False
-    if pass_count < pass_count_treshold: # Note: pass_count >= pass_count_treshold --> passed!!
+    if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
         failed_sample_count += 1
         if fitting_error > 1.5:
             failed_sample_fit_error_count += 1
@@ -630,7 +654,7 @@ for _idx in range(len(data_list)):
     #----------------------------#
     if stop_at_fail_cases:
         if is_stress_test:
-            if pass_count < pass_count_treshold:
+            if pass_count < pass_count_threshold:
                 print("Fail, break the stress test!!")
                 is_continuing_to_next_sample = False
     #----------------------------#
@@ -963,14 +987,20 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
 #-------------------------------------------------------#
 def get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0, verbose=True):
     '''
+    If data_GT_key is None, we calculate the statistic property of that value;
+    whereas if the data_GT_key is given, we calculate the statistic of the error.
     '''
     n_data = len(result_list)
     if n_data == 0:
         return None
     data_est_vec = np.vstack( [ _d[ data_est_key ] for _d in result_list] )
-    data_GT_vec = np.vstack( [ _d[ data_GT_key ] for _d in result_list] )
-    _np_data_ratio_vec = data_est_vec / data_GT_vec
-    _np_data_error_vec = data_est_vec - data_GT_vec
+    if data_GT_key is not None:
+        data_GT_vec = np.vstack( [ _d[ data_GT_key ] for _d in result_list] )
+        _np_data_ratio_vec = data_est_vec / data_GT_vec
+        _np_data_error_vec = data_est_vec - data_GT_vec
+    else: # We just want to get the statistic of the value itself instead of the statistic of the error
+        _np_data_ratio_vec = data_est_vec
+        _np_data_error_vec = data_est_vec
 
     ratio_mean = np.average(_np_data_ratio_vec)
     error_mean = np.average(_np_data_error_vec)
@@ -1346,10 +1376,13 @@ drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = get_al
 
 # Get (distance) statistic of each data in the data subset of each class
 #-----------------------------#
+# drpy to drpy
 drpy_2_depth_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0)
 drpy_2_roll_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="roll", data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0)
 drpy_2_pitch_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="pitch", data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0)
 drpy_2_yaw_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="yaw", data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0)
+# drpy to other values
+drpy_2_LM_GT_error_average_normalize_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="LM_GT_error_average_normalize", data_est_key="LM_GT_error_average_normalize", data_GT_key=None, unit="px_m", unit_scale=1.0)
 #-----------------------------#
 
 
@@ -1435,6 +1468,7 @@ statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str +
 write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 
+
 # Statistic about bias
 #---------------------------------------------------#
 # Generate the drpy data
@@ -1465,6 +1499,14 @@ write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path,
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_yaw_statistic_dict
 unit = "deg."
+matric_label = "%s(%s)" % (matric_name, unit)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+# LM_GT_error_average_normalize
+statistic_data_name = "LM_GT_error_average_normalize" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_LM_GT_error_average_normalize_statistic_dict
+unit = "px_m"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
 write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
@@ -1500,6 +1542,14 @@ write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path,
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_yaw_statistic_dict
 unit = "deg."
+matric_label = "%s(%s)" % (matric_name, unit)
+statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
+write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+# LM_GT_error_average_normalize
+statistic_data_name = "LM_GT_error_average_normalize" # Just the name as the info. to the reader
+drpy_2_data_statistic_dict = drpy_2_LM_GT_error_average_normalize_statistic_dict
+unit = "px_m"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
 write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)

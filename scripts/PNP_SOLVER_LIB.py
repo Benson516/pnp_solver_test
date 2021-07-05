@@ -22,7 +22,7 @@ class PNP_SOLVER_A2_M3(object):
             self.pattern_scale_list += [1.0 for _i in range(len(self.point_3d_dict_list) - len(self.pattern_scale_list))]
 
 
-        # test, pre-transfer
+        # test, pre-transfer, parameters
         #---------------------------#
         self.is_using_pre_transform = False
         # self.is_using_pre_transform = True
@@ -30,10 +30,17 @@ class PNP_SOLVER_A2_M3(object):
         self.pre_trans_t_a_h = np.array([[0.0, 0.0, -0.5]]).T
         # self.pre_trans_R_a_h = self.get_rotation_matrix_from_Euler(0.0, 0.0, 45.0, is_degree=True)
         # self.pre_trans_t_a_h = np.array([[0.0, 0.0, 0.0]]).T
+        #---------------------------#
 
+        # test, pretransfer, variables/results
+        #---------------------------#
         # For storing the estimated result of R_ca and t_ca
         self.np_R_c_a_est = np.eye(3)
         self.np_t_c_a_est = np.zeros((3,1))
+        #---------------------------#
+
+
+        # Generating the internal used golden patterns
         #---------------------------#
         self.np_point_3d_dict_list = list()
         self.np_point_3d_pretransfer_dict_list = list()
@@ -43,6 +50,10 @@ class PNP_SOLVER_A2_M3(object):
             _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(_point_3d_dict, _pattern_scale, self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
             self.np_point_3d_dict_list.append(_np_point_3d_dict)
             self.np_point_3d_pretransfer_dict_list.append(_np_point_3d_pretransfer_dict)
+        #---------------------------#
+
+
+
 
         # Setup the global variables
         self.set_golden_pattern_id(0)
@@ -93,22 +104,35 @@ class PNP_SOLVER_A2_M3(object):
         self.lib_print("-"*35)
         self.lib_print("3D points in local coordinate:")
         self.lib_print("pattern_scale = %f" % pattern_scale)
+        np.set_printoptions(suppress=True, precision=4)
         for _k in _np_point_3d_dict:
             # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_dict[_k])))
             # self.lib_print("%s:\n%s" % (_k, str(_np_point_3d_pretransfer_dict[_k])))
-            np.set_printoptions(suppress=True, precision=2)
-            print("%s:%sp_3D=%s.T | p_3D_pretrans=%s.T" %
+            self.lib_print("%s:%sp_3D=%s.T | p_3D_pretrans=%s.T" %
                 (   _k,
                     " "*(12-len(_k)),
                     str(_np_point_3d_dict[_k].T),
                     str(_np_point_3d_pretransfer_dict[_k].T)
                 )
             )
-            np.set_printoptions(suppress=False, precision=8)
+        np.set_printoptions(suppress=False, precision=8)
         self.lib_print("-"*35)
         #---------------------------#
 
         return (_np_point_3d_dict, _np_point_3d_pretransfer_dict)
+
+    def update_the_selected_golden_pattern(self, id, point_3d_dict, pattern_scale):
+        '''
+        '''
+        self.pattern_scale_list[id] = pattern_scale
+        self.point_3d_dict_list[id] = copy.deepcopy(point_3d_dict)
+        # Generating the internal used golden patterns
+        #---------------------------#
+        _np_point_3d_dict, _np_point_3d_pretransfer_dict = self.get_np_point_3d_dict(self.point_3d_dict_list[id], self.pattern_scale_list[id], self.is_using_pre_transform, self.pre_trans_R_a_h, self.pre_trans_t_a_h)
+        self.np_point_3d_dict_list[id] = _np_point_3d_dict
+        self.np_point_3d_pretransfer_dict_list[id] = _np_point_3d_pretransfer_dict
+        #---------------------------#
+        return True
 
 
     def lib_print(self, str=''):
@@ -2042,9 +2066,9 @@ class PNP_SOLVER_A2_M3(object):
         #
         eif_Q_diag[-9:-6] = 10**-2 # 10**-1
         eif_Q_diag[-6:-3] = (2.0)**2 * 10**-2 # 10**-2
-        eif_Q_diag[-9:-3] *= 20 # 0.1 # 20
+        eif_Q_diag[-9:-3] *= 16 # 4**2 # 16 # 25 # 20 # 0.1 # 20
         #
-        eif_Q_diag[-3:] = 10**5
+        eif_Q_diag[-3:] = 10**0 # 10**5
         #
         eif_Q = np.diag(eif_Q_diag)
         #---------------------------------#
@@ -2092,6 +2116,7 @@ class PNP_SOLVER_A2_M3(object):
 
             # Predict
             #-----------------------------#
+            eif_R = self.EKF2_get_process_covariance_R(eif_x, k_it)
             # The following will be replaced by incremental updating algorithm
             eif_Omega = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
             # eif_x = eif_G @ eif_x # x is not changing in the model
@@ -2145,28 +2170,29 @@ class PNP_SOLVER_A2_M3(object):
             self.lib_print("eif_Sigma_s = \n%s" % str(eif_Sigma_s))
 
 
-            # # Experiment with optimal iteration number
-            # #-----------------------------#
-            # # Update error_norm_old
+            # Experiment with optimal iteration number
+            #-----------------------------#
+            # Update error_norm_old
+            error_norm = res_norm
             # error_norm = delta_z_norm
-            # # error_norm = np.linalg.norm(eif_Sigma_s)
-            # erro_ratio = (error_norm - error_norm_old)/error_norm_old
-            # error_norm_old = error_norm
-            # self.lib_print("erro_ratio = %f" % erro_ratio)
-            # #
-            # is_error_growing = (erro_ratio > 0.0)
-            # #
-            # # Test the slow changing
-            # if (abs(erro_ratio) < (5*10**-2)):
-            #     # 10^-1     -> 5~8
-            #     # 5 * 10^-2 -> 9~12
-            #     # 2 * 10^-2 -> 17~21
-            #     # 10^-2     -> 25~30
-            #     break
-            #     # # Test if the delta_z_norm will increase --> No
-            #     # if (erro_ratio >= 0.0) and (k_it > 3):
-            #     #     break
-            # #-----------------------------#
+            # error_norm = np.linalg.norm(eif_Sigma_s)
+            erro_ratio = (error_norm - error_norm_old)/error_norm_old
+            error_norm_old = error_norm
+            self.lib_print("erro_ratio = %f" % erro_ratio)
+            #
+            is_error_growing = (erro_ratio > 0.0)
+            #
+            # Test the slow changing
+            if (abs(erro_ratio) < (1*10**-2)):
+                # 10^-1     -> 5~8
+                # 5 * 10^-2 -> 9~12
+                # 2 * 10^-2 -> 17~21
+                # 10^-2     -> 25~30
+                break
+                # # Test if the delta_z_norm will increase --> No
+                # if (erro_ratio >= 0.0) and (k_it > 3):
+                #     break
+            #-----------------------------#
 
 
 
@@ -3281,6 +3307,64 @@ class PNP_SOLVER_A2_M3(object):
         #
         return (hx, Hx)
 
+    def get_so3_matrix_from_vec3(self, vec3_in):
+        '''
+        '''
+        v3in = vec3_in.reshape((3,))
+        M_so3 = np.array([[0.0, -v3in[2], v3in[1]],[v3in[2], 0.0, -v3in[0]],[-v3in[1], v3in[0], 0.0]])
+        return M_so3
+
+    def EKF2_get_process_covariance_R(self, ekf_x, k_it):
+        '''
+        '''
+        x_size = ekf_x.shape[0]
+        #
+        ekf_u_1 = ekf_x[0:3,:]
+        ekf_u_2 = ekf_x[3:6,:]
+        ekf_u_3 = ekf_x[6:9,:]
+        delta_1 = ekf_x[9,0]
+        delta_2 = ekf_x[10,0]
+        ekf_gamma = ekf_x[11,0]
+        #
+        # sigma_delta_theta_i = (np.deg2rad(5.0))**2 # Change 5.0 degree every time?
+        # sigma_t12 = (0.05)**2 # Move 5 cm every time?
+        # sigma_delta_theta_i = (np.deg2rad(30.0))**2 # Change 30 degree every time?
+        # sigma_t12 = (0.5)**2 # Move 50 cm every time?
+        sigma_delta_theta_i = np.deg2rad(60.0) # Change 30 degree every time?
+        sigma_t12 = 0.05 # Move 50 cm every time?
+
+        #
+        sigma_t3 = 2.0 # Move 50 cm every time?
+
+        # R_delta_u_all
+        so3_u1 = self.get_so3_matrix_from_vec3(ekf_u_1)
+        so3_u2 = self.get_so3_matrix_from_vec3(ekf_u_2)
+        so3_u3 = self.get_so3_matrix_from_vec3(ekf_u_3)
+        Ck = np.vstack([-so3_u1, -so3_u2, -so3_u3])
+        # self.lib_print("so3_u1 = \n%s" % so3_u1)
+        # self.lib_print("so3_u2 = \n%s" % so3_u2)
+        # self.lib_print("so3_u3 = \n%s" % so3_u3)
+        # self.lib_print("Ck = \n%s" % Ck)
+        R_delta_theta = np.eye(3) * (sigma_delta_theta_i**2)
+        R_delta_u_all = Ck @ R_delta_theta @ Ck.T
+
+        # Add some random walk
+        # R_delta_u_all += np.eye(9)*10**-3
+
+        # R_delta_j
+        R_delta_12 = np.eye(2) * (abs(ekf_gamma) * (sigma_t12**2))
+        R_gamma = (ekf_gamma**2) * (sigma_t3**2)
+
+        # Rk
+        Rk = np.zeros((x_size, x_size))
+        Rk[0:9,0:9] = R_delta_u_all
+        Rk[9:11,9:11] = R_delta_12
+        Rk[11,11] = R_gamma
+        # self.lib_print("Rk = \n%s" % Rk)
+
+        return Rk
+
+
     def EKF2_get_hx_H(self, ekf_x, B_x, B_y, P, is_hc0_4_6_linear=False, is_hc1_linear=True):
         '''
         '''
@@ -4148,8 +4232,9 @@ class PNP_SOLVER_A2_M3(object):
 
     def unit_vec(self, vec_in):
         _norm = np.linalg.norm(vec_in)
+        _eps = 10**-7
         if np.abs(_norm) <= 10**-7:
-             _norm_inv = 1.0
+             _norm_inv = 1/_eps
              self.lib_print("_norm = %f" % _norm)
              self.lib_print("_norm approaches zeros!!")
         else:
