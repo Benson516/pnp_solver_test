@@ -20,14 +20,14 @@ data_file_str = "m1_test.txt" # Fake the file name for storing the post analysis
 #---------------------------#
 # Image of Alexander
 # Original image
-image_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ/'
+image_dir_str = data_dir_str
 # The image used for analysis
-image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result_unflipped/'
+image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/M1_test_EIF2_alexander_20210707/result_analysis/result_images/image_unflipped/'
 # The same as the original image
-image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result/'
+image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/M1_test_EIF2_alexander_20210707/result_analysis/result_images/image/'
 #---------------------------#
 # Result CSV file
-result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/result_CSVs/'
+result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/M1_test_EIF2_alexander_20210707/result_analysis/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
 
@@ -283,10 +283,10 @@ for _idx, data_file_name in enumerate(data_file_name_list):
     data_id_dict['pitch'] = _raw_pitch_value * _sign_pitch
     data_id_dict['yaw'] = _raw_yaw_value * _sign_yaw
     #
-    data_id_dict['depth_est'] = _result_list[0]
-    data_id_dict['roll_est'] = _result_list[2]
-    data_id_dict['pitch_est'] = _result_list[3]
-    data_id_dict['yaw_est'] = _result_list[1]
+    data_id_dict['depth_est'] = _result_list[0] * 0.01 # m
+    data_id_dict['roll_est'] = _result_list[2] # deg.
+    data_id_dict['pitch_est'] = _result_list[3] # deg.
+    data_id_dict['yaw_est'] = _result_list[1] # deg.
 
     # Classify ground truth data! (drpy class)
     #----------------------------------------------#
@@ -316,12 +316,6 @@ for _idx, data_file_name in enumerate(data_file_name_list):
 # print(data_list[0])
 print(json.dumps(data_list[0], indent=4))
 #-------------------------------------------------------#
-
-
-
-
-exit()
-
 
 
 
@@ -468,8 +462,16 @@ for _idx in range(len(data_list)):
 
 
     # Get the result
-    np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
+    # np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
 
+    # Get the result from file
+    t3_est = data_list[_idx]['depth_est']
+    roll_est = data_list[_idx]['roll_est']
+    pitch_est = data_list[_idx]['pitch_est']
+    yaw_est = data_list[_idx]['yaw_est']
+    np_R_est = pnp_solver.get_rotation_matrix_from_Euler( roll_est, yaw_est, pitch_est, is_degree=True )
+    np_t_est = np.array([0.0, 0.0, t3_est]).reshape((3,1)) # Assume that the head is at the center of the picture
+    res_norm = 0.0 # Ignore this
 
 
 
@@ -491,7 +493,11 @@ for _idx in range(len(data_list)):
     # Reprojections
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
-    #
+
+    # Note: Fake this
+    np_point_image_dict = np_point_image_dict_reproject_GT_ori_golden_patern
+
+
     # Calculate the pixel error of the LMs and the ground-truth projection of golden pattern
     np_LM_GT_error_dict = dict()
     np_LM_GT_error_norm_dict = dict()
@@ -694,7 +700,8 @@ for _idx in range(len(data_list)):
     # Get the file name of the image
     #--------------------------------------------#
     _file_name = data_list[_idx]['file_name']
-    _image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
+    # _image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
+    _image_file_name_str = _file_name[:-4] + '.jpg'
     print('image file name: [%s]' % _image_file_name_str)
     _image_ori_path_str = image_dir_str + _image_file_name_str
     _image_result_unflipped_path_str = image_result_unflipped_dir_str + _image_file_name_str
@@ -708,6 +715,8 @@ for _idx in range(len(data_list)):
         print("!! Error occured while loading the image !!\n")
         time.sleep(3.0)
         continue
+    _dim = (int(_img.shape[1]*1.5), int(_img.shape[0]*1.5))
+    _img = cv2.resize(_img, _dim, interpolation=cv2.INTER_AREA) # Resize 1.5 times
     _img_shape = _img.shape
     print("_img.shape = %s" % str(_img_shape))
     LM_2_image_scale = _img_shape[1] / 320.0
@@ -766,12 +775,12 @@ for _idx in range(len(data_list)):
     #----------------------------------#
     # [[u,v,1]].T
     for _k in np_point_image_dict:
-        # Landmarks
-        _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 3
-        _color = _color_BLUE # BGR
-        # _color = _color_RED # BGR
-        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        # # Landmarks
+        # _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+        # _radius = 3
+        # _color = _color_BLUE # BGR
+        # # _color = _color_RED # BGR
+        # cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
         # Reprojections of golden pattern onto image using grund truth pose
         _center_pixel = (np_point_image_dict_reproject_GT_ori_golden_patern[_k][0:2,0] * LM_2_image_scale).astype('int')
         _radius = 2
