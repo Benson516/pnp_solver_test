@@ -159,10 +159,11 @@ class PNP_SOLVER_A2_M3(object):
             # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_EKF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_UKF2_single_pattern(np_point_image_dict, _point_3d_dict)
             # _result = self.solve_pnp_LM_single_pattern(np_point_image_dict, _point_3d_dict)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
+            _result = self.solve_pnp_QEIF_single_pattern(np_point_image_dict, _point_3d_dict)
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
             self.lib_print("---\nPattern [%d]: _res_norm = %f\n---\n" % (_idx, _res_norm))
@@ -2752,6 +2753,257 @@ class PNP_SOLVER_A2_M3(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
+    def solve_pnp_QEIF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+        '''
+        For each image frame,
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
+        '''
+        # Form the problem for solving
+        # Constant, only changed when golden pattern changed
+        #--------------------------------#
+        co_P = self.f2_get_P(np_point_3d_pretransfer_dict)
+        n_point = co_P.shape[0]
+        x_size = 6
+        q_size = 4 # The size of quaternion
+        z_size = 2*n_point
+        #
+        eif_G = np.eye(x_size)
+        eif_R_diag = np.ones((x_size,))
+        eif_R_diag[:4] *= 10**-1 # quaternion
+        eif_R_diag[4:6] *= 10**-2 # delta_j
+        eif_R = np.diag(eif_R_diag)
+        #--------------------------------#
+        self.lib_print("co_P = \n%s" % str(co_P))
+        self.lib_print("eif_R_diag = \n%s" % str(eif_R_diag))
+        #
+        self.lib_print("np_point_image_dict.keys() = %s" % str( np_point_image_dict.keys() ))
+
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _stamp_s = time.time()
+        #-------------------------------------#
+
+
+        # Change with sample, constant in iteration
+        #--------------------------------#
+        np_K_camera_inv = np.linalg.inv( self.np_K_camera_est )
+        B_x, B_y = self.f2_get_B_xy(np_point_image_dict, np_K_camera_inv)
+        #
+        eif_z = np.zeros( (z_size, 1) )
+        eif_z[:n_point,:] = B_x
+        eif_z[n_point:(2*n_point),:] = B_y
+        #--------------------------------#
+
+        # B
+        self.lib_print("B_x = \n%s" % str(B_x))
+        self.lib_print("B_y = \n%s" % str(B_y))
+        self.lib_print("B_x.shape = %s" % str(B_x.shape))
+        self.lib_print("B_y.shape = %s" % str(B_y.shape))
+        #
+        self.lib_print("eif_z = \n%s" % str(eif_z))
+
+
+        # Solve by iteration (EKF)
+        #--------------------------------------#
+        # Initial guess
+        eif_x = np.zeros((x_size,1)) # [q; delta_1; delta_2]
+        # Set the initial quaternion to be representing a zero rotation
+        eif_x[0,0] = 1.0 # qr
+        #
+        # eif_Omega = np.zeros((x_size,x_size)) # No information, all zeros
+        eif_Omega = np.eye(x_size) * 10**-5 # No information, close to zeros
+        eif_Omega_pinv = np.linalg.pinv(eif_Omega) # <-- Later will be replaced by incremental updating algorithm
+        #
+        eif_zeta = eif_Omega @ eif_x
+
+
+        # Q and Q_pinv (The unchanged part)
+        #---------------------------------#
+        eif_Q_diag = np.ones((z_size,))
+        f_camera = 225.68
+        eif_Q_diag[0:(2*n_point)] = ((3.0)**2) / (f_camera**2) # f_camera ?
+        # Nose's x and y
+        # _nose_id = 5
+        # eif_Q_diag[ [_nose_id, (n_point+_nose_id)] ] = ((3.0)**2) / (f_camera**2)
+        eif_Q = np.diag(eif_Q_diag)
+        #---------------------------------#
+        eif_Q_pinv = np.linalg.pinv(eif_Q)
+
+
+
+
+        num_it = 14 # 100 # 14 # 3
+        num_it_inner = 1
+        #
+        # Iteration
+        k_it = 0
+        self.lib_print("---")
+        error_norm_old = 10**-7
+        res_norm = 10**5
+        #
+        is_error_growing = False
+        is_error_growing_old = is_error_growing
+        #
+        while k_it < num_it:
+            k_it += 1
+            self.lib_print("!!!!!!!!!!!!!!!!!!!!!!>>>>> k_it = %d" % k_it)
+
+            eif_u_1 = eif_x[0:3]
+            eif_u_2 = eif_x[3:6]
+            eif_u_3 = eif_x[6:9]
+            eif_u_1_norm = np.linalg.norm(eif_u_1)
+            eif_u_2_norm = np.linalg.norm(eif_u_2)
+            eif_u_3_norm = np.linalg.norm(eif_u_3)
+            self.lib_print("eif_u_1_norm = %f" % eif_u_1_norm)
+            self.lib_print("eif_u_2_norm = %f" % eif_u_2_norm)
+            self.lib_print("eif_u_3_norm = %f" % eif_u_3_norm)
+
+
+            # Predict
+            #-----------------------------#
+            # The following will be replaced by incremental updating algorithm
+            eif_Omega = np.linalg.pinv(eif_G @ eif_Omega_pinv @ eif_G.T + eif_R)
+            # eif_x = eif_G @ eif_x # x is not changing in the model
+            eif_zeta = eif_Omega @ eif_x
+            #-----------------------------#
+
+            for _i in range(num_it_inner):
+                # Update
+                #-----------------------------#
+                eif_hx, eif_Hx = self.QEKF_get_hx_H(eif_x, B_x, B_y, co_P)
+                _eif_HTQpinv = eif_Hx.T @ eif_Q_pinv
+                eif_Omega += _eif_HTQpinv @ eif_Hx
+                eif_zeta += _eif_HTQpinv @ (eif_z - eif_hx + (eif_Hx @ eif_x) )
+                # The following will be replaced by incremental updating algorithm
+
+                # Inspections
+                #-----------------------------#
+                #
+                eif_Omega_u, eif_Omega_s, eif_Omega_vh = np.linalg.svd(eif_Omega)
+                delta_z = (eif_z - eif_hx)
+                delta_z_norm = np.linalg.norm(delta_z)
+                res_norm = np.linalg.norm(delta_z[:(2*n_point),:])
+                #
+                # self.lib_print("diag(eif_Q_pinv) = \n%s" % str(np.diag(eif_Q_pinv)))
+                self.lib_print("eif_Omega_s = \n%s" % str(eif_Omega_s))
+                self.lib_print("eif_z = \n%s" % str(eif_z))
+                self.lib_print("eif_hx = \n%s" % str(eif_hx))
+                self.lib_print("delta_z = (eif_z-eif_hx) = \n%s" % str(delta_z))
+                # self.lib_print("eif_Omega = \n%s" % eif_Omega)
+                # self.lib_print("eif_zeta = \n%s" % eif_zeta)
+                #
+                self.lib_print("delta_z_norm = %f" % delta_z_norm)
+                self.lib_print("res_norm = %f" % res_norm)
+                #-----------------------------#
+
+                # Update x
+                #-----------------------------#
+                self.lib_print("(old) eif_x = \n%s" % str(eif_x))
+                eif_Omega_pinv = np.linalg.pinv(eif_Omega)
+                eif_x = eif_Omega_pinv @ eif_zeta
+                self.lib_print("(new) eif_x = \n%s" % str(eif_x))
+                #-----------------------------#
+
+                #-----------------------------#
+
+
+
+            # Inspection about Sigma = eif_Omega_pinv
+            eif_Sigma = eif_Omega_pinv
+            eif_Sigma_u, eif_Sigma_s, eif_Sigma_vh = np.linalg.svd(eif_Sigma)
+            self.lib_print("eif_Sigma_s = \n%s" % str(eif_Sigma_s))
+
+
+            # Experiment with optimal iteration number
+            #-----------------------------#
+            # Update error_norm_old
+            error_norm = res_norm
+            # error_norm = delta_z_norm
+            # error_norm = np.linalg.norm(eif_Sigma_s)
+            erro_ratio = (error_norm - error_norm_old)/error_norm_old
+            error_norm_old = error_norm
+            self.lib_print("erro_ratio = %f" % erro_ratio)
+            #
+            is_error_growing = (erro_ratio > 0.0)
+            #
+            # Test the slow changing
+            if (abs(erro_ratio) < (1*10**-2)):
+                # 10^-1     -> 5~8
+                # 5 * 10^-2 -> 9~12
+                # 2 * 10^-2 -> 17~21
+                # 10^-2     -> 25~30
+                break
+                # # Test if the delta_z_norm will increase --> No
+                # if (erro_ratio >= 0.0) and (k_it > 3):
+                #     break
+            #-----------------------------#
+
+
+
+            # # Inspection
+            # #--------------------------------------------------------#
+            # self.lib_print("")
+            # np_R_est, np_t_est, t3_est = self.QEKF_reconstruct_R_t_m1(eif_x)
+            # self.lib_print("")
+            # #--------------------------------------------------------#
+
+
+            self.lib_print("---")
+
+        #--------------------------------------#
+
+        self.lib_print()
+        self.lib_print("k_it = %d" % k_it)
+        self.lib_print()
+        # Reconstruct (R, t)
+        #--------------------------------------------------------#
+        np_R_est, np_t_est, t3_est = self.QEKF_reconstruct_R_t_m1(eif_x)
+
+        # test, pre-transfer
+        #---------------------------#
+        self.np_R_c_a_est = copy.deepcopy(np_R_est)
+        self.np_t_c_a_est = copy.deepcopy(np_t_est)
+        if self.is_using_pre_transform:
+            np_R_c_h_est = np_R_est @ self.pre_trans_R_a_h # R_ch = R_ca @ R_ah
+            np_t_c_h = np_R_est @ self.pre_trans_t_a_h + np_t_est # t_ch = R_ca @ t_ah + t_ca
+            # Overwrite output
+            np_R_est = copy.deepcopy(np_R_c_h_est)
+            np_t_est = copy.deepcopy(np_t_c_h)
+            t3_est = np_t_est[2,0]
+        #---------------------------#
+
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, verbose=False, is_degree=True)
+        # self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( np.rad2deg(Euler_angle_est) ) )
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est )  ) # Already in degree
+        roll_est, yaw_est, pitch_est = Euler_angle_est
+        #--------------------------------------------------------#
+
+        # # Get the whole residual
+        # #-----------------------------#
+        # res_norm = np.sqrt(res_norm_x**2 + res_norm_y**2)
+        # res_norm = delta_z_norm
+
+        # res_norm = np.linalg.norm(delta_z[:(2*n_point),:], ord=1)
+        # res_norm = np.linalg.norm(delta_z[:(2*n_point),:], ord=float('inf'))
+        # res_norm = np.linalg.norm(eif_Omega_pinv[0:9,0:9], ord=2) # Note: Sigma = eif_Omega_pinv
+        # res_norm = np.linalg.norm(eif_Omega_pinv, ord=2) # Note: Sigma = eif_Omega_pinv
+        # res_norm = 1.0/np.linalg.norm(eif_Omega[0:9,0:9], ord=-2) # Note: Sigma = eif_Omega_pinv
+        self.lib_print("res_norm = %f" % res_norm)
+        # #-----------------------------#
+
+
+        # Measure the duration of the process
+        #-------------------------------------#
+        _duration = time.time() - _stamp_s
+        self.lib_print("\n*** _duration = %f ms ***\n" % (_duration*1000.0))
+        #-------------------------------------#
+
+        # Note: Euler angles are in degree
+        return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
+
     #-----------------------------------------------------------#
 
     # Components of the solution
@@ -3256,6 +3508,74 @@ class PNP_SOLVER_A2_M3(object):
         # end Test
         return (np_R_est, np_t_est, t3_est)
 
+    def QEKF_reconstruct_R_t_m1(self, ekf_x):
+        '''
+        - Use co_x
+        '''
+        x_size = ekf_x.shape[0]
+        q_size = 4 # Quaternion
+        # Decompose the x
+        _qr = ekf_x[0,0]
+        _qi = ekf_x[1,0]
+        _qj = ekf_x[2,0]
+        _qk = ekf_x[3,0]
+        #
+        ekf_q = ekf_x[0:4,:]
+        gamma = (np.linalg.norm(ekf_q))**2
+        self.lib_print("gamma = %f" % gamma)
+
+        # The phi_js
+        #
+        _qii = _qi*_qi
+        _qjj = _qj*_qj
+        _qkk = _qk*_qk
+        #
+        _qij = _qi*_qj
+        _qjk = _qj*_qk
+        _qik = _qi*_qk
+        #
+        _qri = _qr*_qi
+        _qrj = _qr*_qj
+        _qrk = _qr*_qk
+        #
+        phi_1 = np.array([ (gamma - 2*(_qjj + _qkk)),          2*(_qij - _qrk),           2*(_qik + _qrj)  ]).reshape((3,1))
+        phi_2 = np.array([          2*(_qij + _qrk),  (gamma - 2*(_qii + _qkk)),          2*(_qjk - _qri)  ]).reshape((3,1))
+        phi_3 = np.array([          2*(_qik - _qrj),           2*(_qjk + _qri),  (gamma - 2*(_qii + _qjj)) ]).reshape((3,1))
+
+        # Construct the Gamma matrix (the scaled rotation matrix)
+        np_Gamma_est = np.vstack([phi_1.T, phi_2.T, phi_3.T])
+        self.lib_print("np_Gamma_est = \n%s" % str(np_Gamma_est))
+
+        # Inspection
+        G_u, G_s, G_vh = np.linalg.svd(np_Gamma_est)
+        # self.lib_print("G_u = \n%s" % str(G_u))
+        self.lib_print("G_s = \n%s" % str(G_s))
+        # self.lib_print("G_vh = \n%s" % str(G_vh))
+        G_D = np.linalg.det(G_u @ G_vh)
+        self.lib_print("G_D = %f" % G_D)
+
+
+        # Reconstruct R
+        np_R_est = np_Gamma_est / gamma
+        self.lib_print("np_R_est = \n%s" % str(np_R_est))
+        # Convert to Euler angle
+        Euler_angle_est = self.get_Euler_from_rotation_matrix(np_R_est, is_degree=True)
+        self.lib_print("(roll, yaw, pitch) \t\t= %s" % str( Euler_angle_est ) ) # Note: Euler angles are in degree.
+        # roll_est, yaw_est, pitch_est = Euler_angle_est
+
+        # Reconstruct t vector
+        # Get the "value" of G
+        value_G = gamma
+        self.lib_print("value_G = %f" % value_G)
+        #
+        t3_est = 1.0 / value_G
+        # t3_est = 1.0 / np.average(G_s)
+        self.lib_print("t3_est = %f" % t3_est)
+        np_t_est = np.vstack((ekf_x[4:6,:], 1.0)) * t3_est
+        self.lib_print("np_t_est = \n%s" % str(np_t_est))
+        #---------------------------------#
+        # end Test
+        return (np_R_est, np_t_est, t3_est)
     #-------------------------------------------#
 
     # Constrained optimization: Lagrange multiplier + Newton-Raphson method
@@ -3363,7 +3683,6 @@ class PNP_SOLVER_A2_M3(object):
         # self.lib_print("Rk = \n%s" % Rk)
 
         return Rk
-
 
     def EKF2_get_hx_H(self, ekf_x, B_x, B_y, P, is_hc0_4_6_linear=False, is_hc1_linear=True):
         '''
@@ -3548,6 +3867,89 @@ class PNP_SOLVER_A2_M3(object):
         #-------------------------------------#
         #
         return hx
+
+    def QEKF_get_hx_H(self, ekf_x, B_x, B_y, P):
+        '''
+        '''
+        n_point = P.shape[0]
+        x_size = ekf_x.shape[0]
+        q_size = 4 # Quaternion
+        z_size = 2*n_point
+        # Decompose the x
+        _qr = ekf_x[0,0]
+        _qi = ekf_x[1,0]
+        _qj = ekf_x[2,0]
+        _qk = ekf_x[3,0]
+        delta_1 = ekf_x[4,0]
+        delta_2 = ekf_x[5,0]
+        #
+        ekf_q = ekf_x[0:4,:]
+        gamma = (np.linalg.norm(ekf_q))**2
+
+        # The phi_js
+        #
+        _qii = _qi*_qi
+        _qjj = _qj*_qj
+        _qkk = _qk*_qk
+        #
+        _qij = _qi*_qj
+        _qjk = _qj*_qk
+        _qik = _qi*_qk
+        #
+        _qri = _qr*_qi
+        _qrj = _qr*_qj
+        _qrk = _qr*_qk
+        #
+        phi_1 = np.array([ (gamma - 2*(_qjj + _qkk)),          2*(_qij - _qrk),           2*(_qik + _qrj)  ]).reshape((3,1))
+        phi_2 = np.array([          2*(_qij + _qrk),  (gamma - 2*(_qii + _qkk)),          2*(_qjk - _qri)  ]).reshape((3,1))
+        phi_3 = np.array([          2*(_qik - _qrj),           2*(_qjk + _qri),  (gamma - 2*(_qii + _qjj)) ]).reshape((3,1))
+
+
+        # The Jacobians of phi_j to q
+        _2qr = 2.0 * _qr
+        _2qi = 2.0 * _qi
+        _2qj = 2.0 * _qj
+        _2qk = 2.0 * _qk
+        #
+        Q_1 = np.array([[  _2qr,    _2qi,  (-_2qj), (-_2qk)],
+                        [(-_2qk),   _2qj,    _2qi,  (-_2qr)],
+                        [  _2qj,    _2qk,    _2qr,    _2qi ]])
+
+        Q_2 = np.array([[  _2qk,    _2qj,    _2qi,    _2qr ],
+                        [  _2qr,  (-_2qi),   _2qj,  (-_2qk)],
+                        [(-_2qi), (-_2qr),   _2qk,    _2qj]])
+
+        Q_3 = np.array([[(-_2qj),   _2qk,  (-_2qr),   _2qi ],
+                        [  _2qi,    _2qr,    _2qk,    _2qj],
+                        [  _2qr,  (-_2qi), (-_2qj),   _2qk]])
+
+
+        #
+        zeros_nx1 = np.zeros((n_point,1))
+        ones_nx1 = np.ones((n_point,1))
+        #
+
+        # hx
+        #-------------------------------------#
+        hx = np.zeros((z_size, 1))
+        P_phi_1 = P @ phi_1
+        P_phi_2 = P @ phi_2
+        P_phi_3 = P @ phi_3
+        hx[:n_point,:]              = P_phi_1 - (B_x * P_phi_3) + delta_1
+        hx[n_point:(2*n_point),:]   = P_phi_2 - (B_y * P_phi_3) + delta_2
+        #-------------------------------------#
+
+        # Hx
+        #-------------------------------------#
+        Hx = np.zeros( (z_size, x_size))
+        P_Q_1 = P @ Q_1
+        P_Q_2 = P @ Q_2
+        P_Q_3 = P @ Q_3
+        Hx[:n_point, :]             = np.hstack([ (P_Q_1 - B_x*P_Q_3), ones_nx1,  zeros_nx1 ])
+        Hx[n_point:(2*n_point), :]  = np.hstack([ (P_Q_2 - B_y*P_Q_3), zeros_nx1, ones_nx1  ])
+        #-------------------------------------#
+        #
+        return (hx, Hx)
     #-------------------------------------------#
 
 

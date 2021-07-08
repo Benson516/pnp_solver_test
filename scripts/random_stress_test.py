@@ -46,8 +46,8 @@ stop_at_fail_cases = False
 
 #
 # DATA_COUNT = 3
-DATA_COUNT = 1000
-# DATA_COUNT = 10000 # 1000
+# DATA_COUNT = 1000
+DATA_COUNT = 10000 # 1000
 #
 verbose = True
 # verbose = False
@@ -350,8 +350,8 @@ signal(SIGINT, SIGINT_handler)
 # Loop through data
 #-------------------------------------------------------#
 # Random generator
-random_seed = 42
-# random_seed = None
+# random_seed = 42
+random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 
 # Collect the result
