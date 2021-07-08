@@ -3,6 +3,11 @@ import copy
 import time
 import csv
 #
+import glob # For searching in the directory
+import os
+import math
+import json
+#
 import cv2
 #
 import PNP_SOLVER_LIB as PNPS
@@ -10,13 +15,8 @@ import PNP_SOLVER_LIB as PNPS
 
 #---------------------------#
 # Landmark (LM) dataset
-data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'test_Alexander.txt'
-# data_file_str = 'test_Alexey.txt'
-# data_file_str = "test_Holly.txt"
-# data_file_str = "test_Pantea.txt"
-#
-# data_file_str = "train_head03.txt"
+data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/M1_test_EIF2_alexander_20210707/results/'
+data_file_str = "m1_test.txt" # Fake the file name for storing the post analysis results
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -118,39 +118,31 @@ pattern_scale = 1.0 # 0.85 # Multiply onto the golden pattern
 
 # Loading Data
 #----------------------------------------------------------#
-data_path_str = data_dir_str + data_file_str
-#
 data_idx_list = list()
-data_str_list_list = list()
-data_name_split_list_list = list()
-with open(data_path_str, 'r') as _f:
-    # Read and print the entire file line by line
-    _line = _f.readline()
-    _idx = 0
-    while (_line != '') and ((not is_limiting_line_count) or (_idx < (DATA_START_ID+DATA_COUNT) ) ):  # The EOF char is an empty string
-        if _idx >= DATA_START_ID:
-            data_idx_list.append(_idx)
-            # print(_line, end='')
-            _line_split_list = _line.split()
-            # print(_line_split_list)
-            data_str_list_list.append(_line_split_list)
-            #
-            data_name_split_list = _line_split_list[0].split('_')
-            # print("data_name_split_list = %s" % str(data_name_split_list))
-            data_name_split_list_list.append( data_name_split_list )
-        # Update
-        _line = _f.readline()
-        _idx += 1
+data_file_name_list = list()
+#
+bin_file_gen = glob.iglob( data_dir_str + "*.bin" )
+_idx = 0
+for bin_file_path in bin_file_gen:
+    if is_limiting_line_count and (_idx >= (DATA_START_ID+DATA_COUNT)):
+        break
+    #
+    if _idx >= DATA_START_ID:
+        data_idx_list.append(_idx)
+        bin_file_name = os.path.basename(bin_file_path)
+        # print("bin_file_name = %s" % bin_file_name)
+        data_file_name_list.append(bin_file_name)
+    _idx += 1
 #
 print("-"*70)
 print("data count = %d" % len(data_idx_list))
 print("-"*70)
 print(data_idx_list[0])
-print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
-print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
+print(data_file_name_list[0]) # [data_idx][column in line of file]
 #
 # time.sleep(10.0)
 #----------------------------------------------------------#
+
 
 
 # Ground truth classification
@@ -250,33 +242,40 @@ else:
 # Convert the original data to structured data_list
 #-------------------------------------------------------#
 data_list = list()
-for _idx in range(len(data_str_list_list)):
+for _idx, data_file_name in enumerate(data_file_name_list):
+    # Process the file name
+    data_name_split_list = data_file_name.split('_')
+    # print("data_name_split_list = %s" % str(data_name_split_list))
+    #
+    _raw_pitch_value = float(data_name_split_list[6])
+    _raw_roll_value = float(data_name_split_list[2])
+    _raw_yaw_value = float(data_name_split_list[8])
+    #
+    _sign_pitch = (-1.0 if data_name_split_list[5] == 'd' else 1.0)
+    _sign_roll = -1.0 # Note: The sign of the value if fully determined by the value itself.
+    _sign_yaw = (-1.0 if data_name_split_list[1] == 'left' else 1.0)
+    #
+
     data_id_dict = dict()
     # File info
     data_id_dict['idx'] = data_idx_list[_idx]
-    data_id_dict['file_name'] = data_str_list_list[_idx][0]
+    data_id_dict['file_name'] = data_file_name
     # "Label" of classes, type: string
     data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
     # Grund truth
-    data_id_dict['distance'] = float(data_str_list_list[_idx][1])
-    data_id_dict['pitch'] = float(data_str_list_list[_idx][2])
-    data_id_dict['roll'] = float(data_str_list_list[_idx][3])
-    data_id_dict['yaw'] = float(data_str_list_list[_idx][4])
-    # Test inputs
-    data_id_dict['box_xy'] = np.array(data_name_split_list_list[_idx][9:11]).astype(np.float) # np array, shape=(2,)
-    data_id_dict['box_h'] = float(data_name_split_list_list[_idx][11]) # np array, shape=(2,)
-    data_id_dict['LM_local_norm'] = (np.array([data_str_list_list[_idx][5::2], data_str_list_list[_idx][6::2]]).T).astype(np.float) # np array, shape=(2,)
-    #
-    data_id_dict['LM_pixel'] = data_id_dict['LM_local_norm'] * data_id_dict['box_h'] + data_id_dict['box_xy'].reshape((1,2))
+    data_id_dict['distance'] = float(data_name_split_list[3])
+    data_id_dict['pitch'] = _raw_pitch_value * _sign_pitch
+    data_id_dict['roll'] = ( math.fmod( (_raw_roll_value + 180.0), 360.0 ) - 180.0 ) * _sign_roll
+    data_id_dict['yaw'] = _raw_yaw_value * _sign_yaw
 
     # Classify ground truth data! (drpy class)
     #----------------------------------------------#
     _class_dict = dict()
     if is_classified_by_label:
-        _class_dict['distance'] = data_str_list_list[_idx][1]
-        _class_dict['pitch'] = data_str_list_list[_idx][2]
-        _class_dict['roll'] = data_str_list_list[_idx][3]
-        _class_dict['yaw'] = data_str_list_list[_idx][4]
+        _class_dict['distance'] = "%d" % data_id_dict['distance']
+        _class_dict['pitch'] = "%d" % data_id_dict['pitch']
+        _class_dict['roll'] = "%d" % data_id_dict['roll']
+        _class_dict['yaw'] = "%d" % data_id_dict['yaw']
     else:
         _class_dict['distance'] = class_depth_label[ np.digitize( data_id_dict['distance'], class_depth_bins) ]
         _class_dict['pitch'] = class_pitch_label[ np.digitize( data_id_dict['pitch'], class_pitch_bins) ]
@@ -295,7 +294,25 @@ for _idx in range(len(data_str_list_list)):
     data_list.append(data_id_dict)
 #
 # print(data_list[0])
+print(json.dumps(data_list[0], indent=4))
 #-------------------------------------------------------#
+
+
+
+
+
+
+exit()
+
+
+
+
+
+
+
+
+
+
 
 def solving_center_point(p1,p2,p3,p4):
     '''
