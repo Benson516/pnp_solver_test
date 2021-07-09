@@ -26,12 +26,12 @@ data_file_str = data_version + ".txt" # Fake the file name for storing the post 
 # Original image
 image_dir_str = data_dir_str
 # The image used for analysis
-image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/M1_test_EIF2_alexander_20210707/result_analysis/result_images/image_unflipped/'
+image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_images/image_unflipped/'
 # The same as the original image
-image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/M1_test_EIF2_alexander_20210707/result_analysis/result_images/image/'
+image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_images/image/'
 #---------------------------#
 # Result CSV file
-result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/M1_test_EIF2_alexander_20210707/result_analysis/result_CSVs/'
+result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
 
