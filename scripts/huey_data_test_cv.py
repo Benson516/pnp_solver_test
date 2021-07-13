@@ -239,7 +239,7 @@ elif drpy_class_format == "HMI_inspection":
     # Yaw
     class_yaw_nominal_value = np.array([-20, -10, 0, 10, 20]) # Note: the length of label should be one element longer than the bin
     class_yaw_label = [str(int(_e)) for _e in class_yaw_nominal_value] # Using nominal value as class label
-    class_yaw_bins = [-20, -10, 10, 20] # Only the middle bound values
+    class_yaw_bins = [-20.01, -10, 10, 20.01] # Only the middle bound values
     print("class_yaw_label = %s" % class_yaw_label)
     print("class_yaw_bins = %s" % class_yaw_bins)
     #
