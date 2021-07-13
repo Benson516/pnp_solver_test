@@ -3,6 +3,11 @@ import copy
 import time
 import csv
 #
+import glob # For searching in the directory
+import os
+import math
+import json
+#
 import cv2
 #
 import PNP_SOLVER_LIB as PNPS
@@ -10,24 +15,23 @@ import PNP_SOLVER_LIB as PNPS
 
 #---------------------------#
 # Landmark (LM) dataset
-data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'test_Alexander.txt'
-# data_file_str = 'test_Alexey.txt'
-# data_file_str = "test_Holly.txt"
-# data_file_str = "test_Pantea.txt"
+data_rool_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/'
+# data_version = 'M1_test_EIF2_alexander_20210707'
+data_version = 'M1_test_QEIF_alexander_20210709'
 #
-# data_file_str = "train_head03.txt"
+data_dir_str = data_rool_str + data_version + '/results/'
+data_file_str = data_version + ".txt" # Fake the file name for storing the post analysis results
 #---------------------------#
 # Image of Alexander
 # Original image
-image_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ/'
+image_dir_str = data_dir_str
 # The image used for analysis
-image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result_unflipped/'
+image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_images/image_unflipped/'
 # The same as the original image
-image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result/'
+image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_images/image/'
 #---------------------------#
 # Result CSV file
-result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/result_CSVs/'
+result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
 
@@ -118,39 +122,31 @@ pattern_scale = 1.0 # 0.85 # Multiply onto the golden pattern
 
 # Loading Data
 #----------------------------------------------------------#
-data_path_str = data_dir_str + data_file_str
-#
 data_idx_list = list()
-data_str_list_list = list()
-data_name_split_list_list = list()
-with open(data_path_str, 'r') as _f:
-    # Read and print the entire file line by line
-    _line = _f.readline()
-    _idx = 0
-    while (_line != '') and ((not is_limiting_line_count) or (_idx < (DATA_START_ID+DATA_COUNT) ) ):  # The EOF char is an empty string
-        if _idx >= DATA_START_ID:
-            data_idx_list.append(_idx)
-            # print(_line, end='')
-            _line_split_list = _line.split()
-            # print(_line_split_list)
-            data_str_list_list.append(_line_split_list)
-            #
-            data_name_split_list = _line_split_list[0].split('_')
-            # print("data_name_split_list = %s" % str(data_name_split_list))
-            data_name_split_list_list.append( data_name_split_list )
-        # Update
-        _line = _f.readline()
-        _idx += 1
+data_file_name_list = list()
+#
+bin_file_gen = glob.iglob( data_dir_str + "*.bin" )
+_idx = 0
+for bin_file_path in bin_file_gen:
+    if is_limiting_line_count and (_idx >= (DATA_START_ID+DATA_COUNT)):
+        break
+    #
+    if _idx >= DATA_START_ID:
+        data_idx_list.append(_idx)
+        bin_file_name = os.path.basename(bin_file_path)
+        # print("bin_file_name = %s" % bin_file_name)
+        data_file_name_list.append(bin_file_name)
+    _idx += 1
 #
 print("-"*70)
 print("data count = %d" % len(data_idx_list))
 print("-"*70)
 print(data_idx_list[0])
-print(data_str_list_list[0][0:5]) # [data_idx][column in line of file]
-print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split]
+print(data_file_name_list[0]) # [data_idx][column in line of file]
 #
 # time.sleep(10.0)
 #----------------------------------------------------------#
+
 
 
 # Ground truth classification
@@ -159,9 +155,9 @@ print(data_name_split_list_list[0][9:12]) # [data_idx][column in file name split
 is_classified_by_label = False
 
 # Formate
-drpy_class_format = "drpy_expand"
+# drpy_class_format = "drpy_expand"
 # drpy_class_format = "drpy_expand_zoom_in"
-# drpy_class_format = "HMI_inspection"
+drpy_class_format = "HMI_inspection"
 
 if drpy_class_format == "drpy_expand":
     # class label and bins
@@ -250,33 +246,60 @@ else:
 # Convert the original data to structured data_list
 #-------------------------------------------------------#
 data_list = list()
-for _idx in range(len(data_str_list_list)):
+for _idx, data_file_name in enumerate(data_file_name_list):
+    # Process the file name
+    data_name_split_list = data_file_name.split('_')
+    # print("data_name_split_list = %s" % str(data_name_split_list))
+
+    # Raw value in file name
+    _raw_roll_value = float(data_name_split_list[2])
+    _raw_pitch_value = float(data_name_split_list[6])
+    _raw_yaw_value = float(data_name_split_list[8])
+    # Sign
+    _sign_roll = -1.0 # Note: The sign of the value if fully determined by the value itself.
+    _sign_pitch = (-1.0 if data_name_split_list[5] == 'd' else 1.0)
+    _sign_yaw = (-1.0 if data_name_split_list[1] == 'left' else 1.0)
+    #
+
+    # Read the result
+    #--------------------------#
+    _result_list = list() # [dist, yaw, roll, pitch]
+    with open(data_dir_str + data_file_name, 'r') as _f:
+        _line = _f.readline()
+        while (_line != ''):
+            # print(_line, end='')
+            _line_split = _line.split()
+            # print(_line_split)
+            _result_list.append( float(_line_split[1]) )
+            _line = _f.readline()
+    #--------------------------#
+    print(_result_list)
+
     data_id_dict = dict()
     # File info
     data_id_dict['idx'] = data_idx_list[_idx]
-    data_id_dict['file_name'] = data_str_list_list[_idx][0]
+    data_id_dict['file_name'] = data_file_name
     # "Label" of classes, type: string
     data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
     # Grund truth
-    data_id_dict['distance'] = float(data_str_list_list[_idx][1])
-    data_id_dict['pitch'] = float(data_str_list_list[_idx][2])
-    data_id_dict['roll'] = float(data_str_list_list[_idx][3])
-    data_id_dict['yaw'] = float(data_str_list_list[_idx][4])
-    # Test inputs
-    data_id_dict['box_xy'] = np.array(data_name_split_list_list[_idx][9:11]).astype(np.float) # np array, shape=(2,)
-    data_id_dict['box_h'] = float(data_name_split_list_list[_idx][11]) # np array, shape=(2,)
-    data_id_dict['LM_local_norm'] = (np.array([data_str_list_list[_idx][5::2], data_str_list_list[_idx][6::2]]).T).astype(np.float) # np array, shape=(2,)
+    data_id_dict['distance'] = float(data_name_split_list[3])
+    data_id_dict['roll'] = ( math.fmod( (_raw_roll_value + 180.0), 360.0 ) - 180.0 ) * _sign_roll
+    data_id_dict['pitch'] = _raw_pitch_value * _sign_pitch
+    data_id_dict['yaw'] = _raw_yaw_value * _sign_yaw
     #
-    data_id_dict['LM_pixel'] = data_id_dict['LM_local_norm'] * data_id_dict['box_h'] + data_id_dict['box_xy'].reshape((1,2))
+    data_id_dict['depth_est'] = _result_list[0] * 0.01 # m
+    data_id_dict['roll_est'] = _result_list[2] # deg.
+    data_id_dict['pitch_est'] = _result_list[3] # deg.
+    data_id_dict['yaw_est'] = _result_list[1] # deg.
 
     # Classify ground truth data! (drpy class)
     #----------------------------------------------#
     _class_dict = dict()
     if is_classified_by_label:
-        _class_dict['distance'] = data_str_list_list[_idx][1]
-        _class_dict['pitch'] = data_str_list_list[_idx][2]
-        _class_dict['roll'] = data_str_list_list[_idx][3]
-        _class_dict['yaw'] = data_str_list_list[_idx][4]
+        _class_dict['distance'] = "%d" % data_id_dict['distance']
+        _class_dict['pitch'] = "%d" % data_id_dict['pitch']
+        _class_dict['roll'] = "%d" % data_id_dict['roll']
+        _class_dict['yaw'] = "%d" % data_id_dict['yaw']
     else:
         _class_dict['distance'] = class_depth_label[ np.digitize( data_id_dict['distance'], class_depth_bins) ]
         _class_dict['pitch'] = class_pitch_label[ np.digitize( data_id_dict['pitch'], class_pitch_bins) ]
@@ -295,35 +318,10 @@ for _idx in range(len(data_str_list_list)):
     data_list.append(data_id_dict)
 #
 # print(data_list[0])
+print(json.dumps(data_list[0], indent=4))
 #-------------------------------------------------------#
 
-def solving_center_point(p1,p2,p3,p4):
-    '''
-    p1   p2
-       \/
-       pc
-       /\
-    p4   p3
-    '''
-    # Transform to 2D arrays
-    _n = np.array(p1).size
-    _p1_shape = np.array(p1).shape
-    _p1 = np.array(p1).reshape( (_n,1) )
-    _p2 = np.array(p2).reshape( (_n,1) )
-    _p3 = np.array(p3).reshape( (_n,1) )
-    _p4 = np.array(p4).reshape( (_n,1) )
-    #
-    _d13 = _p3 - _p1
-    _d24 = _p4 - _p2
-    _A = np.hstack([_d13, _d24])
-    _b = _p2 - _p1
-    _uv = np.linalg.pinv(_A) @ _b
-    _pc = _p1 + _uv[0,0] * _d13
-    # reshape
-    pc = _pc.reshape( _p1_shape )
-    if type(p1) == type(list()):
-        pc = list(pc)
-    return pc
+
 
 # ============= Start testing ================
 #-------------------------------------------------------#
@@ -467,73 +465,19 @@ for _idx in range(len(data_list)):
     print('file file_name: [%s]' % data_list[_idx]['file_name'])
 
 
-    LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
-    np_point_image_dict = dict()
-    # [x,y,1].T, shape: (3,1)
-    np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96])
-    np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97])
-    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
-    np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
-    np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
-    np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
-    # np_point_image_dict["brow_cl_35"] = convert_pixel_to_homo(LM_pixel_data_matrix[35])
-    # np_point_image_dict["brow_il_37"] = convert_pixel_to_homo(LM_pixel_data_matrix[37])
-    # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42])
-    # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44])
-    #
-    # np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
-    #                                                             LM_pixel_data_matrix[97],
-    #                                                             LM_pixel_data_matrix[96],
-    #                                                             LM_pixel_data_matrix[76],
-    #                                                             LM_pixel_data_matrix[82])
-    #                                                         )
+    # Get the result
+    # np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
 
-    # # Print
-    # print("-"*35)
-    # print("2D points on image:")
-    # for _k in np_point_image_dict:
-    #     # print("%s:%sp=%s.T | p_no_q_err=%s.T | q_e=%s.T" % (_k, " "*(12-len(_k)), str(np_point_image_dict[_k].T), str(np_point_image_no_q_err_dict[_k].T), str(np_point_quantization_error_dict[_k].T) ))
-    #     print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
-    #     # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
-    # print("-"*35)
+    # Get the result from file
+    t3_est = data_list[_idx]['depth_est']
+    roll_est = data_list[_idx]['roll_est']
+    pitch_est = data_list[_idx]['pitch_est']
+    yaw_est = data_list[_idx]['yaw_est']
+    np_R_est = pnp_solver.get_rotation_matrix_from_Euler( roll_est, yaw_est, pitch_est, is_degree=True )
+    np_t_est = np.array([0.0, 0.0, t3_est]).reshape((3,1)) # Assume that the head is at the center of the picture
+    res_norm = 0.0 # Ignore this
 
-    # Solve
-    np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
 
-    # # OpenCV method
-    # #----------------------------------------------------#
-    # _key_list = list(np_point_image_dict.keys())
-    # model_points = np.array([ point_3d_dict[_k] for _k in _key_list] )
-    # image_points = np.array([ np_point_image_dict[_k][0:2,0] for _k in _key_list])
-    # camera_matrix = np_K_camera_est
-    # dist_coeffs = None #  np.zeros((4,1)) # Assuming no lens distortion
-    # # Solve
-    # # flags = cv2.SOLVEPNP_ITERATIVE
-    # flags = cv2.SOLVEPNP_EPNP
-    # inliers = None
-    # # success, rotation_vector, t_est_CV = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=flags )
-    # success, rotation_vector, t_est_CV, inliers = cv2.solvePnPRansac(model_points, image_points, camera_matrix, dist_coeffs, flags=flags, reprojectionError=0.8 )
-    # R_est_CV, _ = cv2.Rodrigues(rotation_vector)
-    # roll_est_CV, yaw_est_CV, pitch_est_CV = pnp_solver.get_Euler_from_rotation_matrix(R_est_CV, verbose=False, is_degree=True)
-    # print()
-    # print("success = %s" % str(success))
-    # print("R_est_CV = \n%s" % str(R_est_CV))
-    # print("(roll_est_CV, yaw_est_CV, pitch_est_CV) \t\t= %s" % str( (roll_est_CV, yaw_est_CV, pitch_est_CV) )  ) # Already in degree
-    # print("t_est_CV = \n%s" % str(t_est_CV))
-    # print("inliers = %s" % str(inliers))
-    # print()
-    # # Overwrite the results
-    # np_R_est, np_t_est, t3_est = R_est_CV, t_est_CV, t_est_CV[2,0]
-    # roll_est, yaw_est, pitch_est = roll_est_CV, yaw_est_CV, pitch_est_CV
-    # res_norm = 0.0 # Not being returned
-    # #----------------------------------------------------#
-
-    # Note: Euler angles are in degree
-    np_R_ca_est = pnp_solver.np_R_c_a_est
-    np_t_ca_est = pnp_solver.np_t_c_a_est
-    # np_R_ca_est = copy.deepcopy(pnp_solver.np_R_c_a_est)
-    # np_t_ca_est = copy.deepcopy(pnp_solver.np_t_c_a_est)
 
     # Compare result
     #-----------------------------#
@@ -552,9 +496,12 @@ for _idx in range(len(data_list)):
 
     # Reprojections
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
-    # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
-    #
+
+    # Note: Fake this
+    np_point_image_dict = np_point_image_dict_reproject_GT_ori_golden_patern
+
+
     # Calculate the pixel error of the LMs and the ground-truth projection of golden pattern
     np_LM_GT_error_dict = dict()
     np_LM_GT_error_norm_dict = dict()
@@ -757,7 +704,8 @@ for _idx in range(len(data_list)):
     # Get the file name of the image
     #--------------------------------------------#
     _file_name = data_list[_idx]['file_name']
-    _image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
+    # _image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
+    _image_file_name_str = _file_name[:-4] + '.jpg'
     print('image file name: [%s]' % _image_file_name_str)
     _image_ori_path_str = image_dir_str + _image_file_name_str
     _image_result_unflipped_path_str = image_result_unflipped_dir_str + _image_file_name_str
@@ -771,6 +719,8 @@ for _idx in range(len(data_list)):
         print("!! Error occured while loading the image !!\n")
         time.sleep(3.0)
         continue
+    _dim = (int(_img.shape[1]*1.5), int(_img.shape[0]*1.5))
+    _img = cv2.resize(_img, _dim, interpolation=cv2.INTER_AREA) # Resize 1.5 times
     _img_shape = _img.shape
     print("_img.shape = %s" % str(_img_shape))
     LM_2_image_scale = _img_shape[1] / 320.0
@@ -829,12 +779,12 @@ for _idx in range(len(data_list)):
     #----------------------------------#
     # [[u,v,1]].T
     for _k in np_point_image_dict:
-        # Landmarks
-        _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 3
-        _color = _color_BLUE # BGR
-        # _color = _color_RED # BGR
-        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        # # Landmarks
+        # _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+        # _radius = 3
+        # _color = _color_BLUE # BGR
+        # # _color = _color_RED # BGR
+        # cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
         # Reprojections of golden pattern onto image using grund truth pose
         _center_pixel = (np_point_image_dict_reproject_GT_ori_golden_patern[_k][0:2,0] * LM_2_image_scale).astype('int')
         _radius = 2
