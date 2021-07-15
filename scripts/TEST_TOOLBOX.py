@@ -39,7 +39,7 @@ def solving_center_point(p1,p2,p3,p4):
         pc = list(pc)
     return pc
 
-def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
+def convert_pixel_to_homo(pixel_xy, mirrored=False):
     '''
     pixel_xy: np array, shape=(2,)
     '''
