@@ -426,18 +426,6 @@ pattern_scale_list.append(pattern_scale)
 pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
 
 
-def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
-    '''
-    pixel_xy: np array, shape=(2,)
-    '''
-    if mirrored:
-        pixel_center_x = 320/2.0
-        pixel_xy_mirrored = copy.deepcopy(pixel_xy)
-        pixel_xy_mirrored[0] = -1.0 * (pixel_xy[0] - pixel_center_x) + pixel_center_x
-        return np.array([pixel_xy_mirrored[0], pixel_xy_mirrored[1], 1.0]).reshape((3,1))
-    else:
-        return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
-
 
 def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
     '''
@@ -471,19 +459,19 @@ for _idx in range(len(data_list)):
     LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
     np_point_image_dict = dict()
     # [x,y,1].T, shape: (3,1)
-    np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96], mirrored=is_mirrored_image)
-    np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97], mirrored=is_mirrored_image)
-    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51], mirrored=is_mirrored_image)
-    np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76], mirrored=is_mirrored_image)
-    np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82], mirrored=is_mirrored_image)
-    np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54], mirrored=is_mirrored_image)
-    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_cl_35"] = convert_pixel_to_homo(LM_pixel_data_matrix[35], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_il_37"] = convert_pixel_to_homo(LM_pixel_data_matrix[37], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_l_96"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[96], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_r_97"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[97], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_c_51"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[51], mirrored=is_mirrored_image)
+    np_point_image_dict["mouse_l_76"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[76], mirrored=is_mirrored_image)
+    np_point_image_dict["mouse_r_82"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[82], mirrored=is_mirrored_image)
+    np_point_image_dict["nose_t_54"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[54], mirrored=is_mirrored_image)
+    np_point_image_dict["chin_t_16"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[16], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_cl_35"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[35], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_il_37"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[37], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_ir_42"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[42], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_cr_44"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[44], mirrored=is_mirrored_image)
     #
-    # np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
+    # np_point_image_dict["face_c"] = TTBX.convert_pixel_to_homo(      solving_center_point(
     #                                                             LM_pixel_data_matrix[97],
     #                                                             LM_pixel_data_matrix[96],
     #                                                             LM_pixel_data_matrix[76],
