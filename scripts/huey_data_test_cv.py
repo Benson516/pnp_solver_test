@@ -664,7 +664,7 @@ for _idx in range(len(data_list)):
     is_storing_case_image = False
     if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
         failed_sample_count += 1
-        if fitting_error > 1.5:
+        if fitting_error > 1.0: # 1.5
             failed_sample_fit_error_count += 1
         # if fitting_error <= 1.5:
             failed_sample_filename_list.append(data_list[_idx]['file_name'])

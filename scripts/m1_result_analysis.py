@@ -617,17 +617,20 @@ for _idx in range(len(data_list)):
 
     # Determin if we want to further investigate this sample
     is_storing_case_image = False
-    if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
-        failed_sample_count += 1
-        if fitting_error > 1.5:
-            failed_sample_fit_error_count += 1
-        # if fitting_error <= 1.5:
-            failed_sample_filename_list.append(data_list[_idx]['file_name'])
-            is_storing_case_image = is_storing_fail_case_image
 
-    # if not drpy_pass_list[0]:
-    #     failed_sample_filename_list.append(data_list[_idx]['file_name'])
-    #     is_storing_case_image = is_storing_fail_case_image
+    # # By pass count and fitting error
+    # if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
+    #     failed_sample_count += 1
+    #     if fitting_error > 1.5:
+    #         failed_sample_fit_error_count += 1
+    #     # if fitting_error <= 1.5:
+    #         failed_sample_filename_list.append(data_list[_idx]['file_name'])
+    #         is_storing_case_image = is_storing_fail_case_image
+
+    # By pitch error
+    if not drpy_pass_list[2]: # Pitch
+        failed_sample_filename_list.append(data_list[_idx]['file_name'])
+        is_storing_case_image = is_storing_fail_case_image
     #----------------------------#
 
 
