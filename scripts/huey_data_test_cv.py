@@ -1059,63 +1059,6 @@ TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name
 
 
 
-def get_all_class_seperated_result(result_list):
-    '''
-    Hirachy: drpy
-    [distance][roll][pitch][yaw]
-    '''
-    class_dict = dict()
-    _d_label_set = set()
-    _r_label_set = set()
-    _p_label_set = set()
-    _y_label_set = set()
-    for _idx in range(len(result_list)):
-        # Loop thrugh all data
-        _d_label = result_list[_idx]['class']["distance"]
-        _r_label = result_list[_idx]['class']["roll"]
-        _p_label = result_list[_idx]['class']["pitch"]
-        _y_label = result_list[_idx]['class']["yaw"]
-        # d
-        _d_dict = class_dict
-        if not _d_label in _d_dict:
-            _d_dict[_d_label] = dict()
-        # r
-        _r_dict = _d_dict[_d_label]
-        if not _r_label in _r_dict:
-            _r_dict[_r_label] = dict()
-        # p
-        _p_dict = _r_dict[_r_label]
-        if not _p_label in _p_dict:
-            _p_dict[_p_label] = dict()
-        # y
-        _y_dict = _p_dict[_p_label]
-        if not _y_label in _y_dict:
-            _y_dict[_y_label] = list()
-
-        # Update label set
-        _d_label_set.add(_d_label)
-        _r_label_set.add(_r_label)
-        _p_label_set.add(_p_label)
-        _y_label_set.add(_y_label)
-        # Append to the class list
-        class_dict[_d_label][_r_label][_p_label][_y_label].append(result_list[_idx])
-
-        # # Decide wether to record or not
-        # if (approval_func is None) or approval_func( result_list[_idx] ):
-        #     class_dict[_label].append(result_list[_idx])
-
-    # Prepare the class label list
-    d_label_list = list(_d_label_set)
-    r_label_list = list(_r_label_set)
-    p_label_list = list(_p_label_set)
-    y_label_list = list(_y_label_set)
-    d_label_list.sort(key=_class_order_func)
-    r_label_list.sort(key=_class_order_func)
-    p_label_list.sort(key=_class_order_func)
-    y_label_list.sort(key=_class_order_func)
-    #
-    return (class_dict, d_label_list, r_label_list, p_label_list, y_label_list)
-#
 
 def get_drpy_statistic( drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0):
     '''
@@ -1154,7 +1097,7 @@ def get_drpy_statistic( drpy_class_dict, class_name="distance", data_est_key="t3
 
 
 #-----------------------------#
-drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = get_all_class_seperated_result(result_list)
+drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = TTBX.get_all_class_seperated_result(result_list)
 # print(drpy_class_dict)
 #-----------------------------#
 
