@@ -427,15 +427,6 @@ pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict_list, pattern_scale_
 
 
 
-def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
-    '''
-    output
-    [depth-passed, roll-passed, pitch-passed, yaw-passed], how many criterion passed
-    '''
-    drpy_pass_list = [ (np.abs( drpy_est_list[_i] - drpy_GT_list[_i] ) < drpy_error_bound_list[_i]) for _i in range(len(drpy_est_list))]
-    pass_count = len([ _e for _e in drpy_pass_list if _e])
-    return (drpy_pass_list, pass_count)
-
 
 # Loop through data
 #-------------------------------------------------------#
@@ -641,7 +632,7 @@ for _idx in range(len(data_list)):
 
     # Claulate the errors
     #----------------------------#
-    drpy_pass_list, pass_count = check_if_the_sample_passed(
+    drpy_pass_list, pass_count = TTBX.check_if_the_sample_passed(
                             (t3_est*100.0, roll_est, pitch_est, yaw_est),
                             (data_list[_idx]['distance'], data_list[_idx]['roll'], data_list[_idx]['pitch'], data_list[_idx]['yaw']),
                             (10.0, 10.0, 10.0, 10.0) )
