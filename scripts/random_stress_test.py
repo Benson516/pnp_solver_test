@@ -975,24 +975,6 @@ def get_statistic_of_result(result_list, class_name='all', class_label='all', da
     return statis_dict
 
 
-def get_classified_result(result_list, class_name='distance', include_all=True, approval_func=None):
-    '''
-    '''
-    class_dict = dict()
-    for _idx in range(len(result_list)):
-        _label = result_list[_idx]['class'][class_name]
-        if not _label in class_dict:
-            class_dict[_label] = list()
-        # Decide wether to record or not
-        if (approval_func is None) or approval_func( result_list[_idx] ):
-            class_dict[_label].append(result_list[_idx])
-    #
-    if include_all:
-        # class_dict["all"] = result_list
-        class_dict["all"] = copy.deepcopy(result_list)
-    return class_dict
-
-
 
 
 def _class_order_func(e):
@@ -1042,9 +1024,9 @@ def approval_func_small_angle(result_list_idx):
     return True
 def approval_func_large_angle(result_list_idx):
     return (not approval_func_small_angle(result_list_idx))
-distance_class_dict = get_classified_result(result_list, class_name='distance', approval_func=None)
-# distance_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_small_angle)
-# distance_class_dict = get_classified_result(result_list, class_name='distance', approval_func=approval_func_large_angle)
+distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=None)
+# distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=approval_func_small_angle)
+# distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=approval_func_large_angle)
 
 
 # Get several statistic of each data in the data subset of each class
