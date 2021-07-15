@@ -961,20 +961,9 @@ TTBX.write_result_to_csv(result_list, csv_path)
 
 
 # Get statistic result in each class, filter (by approval func) if required
-def approval_func_small_angle(result_list_idx):
-    angle_th = 30
-    if abs(result_list_idx["roll_GT"]) > angle_th:
-        return False
-    if abs(result_list_idx["pitch_GT"]) > angle_th:
-        return False
-    if abs(result_list_idx["yaw_GT"]) > angle_th:
-        return False
-    return True
-def approval_func_large_angle(result_list_idx):
-    return (not approval_func_small_angle(result_list_idx))
 distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=None)
-# distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=approval_func_small_angle)
-# distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=approval_func_large_angle)
+# distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=TTBX.approval_func_small_angle)
+# distance_class_dict = TTBX.get_classified_result(result_list, class_name='distance', approval_func=TTBX.approval_func_large_angle)
 
 
 # Get several statistic of each data in the data subset of each class

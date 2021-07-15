@@ -331,6 +331,21 @@ def get_classified_result(result_list, class_name='distance', include_all=True, 
     return class_dict
 #----------------------------------------------#
 
+# Possible approval functions for get_classified_result()
+#----------------------------------------------#
+def approval_func_small_angle(result_list_idx):
+    angle_th = 30
+    if abs(result_list_idx["roll_GT"]) > angle_th:
+        return False
+    if abs(result_list_idx["pitch_GT"]) > angle_th:
+        return False
+    if abs(result_list_idx["yaw_GT"]) > angle_th:
+        return False
+    return True
+
+def approval_func_large_angle(result_list_idx):
+    return (not approval_func_small_angle(result_list_idx))
+#----------------------------------------------#
 
 # drpy (depth, roll, pitch, yaw) analysis
 #----------------------------------------------#
