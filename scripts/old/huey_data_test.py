@@ -117,7 +117,7 @@ print("-"*35)
 #----------------------------------------#
 # verbose = True
 verbose = False
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, verbose=verbose)
+pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict, verbose=verbose)
 
 
 def convert_pixel_to_homo(pixel_xy, mirrored=True):

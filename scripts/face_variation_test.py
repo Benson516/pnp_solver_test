@@ -202,7 +202,7 @@ pattern_scale_list.append(pattern_scale)
 # Golden pattern (simply copy the GT one)
 point_3d_dict_GT_list = copy.deepcopy(point_3d_dict_list)
 pattern_scale_GT_list = copy.deepcopy(pattern_scale_list)
-pnp_solver_GT = PNPS.PNP_SOLVER_A2_M3(np_K_camera_GT, point_3d_dict_GT_list, pattern_scale_list=pattern_scale_GT_list, verbose=verbose)
+pnp_solver_GT = PNPS.PNP_SOLVER(np_K_camera_GT, point_3d_dict_GT_list, pattern_scale_list=pattern_scale_GT_list, verbose=verbose)
 #----------------------------------------#
 
 
@@ -223,7 +223,7 @@ print("np_K_camera_est = \n%s" % str(np_K_camera_est))
 
 # Create the solver
 #----------------------------------------#
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict_list, pattern_scale_list=pattern_scale_list, verbose=verbose)
+pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict_list, pattern_scale_list=pattern_scale_list, verbose=verbose)
 #-------------------------------------------------------#
 
 

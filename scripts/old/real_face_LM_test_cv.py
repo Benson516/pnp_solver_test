@@ -191,7 +191,7 @@ point_3d_dict["chin_t_10"] = [0.0, 0.12, 0.0]
 
 # Create the solver
 #----------------------------------------#
-pnp_solver = PNPS.PNP_SOLVER_A2_M3(np_K_camera_est, point_3d_dict, pattern_scale=pattern_scale, verbose=verbose)
+pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict, pattern_scale=pattern_scale, verbose=verbose)
 
 
 

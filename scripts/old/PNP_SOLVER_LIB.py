@@ -4,7 +4,7 @@ import copy
 import time
 
 
-class PNP_SOLVER_A2_M3(object):
+class PNP_SOLVER(object):
     '''
     '''
     def __init__(self, np_K_camera_est, point_3d_dict_list, pattern_scale_list=None, verbose=False):
@@ -4687,7 +4687,7 @@ def main():
     np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
     print("np_K_camera_est = \n%s" % str(np_K_camera_est))
     #
-    pnp_solver = PNP_SOLVER_A2_M3(np_K_camera_est, [point_3d_dict], verbose=True)
+    pnp_solver = PNP_SOLVER(np_K_camera_est, [point_3d_dict], verbose=True)
 
     # test
     # roll = 10.0
