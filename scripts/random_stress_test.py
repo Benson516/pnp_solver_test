@@ -457,16 +457,6 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     print("\n-------------- data_idx = %d (process idx = %d)--------------\n" % (data_list[_idx]['idx'], _idx))
     # print('file file_name: [%s]' % data_list[_idx]['file_name'])
 
-    # LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
-    # np_point_image_dict = dict()
-    # # [x,y,1].T, shape: (3,1)
-    # np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96])
-    # np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97])
-    # np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
-    # np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
-    # np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
-    # np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    # np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
 
     # Just reference the original projection data
     LM_pixel_dict = data_list[_idx]['LM_pixel_dict']

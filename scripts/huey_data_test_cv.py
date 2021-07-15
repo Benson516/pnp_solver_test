@@ -471,23 +471,24 @@ for _idx in range(len(data_list)):
     LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
     np_point_image_dict = dict()
     # [x,y,1].T, shape: (3,1)
-    np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96])
-    np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97])
-    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51])
-    np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76])
-    np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82])
-    np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54])
-    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16])
-    # np_point_image_dict["brow_cl_35"] = convert_pixel_to_homo(LM_pixel_data_matrix[35])
-    # np_point_image_dict["brow_il_37"] = convert_pixel_to_homo(LM_pixel_data_matrix[37])
-    # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42])
-    # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44])
+    np_point_image_dict["eye_l_96"] = convert_pixel_to_homo(LM_pixel_data_matrix[96], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_r_97"] = convert_pixel_to_homo(LM_pixel_data_matrix[97], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_c_51"] = convert_pixel_to_homo(LM_pixel_data_matrix[51], mirrored=is_mirrored_image)
+    np_point_image_dict["mouse_l_76"] = convert_pixel_to_homo(LM_pixel_data_matrix[76], mirrored=is_mirrored_image)
+    np_point_image_dict["mouse_r_82"] = convert_pixel_to_homo(LM_pixel_data_matrix[82], mirrored=is_mirrored_image)
+    np_point_image_dict["nose_t_54"] = convert_pixel_to_homo(LM_pixel_data_matrix[54], mirrored=is_mirrored_image)
+    np_point_image_dict["chin_t_16"] = convert_pixel_to_homo(LM_pixel_data_matrix[16], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_cl_35"] = convert_pixel_to_homo(LM_pixel_data_matrix[35], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_il_37"] = convert_pixel_to_homo(LM_pixel_data_matrix[37], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_ir_42"] = convert_pixel_to_homo(LM_pixel_data_matrix[42], mirrored=is_mirrored_image)
+    # np_point_image_dict["brow_cr_44"] = convert_pixel_to_homo(LM_pixel_data_matrix[44], mirrored=is_mirrored_image)
     #
     # np_point_image_dict["face_c"] = convert_pixel_to_homo(      solving_center_point(
     #                                                             LM_pixel_data_matrix[97],
     #                                                             LM_pixel_data_matrix[96],
     #                                                             LM_pixel_data_matrix[76],
-    #                                                             LM_pixel_data_matrix[82])
+    #                                                             LM_pixel_data_matrix[82]),
+    #                                                             mirrored=is_mirrored_image
     #                                                         )
 
     # # Print
