@@ -1065,72 +1065,7 @@ def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=
         print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
     #---------------------#
 
-def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name="distance", statistic_data_name="depth", is_horizontal=is_statistic_csv_horizontal):
-    '''
-    Horizontal:
-            class -->
-    matrics
-    |
-    |/
 
-    Vertical:
-            matrics -->
-    class
-    |
-    |/
-    '''
-    # Preorganize data
-    #--------------------------------#
-    # Class labels
-    _label_list = list(class_statistic_dict.keys())
-    # _label_list.sort(key=int) # Using the integer value of string to sort the list
-    _label_list.sort(key=_class_order_func) # Using the integer value of string to sort the list
-    # Matric labels
-    _matric_list = list(class_statistic_dict[ _label_list[0] ].keys())
-    #--------------------------------#
-
-    if is_horizontal:
-        # Horizontal class
-        #--------------------------------#
-        fieldnames = ['_'] + _label_list
-        row_dict_list = list()
-        for _matric_l in _matric_list: # Key
-            _row_dict = dict()
-            # 1st column
-            _row_dict['_'] = _matric_l
-            # 2nd column and so on
-            for _label in _label_list: # Key
-                _s_data_dict = class_statistic_dict[_label] # _s_data_dict is a dict of statistic values
-                _row_dict[_label] = _s_data_dict[_matric_l] # _matric_l matric
-            #
-            row_dict_list.append(_row_dict)
-        #--------------------------------#
-    else:
-        # Vertical class
-        #--------------------------------#
-        fieldnames = ['_'] + _matric_list
-        row_dict_list = list()
-        for _label in _label_list: # Key
-            _row_dict = dict()
-            # 1st column
-            _row_dict['_'] = _label
-            # 2nd column and so on
-            for _matric_l in _matric_list: # Index
-                _s_data_dict = class_statistic_dict[_label] # _s_data_dict is a dict of statistic values
-                _row_dict[ _matric_l ] = _s_data_dict[_matric_l] # _matric_l matric
-            #
-            row_dict_list.append(_row_dict)
-        #--------------------------------#
-
-    with open(statistic_csv_path, mode='w') as _csv_f:
-        _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
-        #
-        _csv_w.writeheader()
-        _csv_w.writerows(row_dict_list)
-        # for _e_dict in row_dict_list:
-        #     _csv_w.writerow(_e_dict)
-        _hv_adv_str = 'horizontally' if is_horizontal else 'vertically'
-        print("\n*** Wrote the statistic results [%s] to the csv file:\n\t[%s]\n" % ( _hv_adv_str, csv_path))
 #-------------------------------------------------------#
 
 
@@ -1195,28 +1130,28 @@ class_statistic_dict = dist_2_depth_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
 write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
+TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 #
 statistic_data_name = "roll" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_roll_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
 write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
+TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 #
 statistic_data_name = "pitch" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_pitch_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
 write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
+TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 #
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_yaw_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
 write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
-write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
+TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 
 
 

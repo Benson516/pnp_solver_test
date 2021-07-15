@@ -193,7 +193,7 @@ def write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=
         # for _e_dict in row_dict_list:
         #     _csv_w.writerow(_e_dict)
         _hv_adv_str = 'horizontally' if is_horizontal else 'vertically'
-        print("\n*** Wrote the statistic results [%s] to the csv file:\n\t[%s]\n" % ( _hv_adv_str, csv_path))
+        print("\n*** Wrote the statistic results [%s] to the csv file:\n\t[%s]\n" % ( _hv_adv_str, statistic_csv_path))
     return row_dict_list
 #----------------------------------------------#
 
