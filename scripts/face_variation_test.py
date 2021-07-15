@@ -1159,41 +1159,6 @@ def _class_order_func(e):
     # return ( (-1) if (e == "all") else int(e))
     return ( float("-inf") if (e == "all") else float(e))
 
-def write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name="distance", statistic_data_name="depth"):
-    '''
-    '''
-    #---------------------#
-    _statistic_str_out = '\nStatistic of [%s] for each [%s] class:\n' % (statistic_data_name, class_name)
-    # def value_of_string(e):
-    #   return int(e)
-    _label_list = list(class_statistic_dict.keys())
-    # _label_list.sort(key=int) # Using the integer value of string to sort the list
-    _label_list.sort(key=_class_order_func) # Using the integer value of string to sort the list
-    for _label in _label_list:
-        _s_data_dict = class_statistic_dict[_label] # New version, changed to dict
-        _statistic_str_out += "[%s]: " % _label
-        #
-        for _idx, _matric_l in enumerate(_s_data_dict):
-            if _idx > 0:
-                _statistic_str_out += " | "
-            # Write data
-            _statistic_str_out += "%s=%f" % (_matric_l, _s_data_dict[_matric_l]) # Note: _matric_l already include the unit and scale
-            # else: # Apply init_scale and print unit
-            #     _statistic_str_out += "%s=%f %s" % (_matric_l, _s_data_dict[_matric_l]*unit_scale, unit)
-        # _statistic_str_out += "m_ratio=%f" % (_s_data_dict[0])
-        # _statistic_str_out += " | mean=%f %s" % (_s_data_dict[1]*unit_scale, unit)
-        # _statistic_str_out += " | stddev=%f %s" % (_s_data_dict[2]*unit_scale, unit)
-        # _statistic_str_out += " | MAE_2_GT=%f %s" % (_s_data_dict[3]*unit_scale, unit)
-        # _statistic_str_out += " | MAE_2_mean=%f %s" % (_s_data_dict[4]*unit_scale, unit)
-        _statistic_str_out += "\n"
-    #
-    print(_statistic_str_out)
-    #
-    with open(statistic_txt_path, "w") as _f:
-        _f.write(_statistic_str_out)
-        print("\n*** Wrote the statistic to the txt file:\n\t[%s]\n" % statistic_txt_path)
-    #---------------------#
-
 
 #-------------------------------------------------------#
 
@@ -1258,28 +1223,28 @@ statistic_data_name = "depth" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_depth_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+TTBX.write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
 TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 #
 statistic_data_name = "roll" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_roll_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+TTBX.write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
 TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 #
 statistic_data_name = "pitch" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_pitch_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+TTBX.write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
 TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 #
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 class_statistic_dict = dist_2_yaw_statistic_dict
 statistic_txt_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.txt'
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % (class_name, statistic_data_name) ) + '.csv'
-write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
+TTBX.write_statistic_to_txt(class_statistic_dict, statistic_txt_path, class_name=class_name, statistic_data_name=statistic_data_name)
 TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name=class_name, statistic_data_name=statistic_data_name, is_horizontal=is_statistic_csv_horizontal)
 
 
