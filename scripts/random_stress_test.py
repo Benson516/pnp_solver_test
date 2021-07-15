@@ -1147,73 +1147,6 @@ drpy_2_LM_GT_error_average_normalize_statistic_dict = get_drpy_statistic(drpy_cl
 
 
 
-def write_drpy_2_depth_statistic_CSV(drpy_2_statistic_dict, csv_path, d_label_list=None, r_label_list=None, p_label_list=None, y_label_list=None, matric_label="mean(cm)"):
-    '''
-    '''
-    # # Collect the key list
-    # if d_label_list is None:
-    #     d_label_list = list( drpy_2_statistic_dict.keys() )
-    # if r_label_list is None:
-    #     r_label_list = list( drpy_2_statistic_dict[ d_label_list[0] ].keys() )
-    # if p_label_list is None:
-    #     p_label_list = list( drpy_2_statistic_dict[ d_label_list[0] ][ r_label_list[0] ].keys() )
-    # if y_label_list is None:
-    #     y_label_list = list( drpy_2_statistic_dict[ d_label_list[0] ][ r_label_list[0] ][ p_label_list[0] ].keys() )
-    #
-    # _matric_label = "mean" + "(cm)"
-    # _matric_label = "MAE_2_GT" + "(cm)"
-    _matric_label = matric_label
-    #
-    row_dict_list = list()
-    _d_p_list = list()
-    # Roll, verticall
-    for _r in r_label_list: # For vertical table (outer row)
-        for _y in y_label_list: # In each table (inner row)
-            _row_dict = dict()
-            _r_y_label = "r=%s, y=%s" % (_r, _y)
-
-            _bar_count = 0
-            for _d in d_label_list: # For horizontal table (outer column)
-                _d_p_label = "d=%s" % (_d)
-                if not _d_p_label in _d_p_list:
-                    _d_p_list.append( _d_p_label )
-                _row_dict[_d_p_label] = _r_y_label # 1st column of a table
-                #
-                for _p in p_label_list: # In each table (inner column)
-                    _bar_count += 1
-                    _d_p_label = "d=%s, p=%s" % (_d, _p)
-                    #
-                    if not _d_p_label in _d_p_list:
-                        _d_p_list.append( _d_p_label )
-                    #
-                    # print("(d,r,p,y) = %s" % str((_d, _r, _p, _y)))
-                    # _a = drpy_2_statistic_dict[_d][_r][_p][_y]
-                    # print(_a)
-                    try:
-                        _row_dict[_d_p_label] = drpy_2_statistic_dict[_d][_r][_p][_y][_matric_label] # other columns
-                    except:
-                        _row_dict[_d_p_label] = "-"
-                # Finish a table horizontally
-                _d_p_label = "|%d" % _bar_count
-                if not _d_p_label in _d_p_list:
-                    _d_p_list.append( _d_p_label )
-                _row_dict[_d_p_label] = ""
-            # Finish a table virtically
-            row_dict_list.append(_row_dict)
-        #
-        row_dict_list.append(dict()) # Empty line
-    #
-    fieldnames = _d_p_list
-
-    with open(statistic_csv_path, mode='w') as _csv_f:
-        _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
-        #
-        _csv_w.writeheader()
-        _csv_w.writerows(row_dict_list)
-        # for _e_dict in row_dict_list:
-        #     _csv_w.writerow(_e_dict)
-        print("\n*** Wrote the drpy statistic results to the csv file:\n\t[%s]\n" % ( csv_path))
-
 
 
 
@@ -1225,7 +1158,7 @@ statistic_data_name = "all" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_depth_statistic_dict # Since our data is complete, it's no matter we use the depth's data or other's
 matric_label = "n_data"
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 
 
@@ -1240,28 +1173,28 @@ drpy_2_data_statistic_dict = drpy_2_depth_statistic_dict
 unit = "cm"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 statistic_data_name = "roll" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_roll_statistic_dict
 unit = "deg."
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 statistic_data_name = "pitch" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_pitch_statistic_dict
 unit = "deg."
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_yaw_statistic_dict
 unit = "deg."
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 # LM_GT_error_average_normalize
 statistic_data_name = "LM_GT_error_average_normalize" # Just the name as the info. to the reader
@@ -1269,7 +1202,7 @@ drpy_2_data_statistic_dict = drpy_2_LM_GT_error_average_normalize_statistic_dict
 unit = "px_m"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 
 # Statistic about deviation
@@ -1283,28 +1216,28 @@ drpy_2_data_statistic_dict = drpy_2_depth_statistic_dict
 unit = "cm"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 statistic_data_name = "roll" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_roll_statistic_dict
 unit = "deg."
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 statistic_data_name = "pitch" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_pitch_statistic_dict
 unit = "deg."
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 statistic_data_name = "yaw" # Just the name as the info. to the reader
 drpy_2_data_statistic_dict = drpy_2_yaw_statistic_dict
 unit = "deg."
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
 
 # LM_GT_error_average_normalize
 statistic_data_name = "LM_GT_error_average_normalize" # Just the name as the info. to the reader
@@ -1312,4 +1245,4 @@ drpy_2_data_statistic_dict = drpy_2_LM_GT_error_average_normalize_statistic_dict
 unit = "px_m"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
-write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
