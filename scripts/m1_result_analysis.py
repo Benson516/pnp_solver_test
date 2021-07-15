@@ -758,13 +758,13 @@ for _idx in range(len(data_list)):
     # Ploting axies
     #-----------------------------------#
     # Grund truth axes
-    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_GT, np_t_GT_est) # Note: use the estimated t since we don't have the grund truth.
-    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
     vector_scale = 0.2
+    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_GT, np_t_GT_est, scale=vector_scale) # Note: use the estimated t since we don't have the grund truth.
+    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
     _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
-    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x*vector_scale)).astype('int')
-    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y*vector_scale)).astype('int')
-    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z*vector_scale)).astype('int')
+    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x)).astype('int')
+    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y)).astype('int')
+    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z)).astype('int')
     # Draw lines
     _line_width = 2
     cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0,0,127), _line_width)
@@ -772,13 +772,13 @@ for _idx in range(len(data_list)):
     cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, (127,0,0), _line_width)
 
     # Estimated axes
-    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_est, np_t_est)
-    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
     vector_scale = 0.2
+    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_est, np_t_est, scale=vector_scale)
+    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
     _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
-    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x*vector_scale)).astype('int')
-    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y*vector_scale)).astype('int')
-    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z*vector_scale)).astype('int')
+    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x)).astype('int')
+    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y)).astype('int')
+    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z)).astype('int')
     # Draw lines
     _line_width = 1
     cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0, 0, 180), _line_width)

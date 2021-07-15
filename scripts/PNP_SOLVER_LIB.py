@@ -4526,7 +4526,7 @@ class PNP_SOLVER_A2_M3(object):
             return (np_point_image[0:2,0], projection_no_q[0:2,0])
 
 
-    def perspective_projection_obj_axis(self, np_R, np_t):
+    def perspective_projection_obj_axis(self, np_R, np_t, scale=1.0):
         '''
         Project the unit vector of each axis onto the image space.
         output:
@@ -4538,9 +4538,9 @@ class PNP_SOLVER_A2_M3(object):
         # Calculate the control points of each axis (i.e. the point at distance 1.0 on each axis)
         # Note: For uv_0, this operation is eqivelent to "uv_o = (K @ np_t)[0:2,0] "
         uv_o, _ = self.perspective_projection(np.array([[0.0, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
-        uv_x1, _ = self.perspective_projection(np.array([[1.0, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
-        uv_y1, _ = self.perspective_projection(np.array([[0.0, 1.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
-        uv_z1, _ = self.perspective_projection(np.array([[0.0, 0.0, 1.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_x1, _ = self.perspective_projection(np.array([[scale, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_y1, _ = self.perspective_projection(np.array([[0.0, scale, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_z1, _ = self.perspective_projection(np.array([[0.0, 0.0, scale]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
         # Calculate the direction vector for each axis in the image space
         # Note: This operation is eqivelent to "dir_x = self.unit_vec(K @ np_R[:,0])"
         # dir_x = self.unit_vec(uv_x1 - uv_o)
