@@ -310,18 +310,6 @@ def solving_center_point(p1,p2,p3,p4):
         pc = list(pc)
     return pc
 
-def convert_pixel_to_homo(pixel_xy, mirrored=is_mirrored_image):
-    '''
-    pixel_xy: np array, shape=(2,)
-    '''
-    if mirrored:
-        pixel_center_x = 320/2.0
-        pixel_xy_mirrored = copy.deepcopy(pixel_xy)
-        pixel_xy_mirrored[0] = -1.0 * (pixel_xy[0] - pixel_center_x) + pixel_center_x
-        return np.array([pixel_xy_mirrored[0], pixel_xy_mirrored[1], 1.0]).reshape((3,1))
-    else:
-        return np.array([pixel_xy[0], pixel_xy[1], 1.0]).reshape((3,1))
-
 def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_list):
     '''
     output
