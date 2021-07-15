@@ -1046,41 +1046,6 @@ TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name
 
 
 
-def get_drpy_statistic( drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0):
-    '''
-    '''
-    # Get (distance) statistic of each data in the data subset of each class
-    #-----------------------------------------------------#
-    drpy_2_data_statistic_dict = dict()
-    for _d in drpy_class_dict:
-        for _r in drpy_class_dict[_d]:
-            for _p in drpy_class_dict[_d][_r]:
-                for _y in drpy_class_dict[_d][_r][_p]:
-                    _result_list = drpy_class_dict[_d][_r][_p][_y]
-                    # print(_result_list)
-                    _s_data = TTBX.get_statistic_of_result(_result_list, class_name=class_name, class_label='', data_est_key=data_est_key, data_GT_key=data_GT_key, unit=unit, unit_scale=unit_scale, verbose=False)
-                    # print(_s_data)
-                    # d
-                    _d_dict = drpy_2_data_statistic_dict
-                    if not _d in _d_dict:
-                        _d_dict[_d] = dict()
-                    # r
-                    _r_dict = _d_dict[_d]
-                    if not _r in _r_dict:
-                        _r_dict[_r] = dict()
-                    # p
-                    _p_dict = _r_dict[_r]
-                    if not _p in _p_dict:
-                        _p_dict[_p] = dict()
-                    # # y
-                    # _y_dict = _p_dict[_p]
-                    # if not _y in _y_dict:
-                    #     _y_dict[_y] = list()
-                    drpy_2_data_statistic_dict[_d][_r][_p][_y] = _s_data
-    #-----------------------------------------------------#
-    return drpy_2_data_statistic_dict
-
-
 
 #-----------------------------#
 drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = TTBX.get_all_class_seperated_result(result_list)
@@ -1090,12 +1055,12 @@ drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = TTBX.g
 # Get (distance) statistic of each data in the data subset of each class
 #-----------------------------#
 # drpy to drpy
-drpy_2_depth_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0)
-drpy_2_roll_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="roll", data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0)
-drpy_2_pitch_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="pitch", data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0)
-drpy_2_yaw_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="yaw", data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0)
+drpy_2_depth_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name="distance", data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0)
+drpy_2_roll_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name="roll", data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0)
+drpy_2_pitch_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name="pitch", data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0)
+drpy_2_yaw_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name="yaw", data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0)
 # drpy to other values
-drpy_2_LM_GT_error_average_normalize_statistic_dict = get_drpy_statistic(drpy_class_dict, class_name="LM_GT_error_average_normalize", data_est_key="LM_GT_error_average_normalize", data_GT_key=None, unit="px_m", unit_scale=1.0)
+drpy_2_LM_GT_error_average_normalize_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name="LM_GT_error_average_normalize", data_est_key="LM_GT_error_average_normalize", data_GT_key=None, unit="px_m", unit_scale=1.0)
 #-----------------------------#
 
 
