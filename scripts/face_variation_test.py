@@ -1065,22 +1065,6 @@ joblib.dump(workstate, workstate_path_str)
 
 
 
-#-------------------------------------------------------#
-
-
-
-def _class_order_func(e):
-    '''
-    For sorting the key of class
-    Note: "all" class is placed specifically at the top.
-    '''
-    # return ( (-1) if (e == "all") else int(e))
-    return ( float("-inf") if (e == "all") else float(e))
-
-
-#-------------------------------------------------------#
-
-
 
 
 
