@@ -17,7 +17,8 @@ import PNP_SOLVER_LIB as PNPS
 # Landmark (LM) dataset
 data_rool_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/'
 # data_version = 'M1_test_EIF2_alexander_20210707'
-data_version = 'M1_test_QEIF_alexander_20210709'
+# data_version = 'M1_test_QEIF_alexander_20210709'
+data_version = 'M1_test_QEIF_alexander_20210714'
 #
 data_dir_str = data_rool_str + data_version + '/results/'
 data_file_str = data_version + ".txt" # Fake the file name for storing the post analysis results
@@ -270,10 +271,17 @@ for _idx, data_file_name in enumerate(data_file_name_list):
             # print(_line, end='')
             _line_split = _line.split()
             # print(_line_split)
-            _result_list.append( float(_line_split[1]) )
+            try:
+                _result_list.append( float(_line_split[1]) )
+            except:
+                pass
             _line = _f.readline()
     #--------------------------#
     print(_result_list)
+
+    # No face detection result, pass
+    if len(_result_list) <= 1:
+        continue
 
     data_id_dict = dict()
     # File info
