@@ -954,7 +954,9 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
 
 
 
-# Get simple statistic data
+# Get overall statistic data
+# This part is simply for logging
+#-----------------------------------#
 print("\n")
 # TTBX.get_statistic_of_result(result_list)
 print("Distance to depth:")
@@ -965,6 +967,7 @@ print("Distance to pitch:")
 TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=True)
 print("Distance to yaw:")
 TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=True)
+#-----------------------------------#
 
 
 # Write to result CSV file
@@ -1049,10 +1052,6 @@ drpy_2_yaw_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name=
 # drpy to other values
 drpy_2_LM_GT_error_average_normalize_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name="LM_GT_error_average_normalize", data_est_key="LM_GT_error_average_normalize", data_GT_key=None, unit="px_m", unit_scale=1.0)
 #-----------------------------#
-
-
-
-
 
 
 #---------------------------------------------------#

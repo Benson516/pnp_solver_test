@@ -1068,7 +1068,9 @@ joblib.dump(workstate, workstate_path_str)
 
 
 
-# Get simple statistic data
+# Get overall statistic data
+# This part is simply for logging
+#-----------------------------------#
 print("\n")
 # TTBX.get_statistic_of_result(result_list)
 print("Distance to depth:")
@@ -1079,6 +1081,7 @@ print("Distance to pitch:")
 TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=True)
 print("Distance to yaw:")
 TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=True)
+#-----------------------------------#
 
 
 # Write to result CSV file
@@ -1147,6 +1150,7 @@ TTBX.write_statistic_to_csv(class_statistic_dict, statistic_csv_path, class_name
 
 
 
+
 #-----------------------------#
 drpy_class_dict, d_label_list, r_label_list, p_label_list, y_label_list = TTBX.get_all_class_seperated_result(result_list)
 # print(drpy_class_dict)
@@ -1162,10 +1166,6 @@ drpy_2_yaw_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name=
 # drpy to other values
 drpy_2_LM_GT_error_average_normalize_statistic_dict = TTBX.get_drpy_statistic(drpy_class_dict, class_name="LM_GT_error_average_normalize", data_est_key="LM_GT_error_average_normalize", data_GT_key=None, unit="px_m", unit_scale=1.0)
 #-----------------------------#
-
-
-
-
 
 
 #---------------------------------------------------#
@@ -1264,6 +1264,7 @@ unit = "px_m"
 matric_label = "%s(%s)" % (matric_name, unit)
 statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
 TTBX.write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
 
 
 
