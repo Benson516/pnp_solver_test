@@ -1003,22 +1003,6 @@ def get_classified_result(result_list, class_name='distance', include_all=True, 
     return class_dict
 
 
-def write_result_to_csv(result_list, csv_path):
-    '''
-    '''
-    with open(csv_path, mode='w') as _csv_f:
-        fieldnames = result_list[0].keys()
-        # fieldnames = ["idx", "file_name", "drpy", "t3_est", "roll_est", "pitch_est", "yaw_est", "res_norm", "distance_GT", "roll_GT", "pitch_GT", "yaw_GT"]
-        # fieldnames = ["idx", "file_name", "drpy", "t3_est", "distance_GT", "roll_est", "roll_GT", "pitch_est", "pitch_GT", "yaw_est", "yaw_GT", "res_norm"]
-        # fieldnames = ["idx", "file_name", "drpy", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
-        # fieldnames = ["idx", "file_name", "drpy", "distance_GT", "t3_est", "depth_err", "roll_GT", "roll_est", "roll_err", "pitch_GT", "pitch_est", "pitch_err", "yaw_GT", "yaw_est", "yaw_err", "res_norm"]
-        _csv_w = csv.DictWriter(_csv_f, fieldnames=fieldnames, extrasaction='ignore')
-
-        _csv_w.writeheader()
-        _csv_w.writerows(result_list)
-        # for _e_dict in result_list:
-        #     _csv_w.writerow(_e_dict)
-        print("\n*** Wrote the results to the csv file:\n\t[%s]\n" % csv_path)
 
 
 
@@ -1052,7 +1036,7 @@ get_statistic_of_result(result_list, class_name='all', class_label='all', data_e
 
 # Write to result CSV file
 csv_path = result_csv_dir_str + result_csv_file_prefix_str + data_file_str[:-4] + '.csv'
-write_result_to_csv(result_list, csv_path)
+TTBX.write_result_to_csv(result_list, csv_path)
 
 
 
