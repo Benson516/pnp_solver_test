@@ -1066,54 +1066,6 @@ joblib.dump(workstate, workstate_path_str)
 
 
 #-------------------------------------------------------#
-def get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="m", unit_scale=1.0, verbose=True):
-    '''
-    If data_GT_key is None, we calculate the statistic property of that value;
-    whereas if the data_GT_key is given, we calculate the statistic of the error.
-    '''
-    n_data = len(result_list)
-    if n_data == 0:
-        return None
-    data_est_vec = np.vstack( [ _d[ data_est_key ] for _d in result_list] )
-    if data_GT_key is not None:
-        data_GT_vec = np.vstack( [ _d[ data_GT_key ] for _d in result_list] )
-        _np_data_ratio_vec = data_est_vec / data_GT_vec
-        _np_data_error_vec = data_est_vec - data_GT_vec
-    else: # We just want to get the statistic of the value itself instead of the statistic of the error
-        _np_data_ratio_vec = data_est_vec
-        _np_data_error_vec = data_est_vec
-
-    ratio_mean = np.average(_np_data_ratio_vec)
-    error_mean = np.average(_np_data_error_vec)
-    error_variance = (np.linalg.norm( (_np_data_error_vec - error_mean), ord=2)**2)  / (_np_data_error_vec.shape[0])
-    error_stddev = error_variance**0.5
-    MAE_2_GT = np.linalg.norm(_np_data_error_vec, ord=1)/(_np_data_error_vec.shape[0])
-    MAE_2_mean = np.linalg.norm((_np_data_error_vec - error_mean), ord=1)/(_np_data_error_vec.shape[0])
-    max_dev = np.linalg.norm((_np_data_error_vec - error_mean), ord=float('inf'))
-    #
-    if verbose:
-        print("class: [%s], class_label: [%s], n_data=[%d]" % (class_name, class_label, n_data) )
-        print("ratio_mean (estimated/actual) = %f" % ratio_mean)
-        print("error_mean = %f %s" % (error_mean*unit_scale, unit))
-        print("error_stddev = %f %s" % (error_stddev*unit_scale, unit))
-        print("max_dev = %f %s" % (max_dev*unit_scale, unit))
-        print("MAE_2_GT = %f %s" % (MAE_2_GT*unit_scale, unit))
-        print("MAE_2_mean = %f %s" % (MAE_2_mean*unit_scale, unit))
-        print("\n")
-    # return (ratio_mean, error_mean, error_stddev, MAE_2_GT, MAE_2_mean)
-
-    # Capsulate the statistic results as a dict, which contains all the matric names.
-    statis_dict = dict()
-    statis_dict['n_data'] = n_data
-    statis_dict['m_ratio'] = ratio_mean
-    statis_dict['mean(%s)' % unit] = error_mean * unit_scale
-    statis_dict['stddev(%s)' % unit] = error_stddev * unit_scale
-    statis_dict['max_dev(%s)' % unit] = max_dev * unit_scale
-    statis_dict['MAE_2_GT(%s)' % unit] = MAE_2_GT * unit_scale
-    statis_dict['MAE_2_mean(%s)' % unit] = MAE_2_mean * unit_scale
-    return statis_dict
-
-
 
 
 
@@ -1134,15 +1086,15 @@ def _class_order_func(e):
 
 # Get simple statistic data
 print("\n")
-# get_statistic_of_result(result_list)
+# TTBX.get_statistic_of_result(result_list)
 print("Distance to depth:")
-get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=True)
+TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=True)
 print("Distance to yaw:")
-get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0, verbose=True)
+TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0, verbose=True)
 print("Distance to pitch:")
-get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=True)
+TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=True)
 print("Distance to yaw:")
-get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=True)
+TTBX.get_statistic_of_result(result_list, class_name='all', class_label='all', data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=True)
 
 
 # Write to result CSV file
@@ -1176,10 +1128,10 @@ dist_2_roll_statistic_dict = dict()
 dist_2_pitch_statistic_dict = dict()
 dist_2_yaw_statistic_dict = dict()
 for _label in distance_class_dict:
-    dist_2_depth_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=False)
-    dist_2_roll_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0, verbose=False)
-    dist_2_pitch_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=False)
-    dist_2_yaw_statistic_dict[_label] = get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=False)
+    dist_2_depth_statistic_dict[_label] = TTBX.get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="t3_est", data_GT_key="distance_GT", unit="cm", unit_scale=100.0, verbose=False)
+    dist_2_roll_statistic_dict[_label] = TTBX.get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="roll_est", data_GT_key="roll_GT", unit="deg.", unit_scale=1.0, verbose=False)
+    dist_2_pitch_statistic_dict[_label] = TTBX.get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="pitch_est", data_GT_key="pitch_GT", unit="deg.", unit_scale=1.0, verbose=False)
+    dist_2_yaw_statistic_dict[_label] = TTBX.get_statistic_of_result(distance_class_dict[_label], class_name="distance", class_label=_label, data_est_key="yaw_est", data_GT_key="yaw_GT", unit="deg.", unit_scale=1.0, verbose=False)
 #-----------------------------------------------------#
 
 
@@ -1292,7 +1244,7 @@ def get_drpy_statistic( drpy_class_dict, class_name="distance", data_est_key="t3
                 for _y in drpy_class_dict[_d][_r][_p]:
                     _result_list = drpy_class_dict[_d][_r][_p][_y]
                     # print(_result_list)
-                    _s_data = get_statistic_of_result(_result_list, class_name=class_name, class_label='', data_est_key=data_est_key, data_GT_key=data_GT_key, unit=unit, unit_scale=unit_scale, verbose=False)
+                    _s_data = TTBX.get_statistic_of_result(_result_list, class_name=class_name, class_label='', data_est_key=data_est_key, data_GT_key=data_GT_key, unit=unit, unit_scale=unit_scale, verbose=False)
                     # print(_s_data)
                     # d
                     _d_dict = drpy_2_data_statistic_dict
