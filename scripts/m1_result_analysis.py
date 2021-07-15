@@ -373,7 +373,7 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
 # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
 #
-# point_3d_dict["face_c"] = solving_center_point(
+# point_3d_dict["face_c"] = TTBX.solving_center_point(
 #                         point_3d_dict["eye_r_97"],
 #                         point_3d_dict["eye_l_96"],
 #                         point_3d_dict["mouse_l_76"],
@@ -400,7 +400,7 @@ pattern_scale_list.append(pattern_scale)
 # # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
 # # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
 # #
-# # point_3d_dict["face_c"] = solving_center_point(
+# # point_3d_dict["face_c"] = TTBX.solving_center_point(
 # #                         point_3d_dict["eye_r_97"],
 # #                         point_3d_dict["eye_l_96"],
 # #                         point_3d_dict["mouse_l_76"],

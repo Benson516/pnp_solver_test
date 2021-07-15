@@ -298,33 +298,7 @@ for _idx in range(len(data_str_list_list)):
 # print(data_list[0])
 #-------------------------------------------------------#
 
-def solving_center_point(p1,p2,p3,p4):
-    '''
-    p1   p2
-       \/
-       pc
-       /\
-    p4   p3
-    '''
-    # Transform to 2D arrays
-    _n = np.array(p1).size
-    _p1_shape = np.array(p1).shape
-    _p1 = np.array(p1).reshape( (_n,1) )
-    _p2 = np.array(p2).reshape( (_n,1) )
-    _p3 = np.array(p3).reshape( (_n,1) )
-    _p4 = np.array(p4).reshape( (_n,1) )
-    #
-    _d13 = _p3 - _p1
-    _d24 = _p4 - _p2
-    _A = np.hstack([_d13, _d24])
-    _b = _p2 - _p1
-    _uv = np.linalg.pinv(_A) @ _b
-    _pc = _p1 + _uv[0,0] * _d13
-    # reshape
-    pc = _pc.reshape( _p1_shape )
-    if type(p1) == type(list()):
-        pc = list(pc)
-    return pc
+
 
 # ============= Start testing ================
 #-------------------------------------------------------#
@@ -367,7 +341,7 @@ point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
 # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
 # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
 #
-# point_3d_dict["face_c"] = solving_center_point(
+# point_3d_dict["face_c"] = TTBX.solving_center_point(
 #                         point_3d_dict["eye_r_97"],
 #                         point_3d_dict["eye_l_96"],
 #                         point_3d_dict["mouse_l_76"],
@@ -394,7 +368,7 @@ pattern_scale_list.append(pattern_scale)
 # # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
 # # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
 # #
-# # point_3d_dict["face_c"] = solving_center_point(
+# # point_3d_dict["face_c"] = TTBX.solving_center_point(
 # #                         point_3d_dict["eye_r_97"],
 # #                         point_3d_dict["eye_l_96"],
 # #                         point_3d_dict["mouse_l_76"],
@@ -462,7 +436,7 @@ for _idx in range(len(data_list)):
     # np_point_image_dict["brow_ir_42"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[42], mirrored=is_mirrored_image)
     # np_point_image_dict["brow_cr_44"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[44], mirrored=is_mirrored_image)
     #
-    # np_point_image_dict["face_c"] = TTBX.convert_pixel_to_homo(      solving_center_point(
+    # np_point_image_dict["face_c"] = TTBX.convert_pixel_to_homo(      TTBX.solving_center_point(
     #                                                             LM_pixel_data_matrix[97],
     #                                                             LM_pixel_data_matrix[96],
     #                                                             LM_pixel_data_matrix[76],
