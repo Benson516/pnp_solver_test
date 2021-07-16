@@ -676,14 +676,27 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
         print("!! Error occured while loading the image !!\n")
         # time.sleep(3.0)
         # continue
+        # Fake one
+        #---------------------#
         _scale = 3
         _width = 320 * _scale
         _height = 240 * _scale
         _intensity = 200
         _img = np.ones( (_height, _width, 3), dtype=np.uint8) * _intensity
+        #---------------------#
+    # Resize the image
+    #----------------------#
+    _desired_img_display_width = 960 # 2048
+    if (_img.shape[1] != _desired_img_display_width):
+        _aspext_ratio_img_in = float(_img.shape[1]) / float(_img.shape[0]) # width / height
+        _desired_dim = ( int(_desired_img_display_width), int(_desired_img_display_width / _aspext_ratio_img_in) )
+        _img = cv2.resize(_img, _desired_dim, interpolation=cv2.INTER_AREA) # Resize 1.5 times
+    #----------------------#
     _img_shape = _img.shape
     print("_img.shape = %s" % str(_img_shape))
-    LM_2_image_scale = _img_shape[1] / 320.0
+    LM_2_image_scale = _img_shape[1] / 320.0 # Note: 320x240 is the image scale used by LM
+    #--------------------------------------------#
+
 
     # Flip the image if needed
     #----------------------------------#
