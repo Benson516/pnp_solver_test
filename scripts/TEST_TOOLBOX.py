@@ -110,9 +110,10 @@ def plot_LMs_and_axies(
             image_result_unflipped_dir_str, image_result_dir_str,
             pnp_solver,
             result_idx_dict,
-            np_point_image_dict,
-            np_point_image_dict_reproject_GT_ori_golden_patern,
-            np_point_image_dict_reproject,
+            np_homo_point_LM_dict,
+            np_homo_point_GT_golden_dict,
+            np_homo_point_reproject_golden_dict,
+            is_ploting_LMs=True,
             is_mirrored_image=False,
             LM_img_width=320,
             is_showing_image=True):
@@ -137,7 +138,7 @@ def plot_LMs_and_axies(
     - yaw_GT
     - yaw_est
     - yaw_err
-    
+
     '''
     # Get the file name of the image
     #--------------------------------------------#
@@ -236,21 +237,24 @@ def plot_LMs_and_axies(
     # Landmarks
     #----------------------------------#
     # [[u,v,1]].T
-    for _k in np_point_image_dict:
-        # Landmarks
-        _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 3
-        _color = _color_BLUE # BGR
-        # _color = _color_RED # BGR
-        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    for _k in np_homo_point_LM_dict:
+        #
+        if is_ploting_LMs:
+            # Landmarks
+            _center_pixel = (np_homo_point_LM_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+            _radius = 3
+            _color = _color_BLUE # BGR
+            # _color = _color_RED # BGR
+            cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        #
         # Reprojections of golden pattern onto image using grund truth pose
-        _center_pixel = (np_point_image_dict_reproject_GT_ori_golden_patern[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _center_pixel = (np_homo_point_GT_golden_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
         _radius = 2
         _color = (127, 127, 0) # BGR
         # _color = _color_RED # BGR
         cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
         # Reprojections of the golden pattern onto the image using estimated pose
-        _center_pixel = (np_point_image_dict_reproject[_k][0:2,0] * LM_2_image_scale).astype('int')
+        _center_pixel = (np_homo_point_reproject_golden_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
         _radius = 1
         _color = _color_RED # BGR
         # _color = _color_BLUE # BGR

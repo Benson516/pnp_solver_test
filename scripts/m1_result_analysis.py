@@ -670,171 +670,194 @@ for _idx in range(len(data_list)):
     if not (is_showing_image or is_storing_case_image):
         continue
 
+
     # Get the file name of the image
     #--------------------------------------------#
     _file_name = data_list[_idx]['file_name']
-    # _image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
-    _image_file_name_str = _file_name[:-4] + '.jpg'
-    print('image file name: [%s]' % _image_file_name_str)
-    _image_ori_path_str = image_dir_str + _image_file_name_str
-    _image_result_unflipped_path_str = image_result_unflipped_dir_str + _image_file_name_str
-    _image_result_path_str = image_result_dir_str + _image_file_name_str
+    image_file_name_str = _file_name[:-4] + '.jpg'
+    print('image file name: [%s]' % image_file_name_str)
     #--------------------------------------------#
 
-    # Load the original image
-    #--------------------------------------------#
-    _img = cv2.imread(_image_ori_path_str)
-    if _img is None:
-        print("!! Error occured while loading the image !!\n")
-        # time.sleep(3.0)
-        # continue
-        # Fake one
-        #---------------------#
-        _scale = 3
-        _width = 320 * _scale
-        _height = 240 * _scale
-        _intensity = 200
-        _img = np.ones( (_height, _width, 3), dtype=np.uint8) * _intensity
-        #---------------------#
-    # Resize the image
-    #----------------------#
-    _desired_img_display_width = 960 # 2048
-    if (_img.shape[1] != _desired_img_display_width):
-        _aspext_ratio_img_in = float(_img.shape[1]) / float(_img.shape[0]) # width / height
-        _desired_dim = ( int(_desired_img_display_width), int(_desired_img_display_width / _aspext_ratio_img_in) )
-        _img = cv2.resize(_img, _desired_dim, interpolation=cv2.INTER_AREA) # Resize 1.5 times
-    #----------------------#
-    _img_shape = _img.shape
-    print("_img.shape = %s" % str(_img_shape))
-    LM_2_image_scale = _img_shape[1] / 320.0 # Note: 320x240 is the image scale used by LM
-    #--------------------------------------------#
+    TTBX.plot_LMs_and_axies(
+                image_file_name_str,
+                image_dir_str,
+                image_result_unflipped_dir_str, image_result_dir_str,
+                pnp_solver,
+                _result_idx_dict,
+                np_point_image_dict,
+                np_point_image_dict_reproject_GT_ori_golden_patern,
+                np_point_image_dict_reproject,
+                is_mirrored_image=is_mirrored_image,
+                is_ploting_LMs=False,
+                LM_img_width=320,
+                is_showing_image=is_showing_image)
 
 
-    # Flip the image if needed
-    #----------------------------------#
-    if is_mirrored_image:
-        _img_preprocessed = cv2.flip(_img, 1)
-    else:
-        _img_preprocessed = _img
-    #----------------------------------#
-
-    # Ploting LMs onto the image
-    _img_LM = copy.deepcopy(_img_preprocessed)
-    # Colors
-    _color_RED   = (0, 0, 255)
-    _color_GREEN = (0, 255, 0)
-    _color_BLUE  = (255, 0, 0)
-    # _color_RED   = np.array((0, 0, 255))
-    # _color_GREEN = np.array((0, 255, 0))
-    # _color_BLUE  = np.array((255, 0, 0))
-
-
-    # Ploting axies
-    #-----------------------------------#
-    # Grund truth axes
-    vector_scale = 0.2
-    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_GT, np_t_GT_est, scale=vector_scale) # Note: use the estimated t since we don't have the grund truth.
-    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
-    _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
-    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x)).astype('int')
-    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y)).astype('int')
-    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z)).astype('int')
-    # Draw lines
-    _line_width = 2
-    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0,0,127), _line_width)
-    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, (0,127,0), _line_width)
-    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, (127,0,0), _line_width)
-
-    # Estimated axes
-    vector_scale = 0.2
-    uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_est, np_t_est, scale=vector_scale)
-    print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
-    _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
-    _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x)).astype('int')
-    _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y)).astype('int')
-    _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z)).astype('int')
-    # Draw lines
-    _line_width = 1
-    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0, 0, 180), _line_width)
-    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, (0, 180, 0), _line_width)
-    cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, (180, 0, 0), _line_width)
-    #-----------------------------------#
-
-    # Landmarks
-    #----------------------------------#
-    # [[u,v,1]].T
-    for _k in np_point_image_dict:
-        # # Landmarks
-        # _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
-        # _radius = 3
-        # _color = _color_BLUE # BGR
-        # # _color = _color_RED # BGR
-        # cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
-        # Reprojections of golden pattern onto image using grund truth pose
-        _center_pixel = (np_point_image_dict_reproject_GT_ori_golden_patern[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 2
-        _color = (127, 127, 0) # BGR
-        # _color = _color_RED # BGR
-        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
-        # Reprojections of the golden pattern onto the image using estimated pose
-        _center_pixel = (np_point_image_dict_reproject[_k][0:2,0] * LM_2_image_scale).astype('int')
-        _radius = 1
-        _color = _color_RED # BGR
-        # _color = _color_BLUE # BGR
-        cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
-    #----------------------------------#
-
-    # Text
-    #----------------------------------#
-    font = cv2.FONT_HERSHEY_COMPLEX_SMALL # = 5
-    fontScale = 1.5
-    thickness = 2
-    # _text = "Hello world! 012345"
-    _est_text = "drpy_est = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["t3_est"]*100.0,
-                                            _result_idx_dict["roll_est"],
-                                            _result_idx_dict["pitch_est"],
-                                            _result_idx_dict["yaw_est"])
-    _GT_text = "drpy_GT = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["distance_GT"]*100.0,
-                                            _result_idx_dict["roll_GT"],
-                                            _result_idx_dict["pitch_GT"],
-                                            _result_idx_dict["yaw_GT"])
-    _err_text = "drpy_est = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["depth_err"]*100.0,
-                                            _result_idx_dict["roll_err"],
-                                            _result_idx_dict["pitch_err"],
-                                            _result_idx_dict["yaw_err"])
-    cv2.putText(_img_LM, _est_text, (0, 50), font, fontScale, (200, 128, 0), thickness, cv2.LINE_AA)
-    cv2.putText(_img_LM, _GT_text, (0, 80), font, fontScale, (0, 100, 180), thickness, cv2.LINE_AA)
-    cv2.putText(_img_LM, _err_text, (0, 110), font, fontScale, (0, 0, 150), thickness, cv2.LINE_AA)
-    #----------------------------------#
-
-    # Dtermine the final image
-    #-------------------------#
-    # _img_result = _img
-    # _img_result = _img_preprocessed
-    _img_result = _img_LM
-    #-------------------------#
-
-    # Flip the result image if needed
-    #----------------------------------#
-    if is_mirrored_image:
-        _img_result_flipped = cv2.flip(_img_result, 1)
-    else:
-        _img_result_flipped = _img_result
-    #----------------------------------#
-
-    # Save the resulted image
-    #----------------------------------#
-    cv2.imwrite(_image_result_unflipped_path_str, _img_result )
-    cv2.imwrite(_image_result_path_str, _img_result_flipped )
-    #----------------------------------#
-
-    # Displaying the image
-    #----------------------------------#
-    if is_showing_image:
-        cv2.imshow(_image_file_name_str, _img_result)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-    #----------------------------------#
+    # # Get the file name of the image
+    # #--------------------------------------------#
+    # _file_name = data_list[_idx]['file_name']
+    # # _image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
+    # _image_file_name_str = _file_name[:-4] + '.jpg'
+    # print('image file name: [%s]' % _image_file_name_str)
+    # _image_ori_path_str = image_dir_str + _image_file_name_str
+    # _image_result_unflipped_path_str = image_result_unflipped_dir_str + _image_file_name_str
+    # _image_result_path_str = image_result_dir_str + _image_file_name_str
+    # #--------------------------------------------#
+    #
+    # # Load the original image
+    # #--------------------------------------------#
+    # _img = cv2.imread(_image_ori_path_str)
+    # if _img is None:
+    #     print("!! Error occured while loading the image !!\n")
+    #     # time.sleep(3.0)
+    #     # continue
+    #     # Fake one
+    #     #---------------------#
+    #     _scale = 3
+    #     _width = 320 * _scale
+    #     _height = 240 * _scale
+    #     _intensity = 200
+    #     _img = np.ones( (_height, _width, 3), dtype=np.uint8) * _intensity
+    #     #---------------------#
+    # # Resize the image
+    # #----------------------#
+    # _desired_img_display_width = 960 # 2048
+    # if (_img.shape[1] != _desired_img_display_width):
+    #     _aspext_ratio_img_in = float(_img.shape[1]) / float(_img.shape[0]) # width / height
+    #     _desired_dim = ( int(_desired_img_display_width), int(_desired_img_display_width / _aspext_ratio_img_in) )
+    #     _img = cv2.resize(_img, _desired_dim, interpolation=cv2.INTER_AREA) # Resize 1.5 times
+    # #----------------------#
+    # _img_shape = _img.shape
+    # print("_img.shape = %s" % str(_img_shape))
+    # LM_2_image_scale = _img_shape[1] / 320.0 # Note: 320x240 is the image scale used by LM
+    # #--------------------------------------------#
+    #
+    #
+    # # Flip the image if needed
+    # #----------------------------------#
+    # if is_mirrored_image:
+    #     _img_preprocessed = cv2.flip(_img, 1)
+    # else:
+    #     _img_preprocessed = _img
+    # #----------------------------------#
+    #
+    # # Ploting LMs onto the image
+    # _img_LM = copy.deepcopy(_img_preprocessed)
+    # # Colors
+    # _color_RED   = (0, 0, 255)
+    # _color_GREEN = (0, 255, 0)
+    # _color_BLUE  = (255, 0, 0)
+    # # _color_RED   = np.array((0, 0, 255))
+    # # _color_GREEN = np.array((0, 255, 0))
+    # # _color_BLUE  = np.array((255, 0, 0))
+    #
+    #
+    # # Ploting axies
+    # #-----------------------------------#
+    # # Grund truth axes
+    # vector_scale = 0.2
+    # uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_GT, np_t_GT_est, scale=vector_scale) # Note: use the estimated t since we don't have the grund truth.
+    # print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
+    # _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
+    # _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x)).astype('int')
+    # _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y)).astype('int')
+    # _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z)).astype('int')
+    # # Draw lines
+    # _line_width = 2
+    # cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0,0,127), _line_width)
+    # cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, (0,127,0), _line_width)
+    # cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, (127,0,0), _line_width)
+    #
+    # # Estimated axes
+    # vector_scale = 0.2
+    # uv_o, dir_x, dir_y, dir_z = pnp_solver.perspective_projection_obj_axis(np_R_est, np_t_est, scale=vector_scale)
+    # print("(uv_o, dir_x, dir_y, dir_z) = %s" % str((uv_o, dir_x, dir_y, dir_z)))
+    # _pixel_uv_o = (LM_2_image_scale*uv_o).astype('int')
+    # _pixel_uv_x1 = (LM_2_image_scale*(uv_o+dir_x)).astype('int')
+    # _pixel_uv_y1 = (LM_2_image_scale*(uv_o+dir_y)).astype('int')
+    # _pixel_uv_z1 = (LM_2_image_scale*(uv_o+dir_z)).astype('int')
+    # # Draw lines
+    # _line_width = 1
+    # cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_x1, (0, 0, 180), _line_width)
+    # cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_y1, (0, 180, 0), _line_width)
+    # cv2.line(_img_LM, _pixel_uv_o, _pixel_uv_z1, (180, 0, 0), _line_width)
+    # #-----------------------------------#
+    #
+    # # Landmarks
+    # #----------------------------------#
+    # # [[u,v,1]].T
+    # for _k in np_point_image_dict:
+    #     # # Landmarks
+    #     # _center_pixel = (np_point_image_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+    #     # _radius = 3
+    #     # _color = _color_BLUE # BGR
+    #     # # _color = _color_RED # BGR
+    #     # cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    #     # Reprojections of golden pattern onto image using grund truth pose
+    #     _center_pixel = (np_point_image_dict_reproject_GT_ori_golden_patern[_k][0:2,0] * LM_2_image_scale).astype('int')
+    #     _radius = 2
+    #     _color = (127, 127, 0) # BGR
+    #     # _color = _color_RED # BGR
+    #     cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    #     # Reprojections of the golden pattern onto the image using estimated pose
+    #     _center_pixel = (np_point_image_dict_reproject[_k][0:2,0] * LM_2_image_scale).astype('int')
+    #     _radius = 1
+    #     _color = _color_RED # BGR
+    #     # _color = _color_BLUE # BGR
+    #     cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+    # #----------------------------------#
+    #
+    # # Text
+    # #----------------------------------#
+    # font = cv2.FONT_HERSHEY_COMPLEX_SMALL # = 5
+    # fontScale = 1.5
+    # thickness = 2
+    # # _text = "Hello world! 012345"
+    # _est_text = "drpy_est = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["t3_est"]*100.0,
+    #                                         _result_idx_dict["roll_est"],
+    #                                         _result_idx_dict["pitch_est"],
+    #                                         _result_idx_dict["yaw_est"])
+    # _GT_text = "drpy_GT = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["distance_GT"]*100.0,
+    #                                         _result_idx_dict["roll_GT"],
+    #                                         _result_idx_dict["pitch_GT"],
+    #                                         _result_idx_dict["yaw_GT"])
+    # _err_text = "drpy_est = (%.2f, %.2f, %.2f, %.2f)" % (_result_idx_dict["depth_err"]*100.0,
+    #                                         _result_idx_dict["roll_err"],
+    #                                         _result_idx_dict["pitch_err"],
+    #                                         _result_idx_dict["yaw_err"])
+    # cv2.putText(_img_LM, _est_text, (0, 50), font, fontScale, (200, 128, 0), thickness, cv2.LINE_AA)
+    # cv2.putText(_img_LM, _GT_text, (0, 80), font, fontScale, (0, 100, 180), thickness, cv2.LINE_AA)
+    # cv2.putText(_img_LM, _err_text, (0, 110), font, fontScale, (0, 0, 150), thickness, cv2.LINE_AA)
+    # #----------------------------------#
+    #
+    # # Dtermine the final image
+    # #-------------------------#
+    # # _img_result = _img
+    # # _img_result = _img_preprocessed
+    # _img_result = _img_LM
+    # #-------------------------#
+    #
+    # # Flip the result image if needed
+    # #----------------------------------#
+    # if is_mirrored_image:
+    #     _img_result_flipped = cv2.flip(_img_result, 1)
+    # else:
+    #     _img_result_flipped = _img_result
+    # #----------------------------------#
+    #
+    # # Save the resulted image
+    # #----------------------------------#
+    # cv2.imwrite(_image_result_unflipped_path_str, _img_result )
+    # cv2.imwrite(_image_result_path_str, _img_result_flipped )
+    # #----------------------------------#
+    #
+    # # Displaying the image
+    # #----------------------------------#
+    # if is_showing_image:
+    #     cv2.imshow(_image_file_name_str, _img_result)
+    #     cv2.waitKey(0)
+    #     cv2.destroyAllWindows()
+    # #----------------------------------#
 
     #--------------------------------------------#
 

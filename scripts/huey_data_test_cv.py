@@ -706,6 +706,7 @@ for _idx in range(len(data_list)):
                 np_point_image_dict_reproject_GT_ori_golden_patern,
                 np_point_image_dict_reproject,
                 is_mirrored_image=is_mirrored_image,
+                is_ploting_LMs=True,
                 LM_img_width=320,
                 is_showing_image=is_showing_image)
 
