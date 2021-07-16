@@ -117,7 +117,7 @@ point_3d_dict = dict()
 # Note: the Landmark definition in the pitcture in reversed
 point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
 point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+point_3d_dict["eye_c_51"] = [0.0, 0.0, -0.015]
 point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
 point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
 point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
@@ -470,7 +470,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
     # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
-    
+
 
     # Reprojection errors
     #-----------------------------------------------------------#
@@ -559,7 +559,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     is_storing_case_image = False
     if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
         failed_sample_count += 1
-        if fitting_error > 1.5:
+        if fitting_error > 1.0: # 1.5
             failed_sample_fit_error_count += 1
         # if fitting_error <= 1.5:
             failed_sample_filename_list.append(data_list[_idx]['file_name'])

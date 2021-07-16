@@ -514,7 +514,7 @@ for _idx in range(len(data_list)):
     print("(predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key) = (%f, %f, %s)" % (predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key))
     #-----------------------------------------------------------#
 
-    
+
     #
     print("Result from the solver:\n")
     print("2D points on image (re-projection):")

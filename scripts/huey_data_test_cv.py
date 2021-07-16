@@ -703,8 +703,13 @@ for _idx in range(len(data_list)):
     _img = cv2.imread(_image_ori_path_str)
     if _img is None:
         print("!! Error occured while loading the image !!\n")
-        time.sleep(3.0)
-        continue
+        # time.sleep(3.0)
+        # continue
+        _scale = 3
+        _width = 320 * _scale
+        _height = 240 * _scale
+        _intensity = 200
+        _img = np.ones( (_height, _width, 3), dtype=np.uint8) * _intensity
     _img_shape = _img.shape
     print("_img.shape = %s" % str(_img_shape))
     LM_2_image_scale = _img_shape[1] / 320.0
