@@ -509,54 +509,33 @@ for _idx in range(len(data_list)):
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
     # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
-    #
+
+
+    # Reprojection errors
+    #-----------------------------------------------------------#
     # Calculate the pixel error of the LMs and the ground-truth projection of golden pattern
-    np_LM_GT_error_dict = dict()
-    np_LM_GT_error_norm_dict = dict()
-    LM_GT_error_total = 0.0
-    LM_GT_error_max = 0.0
-    LM_GT_error_max_key = ""
-    for _k in np_point_image_dict:
-        np_LM_GT_error_dict[_k] = np_point_image_dict[_k] - np_point_image_dict_reproject_GT_ori_golden_patern[_k]
-        np_LM_GT_error_norm_dict[_k] = np.linalg.norm( np_LM_GT_error_dict[_k] )
-        LM_GT_error_total += np_LM_GT_error_norm_dict[_k]
-        if np_LM_GT_error_norm_dict[_k] > LM_GT_error_max:
-            LM_GT_error_max = np_LM_GT_error_norm_dict[_k]
-            LM_GT_error_max_key = _k
-    LM_GT_error_average = LM_GT_error_total / len(np_point_image_dict)
+    LM_GT_ed_dict = TTBX.cal_LM_error_distances(np_point_image_dict, np_point_image_dict_reproject_GT_ori_golden_patern)
+    LM_GT_error_average = LM_GT_ed_dict["average_error"]
+    LM_GT_error_max = LM_GT_ed_dict["max_error"]
+    LM_GT_error_max_key = LM_GT_ed_dict["max_error_key"]
     print("(LM_GT_error_average, LM_GT_error_max, LM_GT_error_max_key) = (%f, %f, %s)" % (LM_GT_error_average, LM_GT_error_max, LM_GT_error_max_key))
 
     # Calculate the pixel error of the LMs and the reprojections of golden pattern
-    predict_LM_error_dict = dict()
-    np_predict_LM_error_norm_dict = dict()
-    predict_LM_error_total = 0.0
-    predict_LM_error_max = 0.0
-    predict_LM_error_max_key = ""
-    for _k in np_point_image_dict:
-        predict_LM_error_dict[_k] = np_point_image_dict_reproject[_k] - np_point_image_dict[_k]
-        np_predict_LM_error_norm_dict[_k] = np.linalg.norm( predict_LM_error_dict[_k] )
-        predict_LM_error_total += np_predict_LM_error_norm_dict[_k]
-        if np_predict_LM_error_norm_dict[_k] > predict_LM_error_max:
-            predict_LM_error_max = np_predict_LM_error_norm_dict[_k]
-            predict_LM_error_max_key = _k
-    predict_LM_error_average = predict_LM_error_total / len(np_point_image_dict)
+    predict_LM_ed_dict = TTBX.cal_LM_error_distances(np_point_image_dict_reproject, np_point_image_dict)
+    predict_LM_error_average = predict_LM_ed_dict["average_error"]
+    predict_LM_error_max = predict_LM_ed_dict["max_error"]
+    predict_LM_error_max_key = predict_LM_ed_dict["max_error_key"]
     print("(predict_LM_error_average, predict_LM_error_max, predict_LM_error_max_key) = (%f, %f, %s)" % (predict_LM_error_average, predict_LM_error_max, predict_LM_error_max_key))
 
     # Calculate the pixel error of the LMs and the reprojections of golden pattern
-    predict_GT_error_dict = dict()
-    np_predict_GT_error_norm_dict = dict()
-    predict_GT_error_total = 0.0
-    predict_GT_error_max = 0.0
-    predict_GT_error_max_key = ""
-    for _k in np_point_image_dict:
-        predict_GT_error_dict[_k] = np_point_image_dict_reproject[_k] - np_point_image_dict_reproject_GT_ori_golden_patern[_k]
-        np_predict_GT_error_norm_dict[_k] = np.linalg.norm( predict_GT_error_dict[_k] )
-        predict_GT_error_total += np_predict_GT_error_norm_dict[_k]
-        if np_predict_GT_error_norm_dict[_k] > predict_GT_error_max:
-            predict_GT_error_max = np_predict_GT_error_norm_dict[_k]
-            predict_GT_error_max_key = _k
-    predict_GT_error_average = predict_GT_error_total / len(np_point_image_dict)
+    predict_GT_ed_dict = TTBX.cal_LM_error_distances(np_point_image_dict_reproject, np_point_image_dict_reproject_GT_ori_golden_patern)
+    predict_GT_error_average = predict_GT_ed_dict["average_error"]
+    predict_GT_error_max = predict_GT_ed_dict["max_error"]
+    predict_GT_error_max_key = predict_GT_ed_dict["max_error_key"]
     print("(predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key) = (%f, %f, %s)" % (predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key))
+    #-----------------------------------------------------------#
+
+
     #
     print("Result from the solver:\n")
     print("2D points on image (re-projection):")

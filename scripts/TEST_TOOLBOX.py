@@ -63,6 +63,44 @@ def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_lis
 #----------------------------------------------#
 
 
+# Landmark error distances
+#----------------------------------------------#
+def cal_LM_error_distances(np_point_dict_1, np_point_dict_2):
+    '''
+    Inputs
+    - np_point_dict_1
+    - np_point_dict_2
+    Primary outputs
+    - average_error
+    - max_error
+    - max_error_key
+    Minor outputs
+    - np_error_vec_dict
+    - error_norm_dict
+    '''
+    # Calculate the pixel error of the LMs and the ground-truth projection of golden pattern
+    np_error_vec_dict = dict()
+    error_norm_dict = dict()
+    LM_GT_error_total = 0.0
+    max_error = 0.0
+    max_error_key = ""
+    for _k in np_point_dict_1:
+        np_error_vec_dict[_k] = np_point_dict_1[_k] - np_point_dict_2[_k]
+        error_norm_dict[_k] = np.linalg.norm( np_error_vec_dict[_k] )
+        LM_GT_error_total += error_norm_dict[_k]
+        if error_norm_dict[_k] > max_error:
+            max_error = error_norm_dict[_k]
+            max_error_key = _k
+    average_error = LM_GT_error_total / len(np_point_dict_1)
+    # Output
+    output_dict = dict()
+    output_dict["average_error"] = average_error
+    output_dict["max_error"] = max_error
+    output_dict["max_error_key"] = max_error_key
+    output_dict["np_error_vec_dict"] = np_error_vec_dict
+    output_dict["error_norm_dict"] = error_norm_dict
+    return output_dict
+#----------------------------------------------#
 
 
 # File writing
