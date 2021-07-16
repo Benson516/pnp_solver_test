@@ -693,7 +693,7 @@ for _idx in range(len(data_list)):
     #--------------------------------------------#
     _file_name = data_list[_idx]['file_name']
     image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
-    print('image file name: [%s]' % image_file_name_str)
+    # print('image file name: [%s]' % image_file_name_str)
     #--------------------------------------------#
 
     TTBX.plot_LMs_and_axies(
