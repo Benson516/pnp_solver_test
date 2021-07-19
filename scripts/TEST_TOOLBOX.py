@@ -62,6 +62,64 @@ def check_if_the_sample_passed(drpy_est_list, drpy_GT_list, drpy_error_bound_lis
     return (drpy_pass_list, pass_count)
 #----------------------------------------------#
 
+# Golden patterns
+#----------------------------------------------#
+def get_golden_pattern(pattern_name="Alexander"):
+    '''
+    '''
+    if pattern_name == 'Holly':
+        # Holly
+        # list: [x,y,z]
+        point_3d_dict = dict()
+        # Note: Each axis should exist at least 3 different values to make A_all full rank
+        # Note: the Landmark definition in the pitcture in reversed
+        point_3d_dict["eye_l_96"] = [ 0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_r_97"] = [-0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
+        point_3d_dict["mouse_l_76"] = [ 0.025, 0.060, 0.0] # [ 0.025, 0.085, 0.0]
+        point_3d_dict["mouse_r_82"] = [ -0.025, 0.060, 0.0] # [ -0.025, 0.085, 0.0]
+        point_3d_dict["nose_t_54"] = [ 0.00, 0.039, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+        point_3d_dict["chin_t_16"] = [0.0, 0.098, 0.0]
+        # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+        # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+        # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+        # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+        #
+        # point_3d_dict["face_c"] = TTBX.solving_center_point(
+        #                         point_3d_dict["eye_r_97"],
+        #                         point_3d_dict["eye_l_96"],
+        #                         point_3d_dict["mouse_l_76"],
+        #                         point_3d_dict["mouse_r_82"]
+        #                         )
+        #
+    else: # default
+        # Alexander
+        # list: [x,y,z]
+        point_3d_dict = dict()
+        # Note: Each axis should exist at least 3 different values to make A_all full rank
+        # Note: the Landmark definition in the pitcture in reversed
+        point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_c_51"] = [0.0, 0.0, -0.015]
+        point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
+        point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
+        point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
+        point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
+        # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+        # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+        # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+        # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+        #
+        # point_3d_dict["face_c"] = TTBX.solving_center_point(
+        #                         point_3d_dict["eye_r_97"],
+        #                         point_3d_dict["eye_l_96"],
+        #                         point_3d_dict["mouse_l_76"],
+        #                         point_3d_dict["mouse_r_82"]
+        #                         )
+        #
+    return point_3d_dict
+#----------------------------------------------#
+
 # Ground truth classification
 #----------------------------------------------#
 def get_classification_parameters(drpy_class_format="drpy_expand"):

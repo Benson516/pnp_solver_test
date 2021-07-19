@@ -240,86 +240,32 @@ np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_cam
 # print("np_K_camera_GT = \n%s" % str(np_K_camera_GT))
 print("np_K_camera_est = \n%s" % str(np_K_camera_est))
 
+
+
+
+
+
+
+# Golden patterns
 # 3D landmark point - local coordinate
 #----------------------------------------#
 point_3d_dict_list = list()
 pattern_scale_list = list()
-
-#-------------------------------------------------#
 # Alexander
-# list: [x,y,z]
-point_3d_dict = dict()
-# Note: Each axis should exist at least 3 different values to make A_all full rank
-# Note: the Landmark definition in the pitcture in reversed
-point_3d_dict["eye_l_96"] = [ 0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_r_97"] = [-0.032, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-point_3d_dict["eye_c_51"] = [0.0, 0.0, -0.015]
-point_3d_dict["mouse_l_76"] = [ 0.027, 0.070, 0.0] # [ 0.025, 0.085, 0.0]
-point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
-point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
-# point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
-# point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
-# point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
-# point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
-#
-# point_3d_dict["face_c"] = TTBX.solving_center_point(
-#                         point_3d_dict["eye_r_97"],
-#                         point_3d_dict["eye_l_96"],
-#                         point_3d_dict["mouse_l_76"],
-#                         point_3d_dict["mouse_r_82"]
-#                         )
-# Append to the list
-point_3d_dict_list.append(point_3d_dict)
+point_3d_dict_list.append( TTBX.get_golden_pattern(pattern_name="Alexander") )
 pattern_scale_list.append(pattern_scale)
-#-------------------------------------------------#
 # # Holly
-# # list: [x,y,z]
-# point_3d_dict = dict()
-# # Note: Each axis should exist at least 3 different values to make A_all full rank
-# # Note: the Landmark definition in the pitcture in reversed
-# point_3d_dict["eye_l_96"] = [ 0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-# point_3d_dict["eye_r_97"] = [-0.028, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-# point_3d_dict["eye_c_51"] = [0.0, 0.0, 0.0]
-# point_3d_dict["mouse_l_76"] = [ 0.025, 0.060, 0.0] # [ 0.025, 0.085, 0.0]
-# point_3d_dict["mouse_r_82"] = [ -0.025, 0.060, 0.0] # [ -0.025, 0.085, 0.0]
-# point_3d_dict["nose_t_54"] = [ 0.00, 0.039, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
-# point_3d_dict["chin_t_16"] = [0.0, 0.098, 0.0]
-# # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
-# # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
-# # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
-# # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
-# #
-# # point_3d_dict["face_c"] = TTBX.solving_center_point(
-# #                         point_3d_dict["eye_r_97"],
-# #                         point_3d_dict["eye_l_96"],
-# #                         point_3d_dict["mouse_l_76"],
-# #                         point_3d_dict["mouse_r_82"]
-# #                         )
-# # Append to the list
-# point_3d_dict_list.append(point_3d_dict)
+# point_3d_dict_list.append( TTBX.get_golden_pattern(pattern_name="Holly") )
 # pattern_scale_list.append(pattern_scale)
-#-------------------------------------------------#
-
-
-
-# # Convert to numpy vector, shape: (3,1)
-# # Applying the scale as well
-# np_point_3d_dict = dict()
-# print("-"*35)
-# print("3D points in local coordinate:")
-# print("pattern_scale = %f" % pattern_scale)
-# for _k in point_3d_dict:
-#     np_point_3d_dict[_k] = np.array(point_3d_dict[_k]).reshape((3,1))
-#     np_point_3d_dict[_k] = np_point_3d_dict[_k] * pattern_scale # Multiply the scale
-#     print("%s:\n%s" % (_k, str(np_point_3d_dict[_k])))
-# print("-"*35)
-# # print(np_point_3d_dict)
 #----------------------------------------#
+
 
 # Create the solver
 #----------------------------------------#
 pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict_list, pattern_scale_list=[pattern_scale], verbose=verbose)
+
+
+
 
 
 
