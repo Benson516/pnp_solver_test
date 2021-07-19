@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import time
 import csv
+import os
 #
 import cv2
 #
@@ -31,6 +32,13 @@ image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landma
 result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
+
+# Make directories for storing the results if they do not exist.
+#------------------------------------------------------------------#
+os.makedirs(image_result_unflipped_dir_str, mode=0o777, exist_ok=True)
+os.makedirs(image_result_dir_str, mode=0o777, exist_ok=True)
+os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
+#------------------------------------------------------------------#
 
 # Behavior of this program
 #---------------------------#
