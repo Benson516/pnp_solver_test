@@ -369,6 +369,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     LM_pixel_dict = data_list[_idx]['LM_pixel_dict']
     np_point_image_dict = LM_pixel_dict
 
+
     # Solve
     np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
 
