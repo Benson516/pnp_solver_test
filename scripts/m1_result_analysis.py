@@ -20,7 +20,8 @@ import TEST_TOOLBOX as TTBX
 data_rool_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/'
 # data_version = 'M1_test_EIF2_alexander_20210707'
 # data_version = 'M1_test_QEIF_alexander_20210709'
-data_version = 'M1_test_QEIF_alexander_20210714'
+# data_version = 'M1_test_QEIF_alexander_20210714'
+data_version = 'M1_test_QEIF_alexander_20210719'
 #
 data_dir_str = data_rool_str + data_version + '/results/'
 data_file_str = data_version + ".txt" # Fake the file name for storing the post analysis results
@@ -207,9 +208,21 @@ for _idx, data_file_name in enumerate(data_file_name_list):
     #--------------------------#
     print(_result_list)
 
+    #-------------------------------------#
+    # Format ver.2: (dist, yaw, roll, pitch) or "No ...."
     # No face detection result, pass
     if len(_result_list) <= 1:
         continue
+
+    # Format ver.1: (dist, yaw, roll, pitch)
+    if len(_result_list) == 4:
+        _result_list.insert(0, 1) # insert the FD
+
+    # Format ver.3: (FD, dist, yaw, roll, pitch)
+    if len(_result_list) == 5:
+        if _result_list[0] == 0: # FD == 0
+            continue
+    #-------------------------------------#
 
     data_id_dict = dict()
     # File info
@@ -223,10 +236,10 @@ for _idx, data_file_name in enumerate(data_file_name_list):
     data_id_dict['pitch'] = _raw_pitch_value * _sign_pitch
     data_id_dict['yaw'] = _raw_yaw_value * _sign_yaw
     #
-    data_id_dict['depth_est'] = _result_list[0] * 0.01 # m
-    data_id_dict['roll_est'] = _result_list[2] # deg.
-    data_id_dict['pitch_est'] = _result_list[3] # deg.
-    data_id_dict['yaw_est'] = _result_list[1] # deg.
+    data_id_dict['depth_est'] = _result_list[1] * 0.01 # m
+    data_id_dict['roll_est'] = _result_list[3] # deg.
+    data_id_dict['pitch_est'] = _result_list[4] # deg.
+    data_id_dict['yaw_est'] = _result_list[2] # deg.
 
     # Classify ground truth data! (drpy class)
     #----------------------------------------------#
