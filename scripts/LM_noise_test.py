@@ -137,16 +137,16 @@ pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict_list, pattern_scale_
 
 
 
-# Generating random perturbations
+# Generating random perturbations for all test
 #-------------------------------------#
 # Random generator
 random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 300
-random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), n_noise) # shape = (n_noise, 2)
-
+n_noise = 300 # The number of noise pattern for different sameples
+n_point_to_perturb = len(point_3d_dict_list) - 1
+LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
 #-------------------------------------#
 
 
