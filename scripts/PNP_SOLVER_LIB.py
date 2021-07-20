@@ -4498,7 +4498,7 @@ class PNP_SOLVER(object):
         '''
         return (R_in @ point_3D + t_in)
 
-    def perspective_projection(self, np_point_3d, np_K_camera, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=True):
+    def perspective_projection(self, np_point_3d, np_K_camera, np_R, np_t, is_quantized=False, quantize_q=1.0, is_returning_homogeneous_vec=True):
         '''
         input:
         - np_point_3d: [[x,y,z]].T
@@ -4517,7 +4517,7 @@ class PNP_SOLVER(object):
         projection_no_q = _ray/abs(_ray[2,0]) # Incase that the point is behind the camera
         # Quantize
         if is_quantized:
-            np_point_image = np.around(projection_no_q) # with quantization
+            np_point_image = np.around(projection_no_q/quantize_q)*quantize_q # with quantization
         else:
             np_point_image = projection_no_q # no quantization
         if is_returning_homogeneous_vec:
