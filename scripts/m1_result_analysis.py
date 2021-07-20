@@ -49,8 +49,8 @@ os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
 
 # Behavior of this program
 #---------------------------#
-is_run_through_all_data = True
-# is_run_through_all_data = False
+# is_run_through_all_data = True
+is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -394,6 +394,19 @@ for _idx in range(len(data_list)):
     #-----------------------------------------#
 
 
+
+    # Apply criteria
+    #----------------------------------------------#
+    drpy_pass_list, pass_count = TTBX.check_if_the_sample_passed(
+                            (t3_est*100.0, roll_est, pitch_est, yaw_est),
+                            (data_list[_idx]['distance'], data_list[_idx]['roll'], data_list[_idx]['pitch'], data_list[_idx]['yaw']),
+                            (10.0, 10.0, 10.0, 10.0) )
+    print("pass_count = %d  |  drpy_pass_list = %s" % (pass_count, str(drpy_pass_list)))
+    fail_count = len(drpy_pass_list) - pass_count
+    #----------------------------------------------#
+
+
+
     # Reprojections
     np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
     np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
@@ -474,34 +487,6 @@ for _idx in range(len(data_list)):
     print()
     #----------------------------#
 
-    # Claulate the errors
-    #----------------------------#
-    drpy_pass_list, pass_count = TTBX.check_if_the_sample_passed(
-                            (t3_est*100.0, roll_est, pitch_est, yaw_est),
-                            (data_list[_idx]['distance'], data_list[_idx]['roll'], data_list[_idx]['pitch'], data_list[_idx]['yaw']),
-                            (10.0, 10.0, 10.0, 10.0) )
-    print("pass_count = %d  |  drpy_pass_list = %s" % (pass_count, str(drpy_pass_list)))
-    fail_count = len(drpy_pass_list) - pass_count
-
-    fitting_error = (predict_LM_error_average * distance_GT)
-
-    # Determin if we want to further investigate this sample
-    is_storing_case_image = False
-
-    # # By pass count and fitting error
-    # if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
-    #     failed_sample_count += 1
-    #     if fitting_error > 1.5:
-    #         failed_sample_fit_error_count += 1
-    #     # if fitting_error <= 1.5:
-    #         failed_sample_filename_list.append(data_list[_idx]['file_name'])
-    #         is_storing_case_image = is_storing_fail_case_image
-
-    # By pitch error
-    if not drpy_pass_list[2]: # Pitch
-        failed_sample_filename_list.append(data_list[_idx]['file_name'])
-        is_storing_case_image = is_storing_fail_case_image
-    #----------------------------#
 
 
     # Store the error for statistic
@@ -575,6 +560,33 @@ for _idx in range(len(data_list)):
     #
     result_list.append(_result_idx_dict)
     #----------------------------#
+
+
+
+
+    # Determine if the case should be stored for further inspection
+    #----------------------------------------------#
+    fitting_error = _result_idx_dict["predict_LM_error_average_normalize"]
+
+    # Determin if we want to further investigate this sample
+    is_storing_case_image = False
+
+    # # By pass count and fitting error
+    # if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
+    #     failed_sample_count += 1
+    #     if fitting_error > 1.5:
+    #         failed_sample_fit_error_count += 1
+    #     # if fitting_error <= 1.5:
+    #         failed_sample_filename_list.append(data_list[_idx]['file_name'])
+    #         is_storing_case_image = is_storing_fail_case_image
+
+    # By pitch error
+    if not drpy_pass_list[2]: # Pitch
+        failed_sample_filename_list.append(data_list[_idx]['file_name'])
+        is_storing_case_image = is_storing_fail_case_image
+    #----------------------------------------------#
+
+
 
 
     # Image Display
