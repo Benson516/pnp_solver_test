@@ -16,7 +16,7 @@ from signal import signal, SIGINT
 #---------------------------#
 # Landmark (LM) dataset
 data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'random.txt'
+data_file_str = 'LM_noise.txt'
 #---------------------------#
 # Image of Alexander
 # Original image
@@ -40,51 +40,19 @@ os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
 
 # Behavior of this program
 #---------------------------#
-is_stress_test = True
-# is_stress_test = False
+
 
 # Data generation
-# is_random_pose = True
-is_random_pose = False
-#
 is_quantized = True
 # is_quantized = False
 
-# stop_at_fail_cases = True
-stop_at_fail_cases = False
+#
+# verbose = True
+verbose = False
 
-#
-# DATA_COUNT = 3
-# DATA_COUNT = 1000
-DATA_COUNT = 10000 # 1000
-#
-verbose = True
-# verbose = False
-# Image display
-is_showing_image = True
-# is_showing_image = False
-#
-# Fail cases investigation
-is_storing_fail_case_image = True
-# is_storing_fail_case_image = False
-# Note: pass_count >= pass_count_threshold --> passed!!
-pass_count_threshold = 4 # 3 # Note: max=4. If there are less than (not included) pass_count_threshold pass items, store the image
-#
-# Statistic CSV file
-is_statistic_csv_horizontal = True # class --> (right)
-# is_statistic_csv_horizontal = False # class (|, down)
 #---------------------------#
 
-# Not to flush the screen
-if is_stress_test:
-    is_random_pose = True
-    is_showing_image = False
-    if not stop_at_fail_cases:
-        verbose = False
-if not is_random_pose:
-    DATA_COUNT = 1
 
-#
 
 # Parameters of the data
 #---------------------------#
@@ -112,13 +80,6 @@ print("np_K_camera_GT = \n%s" % str(np_K_camera_GT))
 #----------------------------------------#
 
 
-
-
-
-
-
-
-
 # Golden patterns
 # 3D landmark point - local coordinate
 #----------------------------------------#
@@ -140,10 +101,6 @@ point_3d_dict_GT_list = copy.deepcopy(point_3d_dict_list)
 pattern_scale_GT_list = copy.deepcopy(pattern_scale_list)
 pnp_solver_GT = PNPS.PNP_SOLVER(np_K_camera_GT, point_3d_dict_GT_list, pattern_scale_list=pattern_scale_GT_list, verbose=verbose)
 #----------------------------------------#
-
-
-
-
 
 
 
@@ -170,8 +127,30 @@ pnp_solver = PNPS.PNP_SOLVER(np_K_camera_est, point_3d_dict_list, pattern_scale_
 
 
 
-# ============= Loading Data ================
+
+
+
+
+
+# ============= Generating Data ================
 #----------------------------------------------------------#
+
+
+
+# Generating random perturbations
+#-------------------------------------#
+# Random generator
+random_seed = 42
+# random_seed = None
+random_gen = np.random.default_rng(seed=random_seed)
+#
+n_noise = 300
+random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), n_noise) # shape = (n_noise, 2)
+
+#-------------------------------------#
+
+
+
 
 # Ground truth classification
 #-------------------------------#
@@ -204,10 +183,7 @@ signal(SIGINT, SIGINT_handler)
 # ============= Start testing ================
 # Loop through data
 #-------------------------------------------------------#
-# Random generator
-# random_seed = 42
-random_seed = None
-random_gen = np.random.default_rng(seed=random_seed)
+
 
 # Collect the result
 #--------------------------#
@@ -321,33 +297,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     # Solve
     np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
 
-    # # OpenCV method
-    # #----------------------------------------------------#
-    # _key_list = list(np_point_image_dict.keys())
-    # model_points = np.array([ point_3d_dict[_k] for _k in _key_list] )
-    # image_points = np.array([ np_point_image_dict[_k][0:2,0] for _k in _key_list])
-    # camera_matrix = np_K_camera_est
-    # dist_coeffs = None #  np.zeros((4,1)) # Assuming no lens distortion
-    # # Solve
-    # # flags = cv2.SOLVEPNP_ITERATIVE
-    # flags = cv2.SOLVEPNP_EPNP
-    # inliers = None
-    # # success, rotation_vector, t_est_CV = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=flags )
-    # success, rotation_vector, t_est_CV, inliers = cv2.solvePnPRansac(model_points, image_points, camera_matrix, dist_coeffs, flags=flags, reprojectionError=0.8 )
-    # R_est_CV, _ = cv2.Rodrigues(rotation_vector)
-    # roll_est_CV, yaw_est_CV, pitch_est_CV = pnp_solver.get_Euler_from_rotation_matrix(R_est_CV, verbose=False, is_degree=True)
-    # print()
-    # print("success = %s" % str(success))
-    # print("R_est_CV = \n%s" % str(R_est_CV))
-    # print("(roll_est_CV, yaw_est_CV, pitch_est_CV) \t\t= %s" % str( (roll_est_CV, yaw_est_CV, pitch_est_CV) )  ) # Already in degree
-    # print("t_est_CV = \n%s" % str(t_est_CV))
-    # print("inliers = %s" % str(inliers))
-    # print()
-    # # Overwrite the results
-    # np_R_est, np_t_est, t3_est = R_est_CV, t_est_CV, t_est_CV[2,0]
-    # roll_est, yaw_est, pitch_est = roll_est_CV, yaw_est_CV, pitch_est_CV
-    # res_norm = 0.0 # Not being returned
-    # #----------------------------------------------------#
+
 
     # Note: Euler angles are in degree
     np_R_ca_est = pnp_solver.np_R_c_a_est
