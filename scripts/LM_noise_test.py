@@ -41,6 +41,8 @@ os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
 # Behavior of this program
 #---------------------------#
 
+bbox_resolution = 112.0
+# bbox_resolution = 224.0
 
 # Data generation
 is_quantized = True
@@ -148,6 +150,25 @@ n_noise = 300 # The number of noise pattern for different sameples
 n_point_to_perturb = len(point_3d_dict_list) - 1
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
 #-------------------------------------#
+
+
+# Control variables list
+#-------------------------------------#
+n_ctrl_yaw = 15
+n_ctrl_noise_norm = 15
+#
+ctrl_bound_yaw = (0.0, 50.0) # deg
+ctrl_bound_noise_stddev = (0.0, 5.0) # pixel
+#
+# Generate value list
+test_ctrl_yaw_list = np.linspace(ctrl_bound_yaw[0], ctrl_bound_yaw[1], num=n_ctrl_yaw) # deg.
+test_ctrl_noise_stddev_list = np.linspace(ctrl_bound_noise_stddev[0], ctrl_bound_noise_stddev[1], num=n_ctrl_noise_norm)
+#-------------------------------------#
+
+
+
+
+
 
 
 
