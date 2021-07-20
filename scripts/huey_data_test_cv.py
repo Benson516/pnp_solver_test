@@ -43,8 +43,8 @@ os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -609,12 +609,12 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
     _f.writelines('\n'.join(failed_sample_filename_list) )
 
 
-# Pack the GT_R_t_dict for other program
-#-------------------#
-GT_R_t_dict_dir = "/home/benson516/test_PnP_solver/pnp_solver_test/scripts/ground_truth_R_t/"
-GT_R_t_dict_path = GT_R_t_dict_dir + "GT_R_t_dict.pkl"
-joblib.dump(GT_R_t_dict, GT_R_t_dict_path)
-#-------------------#
+# # Pack the GT_R_t_dict for other program
+# #-------------------#
+# GT_R_t_dict_dir = "/home/benson516/test_PnP_solver/pnp_solver_test/scripts/ground_truth_R_t/"
+# GT_R_t_dict_path = GT_R_t_dict_dir + "GT_R_t_dict.pkl"
+# joblib.dump(GT_R_t_dict, GT_R_t_dict_path)
+# #-------------------#
 
 
 

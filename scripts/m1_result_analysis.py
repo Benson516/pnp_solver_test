@@ -3,6 +3,7 @@ import copy
 import time
 import csv
 import os
+import joblib
 #
 import glob # For searching in the directory
 import os
@@ -48,8 +49,8 @@ os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -376,6 +377,7 @@ for _idx in range(len(data_list)):
 
 
     # Get the ground truth (especially the np_t_GT_est) for other programs
+    # and overwrite the np_t_est
     #-----------------------------------------#
     _file_name = data_list[_idx]['file_name'].split('.')[0]
     original_file_name = '_'.join(_file_name.split('_')[1:10])
@@ -383,9 +385,12 @@ for _idx in range(len(data_list)):
     if original_file_name in GT_R_t_dict:
         np_R_GT = GT_R_t_dict[original_file_name]["np_R_GT"]
         np_t_GT_est = GT_R_t_dict[original_file_name]["np_t_GT_est"]
+        #
+        np_t_est = np_t_GT_est / np_t_GT_est[2,0] * t3_est
         print("Use the loaded (R,t)")
         print("np_R_GT = %s" % np_R_GT)
         print("np_t_GT_est = %s" % np_t_GT_est)
+        print("np_t_est = %s" % np_t_est)
     #-----------------------------------------#
 
 
