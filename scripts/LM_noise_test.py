@@ -146,19 +146,21 @@ random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 300 # The number of noise pattern for different sameples
-n_point_to_perturb = len(point_3d_dict_list) - 1
+n_noise = 10 # 300 # The number of noise pattern for different sameples
+anchor_point_key = "eye_c_51"
+n_point_to_perturb = len(point_3d_dict_list[0]) - 1
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
+print("LM_noise_set.shape = %s" % str(LM_noise_set.shape))
 #-------------------------------------#
 
 
 # Control variables list
 #-------------------------------------#
-n_ctrl_yaw = 15
-n_ctrl_noise_norm = 15
+n_ctrl_yaw = 10 # 15
+n_ctrl_noise_norm = 3 # 15
 #
 ctrl_bound_yaw = (0.0, 50.0) # deg
-ctrl_bound_noise_stddev = (0.0, 5.0) # pixel
+ctrl_bound_noise_stddev = (0.0, 5.0) # pixel, in bbox local coordinate
 #
 # Generate value list
 test_ctrl_yaw_list = np.linspace(ctrl_bound_yaw[0], ctrl_bound_yaw[1], num=n_ctrl_yaw) # deg.
@@ -166,8 +168,18 @@ test_ctrl_noise_stddev_list = np.linspace(ctrl_bound_noise_stddev[0], ctrl_bound
 #-------------------------------------#
 
 
+# Fixed conditions
+#-------------------------------------#
+fixed_depth = 1.0 # m
+fixed_roll = 0.0 # deg.
+fixed_pitch = 0.0 # deg.
+#
+bbox_size = 30 # pixel @ 1m
+#-------------------------------------#
 
-
+def convert_bbox_scale_to_global(value, bbox_size_local=112, bbox_size_global=30):
+    # The function for converting the local value in a bounding box back to global image.
+    return (value / float(bbox_size_local) * float(bbox_size_global))
 
 
 
@@ -218,241 +230,85 @@ failed_sample_fit_error_count = 0
 s_stamp = time.time()
 
 # Loop, stress test
-is_continuing_to_next_sample = True
 sample_count = 0
-while (sample_count < DATA_COUNT) and (not received_SIGINT):
-    #
-    if not is_continuing_to_next_sample:
-        break
-    sample_count += 1
-    # The idx for reference into the data list
-    _idx = sample_count-1
-    #
 
-    # Convert the original data to structured data_list
-    #-------------------------------------------------------#
-    data_id_dict = dict()
-    # File info
-    data_id_dict['idx'] = _idx # data_idx_list[_idx]
-    data_id_dict['file_name'] = None # Move to below. Put this here just for keeping the order of key.
-    # "Label" of classes, type: string
-    data_id_dict['class'] = None # Move to below. Put this here just for keeping the order of key.
 
-    # Grund truth pose
-    if is_random_pose:
-        _angle_range = 45.0 # deg
-        _roll = random_gen.uniform( (-_angle_range), _angle_range, None)
-        _pitch = random_gen.uniform( (-_angle_range), _angle_range, None)
-        _yaw = random_gen.uniform( (-_angle_range), _angle_range, None)
+for noise_stddev_i in test_ctrl_noise_stddev_list:
+    for yaw_i in test_ctrl_yaw_list:
+        # at (yaw_i, noise_stddev_i)
+        print("(yaw_i, noise_stddev_i) = (%f, %f)" % (yaw_i, noise_stddev_i))
+
+        # Generate the landmarks (quantized, or not)
+        #------------------------------------#
+        np_R_GT = pnp_solver_GT.get_rotation_matrix_from_Euler(fixed_roll, yaw_i, fixed_pitch, is_degree=True)
+        np_t_GT = np.array([0.0, 0.0, fixed_depth]).reshape((3,1))
+        pnp_solver_GT.set_golden_pattern_id(0) # Use the number 0 pattern to generate the LM
+        quantize_q = convert_bbox_scale_to_global(1.0, bbox_size_local=bbox_resolution, bbox_size_global=bbox_size)
+        LM_pixel_dict = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, quantize_q=quantize_q, is_pretrans_points=False, is_returning_homogeneous_vec=False) # image (u, v)
+        #------------------------------------#
+
+
+        # Convert noise to global image scale
+        #------------------------------------#
+        noise_stddev_i_global = convert_bbox_scale_to_global(noise_stddev_i, bbox_size_local=bbox_resolution, bbox_size_global=bbox_size)
+        print("noise_stddev_i_global = %f" % noise_stddev_i_global)
+        #------------------------------------#
+
+
+        # Run the statistic test over noise patterns under this condition
+        yaw_error_list = list()
+        for noise_idx in range(LM_noise_set.shape[0]):
+            _LM_pixel_polluted_dict = copy.deepcopy(LM_pixel_dict)
+            noise_i = noise_stddev_i_global * LM_noise_set[noise_idx, :, :] # shape = (n_point_to_perturb, 2)
+
+            # Add noise to LMs
+            #------------------------------------#
+            _LM_idx = 0
+            for _k in _LM_pixel_polluted_dict:
+                if _k != anchor_point_key:
+                    _LM_pixel_polluted_dict[_k] += noise_i[_LM_idx, :].reshape((2,))
+                    _LM_idx += 1
+            #------------------------------------#
+
+            # Convert to homogeneous coordinate
+            #------------------------------------#
+            np_point_image_dict = dict()
+            for _k in _LM_pixel_polluted_dict:
+                np_point_image_dict[_k] = np.vstack( (_LM_pixel_polluted_dict[_k].reshape((2,1)), 1.0) )
+            # # Print
+            # print("-"*35)
+            # print("2D points on image:")
+            # for _k in np_point_image_dict:
+            #     print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
+            # print("-"*35)
+            #------------------------------------#
+
+            # Solve
+            #------------------------------------#
+            np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
+            #------------------------------------#
+
+            # Calculate error
+            #------------------------------------#
+            yaw_err = yaw_est - yaw_i
+            yaw_error_list.append(yaw_err)
+            # print("yaw_err = %f" % yaw_err)
+            #------------------------------------#
+
+            # Terminate
+            #------------------------------------#
+            if received_SIGINT:
+                break
+            #------------------------------------#
         #
-        _depth = random_gen.uniform(20, 225, None)/100.0 # m
-        _FOV_max = 45.0 # 1.0 # 45.0 # deg.
-        _FOV_x = random_gen.uniform((-_FOV_max), _FOV_max, None)
-        _FOV_y = random_gen.uniform((-_FOV_max), _FOV_max, None)
-        _np_t_GT = np.zeros((3,1))
-        _np_t_GT[0,0] = _depth * np.tan( np.deg2rad(_FOV_x) )
-        _np_t_GT[1,0] = _depth * np.tan( np.deg2rad(_FOV_y) )
-        _np_t_GT[2,0] = _depth
-    else:
-        _roll = 15.0 # deg.
-        _pitch = -15.0 # deg.
-        _yaw = 45.0 # deg.
-        # _roll = 40.0 # deg.
-        # _pitch = -60.0 # deg.
-        # _yaw = 67.0 # deg.
-        #
-        _np_t_GT = np.zeros((3,1))
-        _np_t_GT[0,0] = 0.35 # m
-        _np_t_GT[1,0] = 0.35 # m
-        _np_t_GT[2,0] = 0.5 # m
-        # _np_t_GT[0,0] = 3.5 # m
-        # _np_t_GT[1,0] = -3.5 # m
-        # _np_t_GT[2,0] = 0.1 # m
-        # _np_t_GT[0,0] = 0.0 # m
-        # _np_t_GT[1,0] = 0.0 # m
-        # _np_t_GT[2,0] = 1.2 # m
-    #
-    np_R_GT = pnp_solver_GT.get_rotation_matrix_from_Euler(_roll, _yaw, _pitch, is_degree=True)
-    np_t_GT = _np_t_GT
-    #
-    data_id_dict['distance'] = _np_t_GT[2,0] * 100.0 # cm
-    data_id_dict['roll'] = _roll
-    data_id_dict['pitch'] = _pitch
-    data_id_dict['yaw'] = _yaw
-    #
-    data_id_dict['np_R_GT'] = np_R_GT
-    data_id_dict['np_t_GT'] = np_t_GT
-    # Test inputs
-    pnp_solver_GT.set_golden_pattern_id(0) # Use the number 0 pattern to generate the LM
-    data_id_dict['LM_pixel_dict'] = pnp_solver_GT.perspective_projection_golden_landmarks(np_R_GT, np_t_GT, is_quantized=is_quantized, is_pretrans_points=False, is_returning_homogeneous_vec=True) # Homogeneous coordinate
 
-    # Classify ground truth data! (drpy class)
-    #----------------------------------------------#
-    _class_dict = dict()
-    _class_dict['distance'] = TTBX.classify_drpy(class_drpy_param_dict, data_id_dict['distance'], class_name="depth", is_classified_by_label=False)
-    _class_dict['roll']     = TTBX.classify_drpy(class_drpy_param_dict, data_id_dict['roll'], class_name="roll", is_classified_by_label=False)
-    _class_dict['pitch']    = TTBX.classify_drpy(class_drpy_param_dict, data_id_dict['pitch'], class_name="pitch", is_classified_by_label=False)
-    _class_dict['yaw']      = TTBX.classify_drpy(class_drpy_param_dict, data_id_dict['yaw'], class_name="yaw", is_classified_by_label=False)
-    data_id_dict['class'] = _class_dict
-    #
-    data_id_dict['file_name'] = "random_drpy_%s_%s_%s_%s" % (_class_dict['distance'], _class_dict['roll'], _class_dict['pitch'], _class_dict['yaw'])
-    #----------------------------------------------#
-
-
-    # Sppend to the total data list
-    data_list.append(data_id_dict)
-    #
-    # print(data_list[0])
-    #-------------------------------------------------------#
-
-
-    print("\n-------------- data_idx = %d (process idx = %d)--------------\n" % (data_list[_idx]['idx'], _idx))
-    # print('file file_name: [%s]' % data_list[_idx]['file_name'])
-
-
-    # Just reference the original projection data
-    LM_pixel_dict = data_list[_idx]['LM_pixel_dict']
-    np_point_image_dict = LM_pixel_dict
-
-
-    # Solve
-    np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm = pnp_solver.solve_pnp(np_point_image_dict)
-
-
-
-    # Note: Euler angles are in degree
-    np_R_ca_est = pnp_solver.np_R_c_a_est
-    np_t_ca_est = pnp_solver.np_t_c_a_est
-    # np_R_ca_est = copy.deepcopy(pnp_solver.np_R_c_a_est)
-    # np_t_ca_est = copy.deepcopy(pnp_solver.np_t_c_a_est)
-
-    # Compare result
-    #-----------------------------#
-
-    # Grund truth (R,t)
-    roll_GT = data_list[_idx]['roll']
-    pitch_GT = data_list[_idx]['pitch']
-    yaw_GT = data_list[_idx]['yaw']
-    np_R_GT = pnp_solver.get_rotation_matrix_from_Euler( roll_GT, yaw_GT, pitch_GT, is_degree=True )
-    # print("np_R_GT = \n%s" % str(np_R_GT))
-    distance_GT = data_list[_idx]['distance'] *0.01 # cm --> m
-    np_t_GT_est = (np_t_est/t3_est) * distance_GT
-
-
-
-    # Apply criteria
-    #----------------------------------------------#
-    drpy_pass_list, pass_count = TTBX.check_if_the_sample_passed(
-                            (t3_est*100.0, roll_est, pitch_est, yaw_est),
-                            (data_list[_idx]['distance'], data_list[_idx]['roll'], data_list[_idx]['pitch'], data_list[_idx]['yaw']),
-                            (10.0, 10.0, 10.0, 10.0) )
-    print("pass_count = %d  |  drpy_pass_list = %s" % (pass_count, str(drpy_pass_list)))
-    fail_count = len(drpy_pass_list) - pass_count
-    #----------------------------------------------#
-
-
-    # Compare the results and wrote to the result dict
-    #----------------------------------------------------------#
-    rpy_est = (roll_est, pitch_est, yaw_est)
-    rpy_GT = (roll_GT, pitch_GT, yaw_GT)
-    _res_list = TTBX.compare_result_and_generate_result_dict(
-                                pnp_solver,
-                                data_list[_idx],
-                                np_R_est, np_t_est, rpy_est,
-                                np_R_GT, np_t_GT_est, rpy_GT,
-                                res_norm,
-                                fail_count, pass_count, drpy_pass_list,
-                                np_point_image_dict=np_point_image_dict,
-                                verbose=verbose
-                            )
-    _result_idx_dict, np_point_image_dict_reproject_GT_ori_golden_patern, np_point_image_dict_reproject = _res_list
-    #----------------------------------------------------------#
-
-    result_list.append(_result_idx_dict)
-    #----------------------------#
-
-
-
-
-    # Determine if the case should be stored for further inspection
-    #----------------------------------------------#
-    fitting_error = _result_idx_dict["predict_LM_error_average_normalize"]
-
-    # Determin if we want to further investigate this sample
-    is_storing_case_image = False
-    if pass_count < pass_count_threshold: # Note: pass_count >= pass_count_threshold --> passed!!
-        failed_sample_count += 1
-        if fitting_error > 1.0: # 1.5
-            failed_sample_fit_error_count += 1
-        # if fitting_error <= 1.5:
-            failed_sample_filename_list.append(data_list[_idx]['file_name'])
-            is_storing_case_image = is_storing_fail_case_image
-    # if not drpy_pass_list[0]:
-    #     failed_sample_filename_list.append(data_list[_idx]['file_name'])
-    #     is_storing_case_image = is_storing_fail_case_image
-    #----------------------------------------------#
-
-    # Break the stress test
-    #----------------------------#
-    if stop_at_fail_cases:
-        if is_stress_test:
-            if pass_count < pass_count_threshold:
-                print("Fail, break the stress test!!")
-                is_continuing_to_next_sample = False
-    #----------------------------#
-
-
-
-
-    # Image Display
-    #====================================================#
-    if not (is_showing_image or is_storing_case_image):
-        continue
-
-
-    # Get the file name of the image
-    #--------------------------------------------#
-    _file_name = data_list[_idx]['file_name']
-    image_file_name_str = '_'.join(_file_name.split('_')[0:9]) + '.png'
-    # print('image file name: [%s]' % image_file_name_str)
-    #--------------------------------------------#
-
-    TTBX.plot_LMs_and_axies(
-                image_file_name_str,
-                image_dir_str,
-                image_result_unflipped_dir_str, image_result_dir_str,
-                pnp_solver,
-                _result_idx_dict,
-                np_point_image_dict,
-                np_point_image_dict_reproject_GT_ori_golden_patern,
-                np_point_image_dict_reproject,
-                is_mirrored_image=is_mirrored_image,
-                is_ploting_LMs=True,
-                LM_img_width=320,
-                is_showing_image=is_showing_image)
-    #--------------------------------------------#
-
-
-#-------------------------------------------------------#
-
-delta_time = time.time() - s_stamp
-print()
-print("Time elapsed for %d data = %f" % (len(result_list), delta_time))
-print("Average processing time for single data = %f" % (delta_time / len(result_list)) )
-print()
-
-print("len(failed_sample_filename_list) = %d" % len(failed_sample_filename_list))
-print("failed_sample_count = %d" % failed_sample_count)
-print("failed_sample_fit_error_count = %d" % failed_sample_fit_error_count)
-print()
-
-failed_sample_filename_list_file_path = image_result_unflipped_dir_str + "fail_case_list.txt"
-with open(failed_sample_filename_list_file_path, "w") as _f:
-    _f.writelines('\n'.join(failed_sample_filename_list) )
-
-
-
-# Data analysis and saving
-#-----------------------------------#
-TTBX.data_analysis_and_saving(result_list, result_csv_dir_str, result_csv_file_prefix_str, result_statistic_txt_file_prefix_str, data_file_str, is_statistic_csv_horizontal=is_statistic_csv_horizontal)
-#-----------------------------------#
+        # Calculate the error
+        #------------------------------------#
+        # yaw_error_list
+        yaw_error_mean = np.mean(yaw_error_list)
+        yaw_error_stddev = np.std(yaw_error_list)
+        yaw_MAE = np.mean(np.abs(yaw_error_list))
+        print("yaw_error_mean = %f" % yaw_error_mean)
+        print("yaw_error_stddev = %f" % yaw_error_stddev)
+        print("yaw_MAE = %f" % yaw_MAE)
+        #------------------------------------#
