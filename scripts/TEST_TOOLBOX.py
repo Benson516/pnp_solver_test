@@ -593,7 +593,8 @@ def plot_LMs_and_axies(
     # Landmarks
     #----------------------------------#
     # [[u,v,1]].T
-    for _k in np_homo_point_LM_dict:
+    _key_list = list( np_homo_point_reproject_golden_dict.keys() )
+    for _k in _key_list:
         #
         if is_ploting_LMs:
             # Landmarks
