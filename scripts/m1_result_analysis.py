@@ -22,7 +22,9 @@ data_rool_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pos
 # data_version = 'M1_test_EIF2_alexander_20210707'
 # data_version = 'M1_test_QEIF_alexander_20210709'
 # data_version = 'M1_test_QEIF_alexander_20210714'
-data_version = 'M1_test_QEIF_alexander_20210719'
+# data_version = 'M1_test_QEIF_alexander_20210719'
+data_version = 'M1_test_QEIF_alexander_SZ_v005f_p6p_20210720'
+# data_version = 'M1_test_QEIF_alexander_SZ_eyeclose224x224_p6p_20210720'
 #
 data_dir_str = data_rool_str + data_version + '/results/'
 data_file_str = data_version + ".txt" # Fake the file name for storing the post analysis results
@@ -36,7 +38,7 @@ image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_f
 image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_images/image/'
 #---------------------------#
 # Result CSV file
-result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_CSVs/'
+result_csv_root_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/' + data_version + '/result_analysis/result_CSVs/'
 result_csv_file_prefix_str = "result_csv_"
 result_statistic_txt_file_prefix_str = "statistic_"
 
@@ -44,13 +46,13 @@ result_statistic_txt_file_prefix_str = "statistic_"
 #------------------------------------------------------------------#
 os.makedirs(image_result_unflipped_dir_str, mode=0o777, exist_ok=True)
 os.makedirs(image_result_dir_str, mode=0o777, exist_ok=True)
-os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
+os.makedirs(result_csv_root_dir_str, mode=0o777, exist_ok=True)
 #------------------------------------------------------------------#
 
 # Behavior of this program
 #---------------------------#
-# is_run_through_all_data = True
-is_run_through_all_data = False
+is_run_through_all_data = True
+# is_run_through_all_data = False
 # Data
 is_limiting_line_count = True
 # is_limiting_line_count = False
@@ -502,5 +504,7 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
 
 # Data analysis and saving
 #-----------------------------------#
+result_csv_dir_str = os.path.normpath( os.path.join(result_csv_root_dir_str, drpy_class_format) ) + '/'
+os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
 TTBX.data_analysis_and_saving(result_list, result_csv_dir_str, result_csv_file_prefix_str, result_statistic_txt_file_prefix_str, data_file_str, is_statistic_csv_horizontal=is_statistic_csv_horizontal)
 #-----------------------------------#
