@@ -18,15 +18,15 @@ import TEST_TOOLBOX as TTBX
 
 #---------------------------#
 # Landmark (LM) dataset
-data_rool_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/'
-# data_version = 'M1_test_EIF2_alexander_20210707'
-# data_version = 'M1_test_QEIF_alexander_20210709'
-# data_version = 'M1_test_QEIF_alexander_20210714'
-# data_version = 'M1_test_QEIF_alexander_20210719'
-data_version = 'M1_test_QEIF_alexander_SZ_v005f_p6p_20210720'
-# data_version = 'M1_test_QEIF_alexander_SZ_eyeclose224x224_p6p_20210720'
+data_root_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/M1_test/'
+# data_version = 'EIF2_alexander_20210707'
+# data_version = 'QEIF_alexander_20210709'
+# data_version = 'QEIF_alexander_20210714'
+# data_version = 'QEIF_alexander_20210719'
+# data_version = 'QEIF_alexander_SZ_v005f_p6p_20210720'
+data_version = 'QEIF_alexander_SZ_eyeclose224x224_p6p_20210720'
 #
-data_dir_str = data_rool_str + data_version + '/results/'
+data_dir_str = data_root_str + data_version + '/results/'
 data_file_str = data_version + ".txt" # Fake the file name for storing the post analysis results
 #---------------------------#
 # Image of Alexander
@@ -168,9 +168,9 @@ print(data_file_name_list[0]) # [data_idx][column in line of file]
 is_classified_by_label = False
 
 # Formate
-# drpy_class_format = "drpy_expand"
+drpy_class_format = "drpy_expand"
 # drpy_class_format = "drpy_expand_zoom_in"
-drpy_class_format = "HMI_inspection"
+# drpy_class_format = "HMI_inspection"
 
 # Get parameters for classification
 class_drpy_param_dict = TTBX.get_classification_parameters(drpy_class_format=drpy_class_format)
