@@ -489,155 +489,22 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     #----------------------------------------------#
 
 
-
-    # Reprojections
-    np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_est, np_t_est, is_quantized=False, is_pretrans_points=False)
-    # np_point_image_dict_reproject = pnp_solver.perspective_projection_golden_landmarks(np_R_ca_est, np_t_ca_est, is_quantized=False, is_pretrans_points=True)
-    np_point_image_dict_reproject_GT_ori_golden_patern = pnp_solver.perspective_projection_golden_landmarks(np_R_GT, np_t_GT_est, is_quantized=False, is_pretrans_points=False)
-
-
-    # Reprojection errors
-    #-----------------------------------------------------------#
-    # Calculate the pixel error of the LMs and the ground-truth projection of golden pattern
-    LM_GT_ed_dict = TTBX.cal_LM_error_distances(np_point_image_dict, np_point_image_dict_reproject_GT_ori_golden_patern)
-    LM_GT_error_average = LM_GT_ed_dict["average_error"]
-    LM_GT_error_max = LM_GT_ed_dict["max_error"]
-    LM_GT_error_max_key = LM_GT_ed_dict["max_error_key"]
-    print("(LM_GT_error_average, LM_GT_error_max, LM_GT_error_max_key) = (%f, %f, %s)" % (LM_GT_error_average, LM_GT_error_max, LM_GT_error_max_key))
-
-    # Calculate the pixel error of the LMs and the reprojections of golden pattern
-    predict_LM_ed_dict = TTBX.cal_LM_error_distances(np_point_image_dict_reproject, np_point_image_dict)
-    predict_LM_error_average = predict_LM_ed_dict["average_error"]
-    predict_LM_error_max = predict_LM_ed_dict["max_error"]
-    predict_LM_error_max_key = predict_LM_ed_dict["max_error_key"]
-    print("(predict_LM_error_average, predict_LM_error_max, predict_LM_error_max_key) = (%f, %f, %s)" % (predict_LM_error_average, predict_LM_error_max, predict_LM_error_max_key))
-
-    # Calculate the pixel error of the LMs and the reprojections of golden pattern
-    predict_GT_ed_dict = TTBX.cal_LM_error_distances(np_point_image_dict_reproject, np_point_image_dict_reproject_GT_ori_golden_patern)
-    predict_GT_error_average = predict_GT_ed_dict["average_error"]
-    predict_GT_error_max = predict_GT_ed_dict["max_error"]
-    predict_GT_error_max_key = predict_GT_ed_dict["max_error_key"]
-    print("(predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key) = (%f, %f, %s)" % (predict_GT_error_average, predict_GT_error_max, predict_GT_error_max_key))
-    #-----------------------------------------------------------#
-
-
-    #
-    print("Result from the solver:\n")
-    print("2D points on image (re-projection):")
-    # print("2D points on image (is_mirrored_image=%s):" % str(is_mirrored_image))
-    print("-"*35)
-    for _k in np_point_image_dict:
-        np.set_printoptions(suppress=True, precision=2)
-        print("%s:%sp_data=%s.T | p_reproject=%s.T | err=%s.T" %
-            (   _k,
-                " "*(12-len(_k)),
-                str(np_point_image_dict[_k].T),
-                str(np_point_image_dict_reproject[_k].T),
-                str((np_point_image_dict_reproject[_k]-np_point_image_dict[_k]).T)
-            )
-        )
-        np.set_printoptions(suppress=False, precision=8)
-        # print("%s:\n%s.T" % (_k, str(np_point_image_dict[_k].T)))
-        # print("%s:\n%s" % (_k, str(np_point_quantization_error_dict[_k])))
-    #
-    print("-"*35)
-    #
-    print("res_norm = %f" % res_norm)
-    print("np_R_est = \n%s" % str(np_R_est))
-    _det = np.linalg.det(np_R_est)
-    print("_det = %f" % _det)
-    # print("(roll_est, yaw_est, pitch_est) \t\t= %s" % str( np.rad2deg( (roll_est, yaw_est, pitch_est) ) ) )
-    print("t3_est = %f" % t3_est)
-    print("np_t_est = \n%s" % str(np_t_est))
-    print()
-    # Result
-    print("-"*30 + " Result " + "-"*30)
-    print("distance = %f cm" % (t3_est*100.0))
-    print("(roll_est, yaw_est, pitch_est) \t\t= %s" % str( [roll_est, yaw_est, pitch_est] ) )
-    print("np_R_est = \n%s" % str(np_R_est))
-    print("np_t_est = \n%s" % str(np_t_est))
-    # Grund truth
-    print("-"*28 + " Grund Truth " + "-"*28)
-    print("distance = %f cm" % data_list[_idx]['distance'])
-    print("(roll_GT, yaw_GT, pitch_GT) \t\t= %s" % str(  [ data_list[_idx]['roll'], data_list[_idx]['yaw'], data_list[_idx]['pitch'] ]) )
-    if verbose:
-        print("np_Gamma_GT = \n%s" % str( np_R_GT / np_t_GT_est[2,0] ))
-    print("np_R_GT = \n%s" % str(np_R_GT))
-    print("np_t_GT_est = \n%s" % str(np_t_GT_est))
-    print("-"*30 + " The End " + "-"*30)
-    print()
-    #----------------------------#
-
-
-
-    # Store the error for statistic
-    #----------------------------#
-    _result_idx_dict = dict()
-    _result_idx_dict['idx'] = data_list[_idx]['idx']
-    _result_idx_dict["file_name"] = data_list[_idx]['file_name']
-    _result_idx_dict["drpy"] = (distance_GT, roll_GT, pitch_GT, yaw_GT)
-    _result_idx_dict["class"] = data_list[_idx]['class']
-    # Result summary
-    #-------------------------------#
-    _result_idx_dict["fail_count"] = fail_count
-    _result_idx_dict["pass_count"] = pass_count
-    _result_idx_dict["is_depth_passed"] = drpy_pass_list[0]
-    _result_idx_dict["is_roll_passed"] = drpy_pass_list[1]
-    _result_idx_dict["is_pitch_passed"] = drpy_pass_list[2]
-    _result_idx_dict["is_yaw_passed"] = drpy_pass_list[3]
-    #-------------------------------#
-    # R, t, depth, roll, pitch, yaw, residual
-    #---#
-    # GT
-    # Result
-    # Error, err = (est - GT)
-    # abs(Error), for scalar values
-    #-------------------------------#
-    # R
-    _result_idx_dict["np_R_GT"] = np_R_GT
-    _result_idx_dict["np_R_est"] = np_R_est
-    _result_idx_dict["np_R_err"] = np_R_est - np_R_GT
-    # t
-    _result_idx_dict["np_t_GT_est"] = np_t_GT_est
-    _result_idx_dict["np_t_est"] = np_t_est
-    _result_idx_dict["np_t_err"] = np_t_est - np_t_GT_est
-    # depth
-    _result_idx_dict["distance_GT"] = distance_GT
-    _result_idx_dict["t3_est"] = t3_est
-    _result_idx_dict["depth_err"] = t3_est - distance_GT
-    _result_idx_dict["abs_depth_err"] = abs(t3_est - distance_GT)
-    # roll
-    _result_idx_dict["roll_GT"] = roll_GT
-    _result_idx_dict["roll_est"] = roll_est
-    _result_idx_dict["roll_err"] = roll_est - roll_GT
-    _result_idx_dict["abs_roll_err"] = abs(roll_est - roll_GT)
-    # pitch
-    _result_idx_dict["pitch_GT"] = pitch_GT
-    _result_idx_dict["pitch_est"] = pitch_est
-    _result_idx_dict["pitch_err"] = pitch_est - pitch_GT
-    _result_idx_dict["abs_pitch_err"] = abs(pitch_est - pitch_GT)
-    # yaw
-    _result_idx_dict["yaw_GT"] = yaw_GT
-    _result_idx_dict["yaw_est"] = yaw_est
-    _result_idx_dict["yaw_err"] = yaw_est - yaw_GT
-    _result_idx_dict["abs_yaw_err"] = abs(yaw_est - yaw_GT)
-    # residual
-    _result_idx_dict["res_norm"] = res_norm
-    _result_idx_dict["res_norm_1000x"] = res_norm * 1000.0
-    _result_idx_dict["res_norm_10000x_n_est"] = res_norm * 1000.0 * t3_est # Note: normalized by estimatd value
-    _result_idx_dict["res_norm_10000x_n_GT"] = res_norm * 1000.0 * distance_GT # Note: normalized by estimatd value
-    # LM-GT error
-    _result_idx_dict["LM_GT_error_average_normalize"] = LM_GT_error_average * distance_GT
-    _result_idx_dict["LM_GT_error_max_normalize"] = LM_GT_error_max * distance_GT
-    _result_idx_dict["LM_GT_error_max_key"] = LM_GT_error_max_key
-    # predict-LM error
-    _result_idx_dict["predict_LM_error_average_normalize"] = predict_LM_error_average * distance_GT
-    _result_idx_dict["predict_LM_error_max_normalize"] = predict_LM_error_max * distance_GT
-    _result_idx_dict["predict_LM_error_max_key"] = predict_LM_error_max_key
-    # predict-GT error
-    _result_idx_dict["predict_GT_error_average_normalize"] = predict_GT_error_average * distance_GT
-    _result_idx_dict["predict_GT_error_max_normalize"] = predict_GT_error_max * distance_GT
-    _result_idx_dict["predict_GT_error_max_key"] = predict_GT_error_max_key
+    # Compare the results and wrote to the result dict
+    #----------------------------------------------------------#
+    rpy_est = (roll_est, pitch_est, yaw_est)
+    rpy_GT = (roll_GT, pitch_GT, yaw_GT)
+    _res_list = TTBX.compare_result_and_generate_result_dict(
+                                pnp_solver,
+                                data_list[_idx],
+                                np_R_est, np_t_est, rpy_est,
+                                np_R_GT, np_t_GT_est, rpy_GT,
+                                res_norm,
+                                fail_count, pass_count, drpy_pass_list,
+                                np_point_image_dict=np_point_image_dict,
+                                verbose=verbose
+                            )
+    _result_idx_dict, np_point_image_dict_reproject_GT_ori_golden_patern, np_point_image_dict_reproject = _res_list
+    #----------------------------------------------------------#
 
     # Pattern Perturbation
     _result_idx_dict["np_pattern_perturbation_dict"] = data_list[_idx]['np_pattern_perturbation_dict']
