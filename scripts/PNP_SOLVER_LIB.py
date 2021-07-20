@@ -4552,7 +4552,7 @@ class PNP_SOLVER(object):
         return (uv_o, dir_x, dir_y, dir_z)
 
 
-    def perspective_projection_golden_landmarks(self, np_R, np_t, is_quantized=False, is_pretrans_points=False, is_returning_homogeneous_vec=True):
+    def perspective_projection_golden_landmarks(self, np_R, np_t, is_quantized=False, quantize_q=1.0, is_pretrans_points=False, is_returning_homogeneous_vec=True):
         '''
         Project the golden landmarks onto the image space using the given camera intrinsic.
         '''
@@ -4571,7 +4571,7 @@ class PNP_SOLVER(object):
                 _point = _np_point_3d_pretransfer_dict[_k]
             else:
                 _point = _np_point_3d_dict[_k]
-            _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized, is_returning_homogeneous_vec=is_returning_homogeneous_vec)
+            _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized, quantize_q=quantize_q, is_returning_homogeneous_vec=is_returning_homogeneous_vec)
             np_point_image_dict[_k] = _np_point_image
             np_point_quantization_error_dict[_k] = (_np_point_image - _projection_no_q)
             np_point_image_no_q_err_dict[_k] = _projection_no_q
