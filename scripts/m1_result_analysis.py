@@ -325,6 +325,19 @@ failed_sample_count = 0
 failed_sample_fit_error_count = 0
 #--------------------------#
 
+# Load the GT_R_t_dict
+#---------------------------------------#
+GT_R_t_dict_dir = "/home/benson516/test_PnP_solver/pnp_solver_test/scripts/ground_truth_R_t/"
+GT_R_t_dict_path = GT_R_t_dict_dir + "GT_R_t_dict.pkl"
+GT_R_t_dict = dict()
+try:
+    GT_R_t_dict = joblib.load(GT_R_t_dict_path)
+except Exception as e:
+    print(e)
+    print("\nNo previous GT_R_t_dict\n")
+#---------------------------------------#
+
+
 s_stamp = time.time()
 
 # Loop thrugh data
@@ -360,6 +373,20 @@ for _idx in range(len(data_list)):
     # print("_det = %f" % _det)
     distance_GT = data_list[_idx]['distance'] *0.01 # cm --> m
     np_t_GT_est = (np_t_est/t3_est) * distance_GT
+
+
+    # Get the ground truth (especially the np_t_GT_est) for other programs
+    #-----------------------------------------#
+    _file_name = data_list[_idx]['file_name'].split('.')[0]
+    original_file_name = '_'.join(_file_name.split('_')[1:10])
+    print("original_file_name = %s" % original_file_name)
+    if original_file_name in GT_R_t_dict:
+        np_R_GT = GT_R_t_dict[original_file_name]["np_R_GT"]
+        np_t_GT_est = GT_R_t_dict[original_file_name]["np_t_GT_est"]
+        print("Use the loaded (R,t)")
+        print("np_R_GT = %s" % np_R_GT)
+        print("np_t_GT_est = %s" % np_t_GT_est)
+    #-----------------------------------------#
 
 
     # Reprojections
