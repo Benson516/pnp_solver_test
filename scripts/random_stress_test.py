@@ -363,9 +363,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     pitch_GT = data_list[_idx]['pitch']
     yaw_GT = data_list[_idx]['yaw']
     np_R_GT = pnp_solver.get_rotation_matrix_from_Euler( roll_GT, yaw_GT, pitch_GT, is_degree=True )
-    # _det = np.linalg.det(np_R_GT)
     # print("np_R_GT = \n%s" % str(np_R_GT))
-    # print("_det = %f" % _det)
     distance_GT = data_list[_idx]['distance'] *0.01 # cm --> m
     np_t_GT_est = (np_t_est/t3_est) * distance_GT
 
@@ -380,7 +378,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     print("pass_count = %d  |  drpy_pass_list = %s" % (pass_count, str(drpy_pass_list)))
     fail_count = len(drpy_pass_list) - pass_count
     #----------------------------------------------#
-    
+
 
 
     # Reprojections
@@ -564,6 +562,8 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
                 print("Fail, break the stress test!!")
                 is_continuing_to_next_sample = False
     #----------------------------#
+
+
 
 
     # Image Display

@@ -369,9 +369,7 @@ for _idx in range(len(data_list)):
     pitch_GT = data_list[_idx]['pitch']
     yaw_GT = data_list[_idx]['yaw']
     np_R_GT = pnp_solver.get_rotation_matrix_from_Euler( roll_GT, yaw_GT, pitch_GT, is_degree=True )
-    # _det = np.linalg.det(np_R_GT)
     # print("np_R_GT = \n%s" % str(np_R_GT))
-    # print("_det = %f" % _det)
     distance_GT = data_list[_idx]['distance'] *0.01 # cm --> m
     np_t_GT_est = (np_t_est/t3_est) * distance_GT
 
@@ -392,7 +390,6 @@ for _idx in range(len(data_list)):
         print("np_t_GT_est = %s" % np_t_GT_est)
         print("np_t_est = %s" % np_t_est)
     #-----------------------------------------#
-
 
 
     # Apply criteria
