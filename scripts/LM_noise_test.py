@@ -369,6 +369,31 @@ print()
 
 
 
+exp_condition_dict = dict()
+exp_condition_dict["bbox_resolution"] = bbox_resolution
+exp_condition_dict["bbox_size"] = bbox_size
+exp_condition_dict["fixed_depth"] = fixed_depth
+exp_condition_dict["fixed_roll"] = fixed_roll
+exp_condition_dict["fixed_pitch"] = fixed_pitch
+
+def get_test_condition_file_name_code(exp_condition_dict):
+    if exp_condition_dict is None:
+        _condition_name = ''
+    else:
+        bbox_resolution = exp_condition_dict["bbox_resolution"]
+        bbox_size = exp_condition_dict["bbox_size"]
+        fixed_depth = exp_condition_dict["fixed_depth"]
+        fixed_roll = exp_condition_dict["fixed_roll"]
+        fixed_pitch = exp_condition_dict["fixed_pitch"]
+        _condition_name = "_bbxr%dbbxs%dd%dr%dp%d" % (bbox_resolution, bbox_size, int(fixed_depth*100.0), fixed_roll, fixed_pitch)
+        # print("_condition_name = %s" % _condition_name)
+    return _condition_name
+
+
+# Get the test condition file name code
+#--------------------------------------------#
+condition_file_name_code = get_test_condition_file_name_code(exp_condition_dict)
+#--------------------------------------------#
 
 
 
@@ -393,29 +418,24 @@ def write_mesh_to_csv(mesh, row_value_list, col_value_list, csv_path):
 # Mean
 value_name = "yaw_error_mean"
 value_mesh = mesh_yn_yaw_error_mean
-csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s.csv' % value_name
+csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s' % value_name + condition_file_name_code + '.csv'
 write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, csv_path)
 # stddev
 value_name = "yaw_error_stddev"
 value_mesh = mesh_yn_yaw_error_stddev
-csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s.csv' % value_name
+csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s' % value_name + condition_file_name_code + '.csv'
 write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, csv_path)
 # MAE
 value_name = "yaw_MAE"
 value_mesh = mesh_yn_yaw_MAE
-csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s.csv' % value_name
+csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s' % value_name + condition_file_name_code + '.csv'
 write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, csv_path)
 #------------------------------------------#
 
 
 
 
-exp_condition_dict = dict()
-exp_condition_dict["bbox_resolution"] = bbox_resolution
-exp_condition_dict["bbox_size"] = bbox_size
-exp_condition_dict["fixed_depth"] = fixed_depth
-exp_condition_dict["fixed_roll"] = fixed_roll
-exp_condition_dict["fixed_pitch"] = fixed_pitch
+
 
 def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, result_plot_dir_str, exp_condition_dict=None, is_transparent=False):
     num_groups = Y.shape[1]
@@ -433,7 +453,7 @@ def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, resu
     plt.ylabel(y_label)
     plt.legend([r"$\sigma$ = %.1f pixel" % e for e in test_ctrl_noise_stddev_list[_index] ])
     #
-    _condition_name = ""
+    # _condition_name = ""
     if exp_condition_dict is not None:
         bbox_resolution = exp_condition_dict["bbox_resolution"]
         bbox_size = exp_condition_dict["bbox_size"]
@@ -449,9 +469,10 @@ def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, resu
         # plt.text(0.02, 0.98, _text, fontsize=8, ha="left", va="top", transform=ax.transAxes)
         plt.text(0.0, 1.02, _text, fontsize=8, ha="left", va="bottom", transform=ax.transAxes)
         #
-        _condition_name = "_bbxr%dbbxs%dd%dr%dp%d" % (bbox_resolution, bbox_size, int(fixed_depth*100.0), fixed_roll, fixed_pitch)
+        # _condition_name = "_bbxr%dbbxs%dd%dr%dp%d" % (bbox_resolution, bbox_size, int(fixed_depth*100.0), fixed_roll, fixed_pitch)
         # print("_condition_name = %s" % _condition_name)
     #
+    _condition_name = get_test_condition_file_name_code(exp_condition_dict)
     file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + _condition_name + '.png'
     plt.savefig( file_path, transparent=is_transparent)
 
@@ -473,7 +494,7 @@ def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot
     plt.ylabel(y_label)
     plt.legend( ["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list[_index] ] )
     #
-    _condition_name = ""
+    # _condition_name = ""
     if exp_condition_dict is not None:
         bbox_resolution = exp_condition_dict["bbox_resolution"]
         bbox_size = exp_condition_dict["bbox_size"]
@@ -489,9 +510,10 @@ def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot
         # plt.text(0.02, 0.98, _text, fontsize=8, ha="left", va="top", transform=ax.transAxes)
         plt.text(0.0, 1.02, _text, fontsize=8, ha="left", va="bottom", transform=ax.transAxes)
         #
-        _condition_name = "_bbxr%dbbxs%dd%dr%dp%d" % (bbox_resolution, bbox_size, int(fixed_depth*100.0), fixed_roll, fixed_pitch)
+        # _condition_name = "_bbxr%dbbxs%dd%dr%dp%d" % (bbox_resolution, bbox_size, int(fixed_depth*100.0), fixed_roll, fixed_pitch)
         # print("_condition_name = %s" % _condition_name)
     #
+    _condition_name = get_test_condition_file_name_code(exp_condition_dict)
     file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + _condition_name + '.png'
     plt.savefig( file_path, transparent=is_transparent)
 
