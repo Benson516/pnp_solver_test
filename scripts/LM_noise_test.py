@@ -142,7 +142,7 @@ random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 10 # 600 # 300 # The number of noise pattern for different sameples
+n_noise = 2000 # 10 # 600 # 300 # The number of noise pattern for different sameples
 anchor_point_key = "eye_c_51"
 n_point_to_perturb = len(point_3d_dict_list[0]) - 1
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
@@ -152,8 +152,8 @@ print("LM_noise_set.shape = %s" % str(LM_noise_set.shape))
 
 # Control variables list
 #-------------------------------------#
-n_ctrl_yaw = 20 # 10 # 15
-n_ctrl_noise_norm = 15 # 3 # 15
+n_ctrl_yaw = 20 # 15 # 10 # 15
+n_ctrl_noise_norm = 10 # 15 # 3 # 15
 #
 ctrl_bound_yaw = (0.0, 50.0) # deg
 ctrl_bound_noise_stddev = (0.0, 5.0) # pixel, in bbox local coordinate
@@ -328,7 +328,7 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
 #
 print("\nFinished\n")
 
-n_data = mesh_yn_yaw_error_mean.size
+n_data = mesh_yn_yaw_error_mean.size * n_noise
 
 delta_time = time.time() - s_stamp
 print()
