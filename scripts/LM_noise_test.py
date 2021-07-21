@@ -235,6 +235,9 @@ mesh_yn_yaw_error_stddev = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
 mesh_yn_yaw_MAE = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
 #
 s_stamp = time.time()
+last_epoch_stamp = s_stamp
+data_count = 0
+n_data = mesh_yn_yaw_error_mean.size * n_noise
 #
 for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
     for ctrl_yaw_idx, yaw_i in enumerate(test_ctrl_yaw_list):
@@ -262,7 +265,12 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
 
         # Run the statistic test over noise patterns under this condition
         yaw_error_list = list()
+        epoch_data_count = 0
         for noise_idx in range(LM_noise_set.shape[0]):
+            #
+            epoch_data_count += 1
+            data_count += 1
+            #
             _LM_pixel_polluted_dict = copy.deepcopy(LM_pixel_dict)
             noise_i = noise_stddev_i_global * LM_noise_set[noise_idx, :, :] # shape = (n_point_to_perturb, 2)
 
@@ -306,7 +314,6 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
                 break
             #------------------------------------#
         #
-
         # Calculate the error
         #------------------------------------#
         # yaw_error_list
@@ -318,6 +325,20 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
         print("yaw_MAE = %f" % yaw_MAE)
         #------------------------------------#
 
+        # Timer and ppppppprogress reports
+        #------------------------------------#
+        _current_stamp = time.time()
+        delta_time = _current_stamp - s_stamp
+        epoch_time = _current_stamp - last_epoch_stamp
+        print()
+        print("Epoch time for %d data = %f" % (epoch_data_count, epoch_time))
+        print("Progress: %.1f%% (%d/%d)" % ( (100.0*data_count/float(n_data)), data_count, n_data))
+        print("Time elapsed for total %d data = %f" % (data_count, delta_time))
+        print("Average processing time for single data = %f" % (delta_time / data_count) )
+        print()
+        last_epoch_stamp = _current_stamp
+        #------------------------------------#
+
         # Store the result into the meshes
         #------------------------------------#
         mesh_yn_yaw_error_mean[ctrl_yaw_idx, ctrl_noise_idx] = yaw_error_mean
@@ -325,15 +346,25 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
         mesh_yn_yaw_MAE[ctrl_yaw_idx, ctrl_noise_idx] = yaw_MAE
         #------------------------------------#
 
+        # Terminate
+        #------------------------------------#
+        if received_SIGINT:
+            break
+        #------------------------------------#
+    # Terminate
+    #------------------------------------#
+    if received_SIGINT:
+        break
+    #------------------------------------#
+
 #
 print("\nFinished\n")
 
-n_data = mesh_yn_yaw_error_mean.size * n_noise
-
+# n_data = mesh_yn_yaw_error_mean.size * n_noise
 delta_time = time.time() - s_stamp
 print()
-print("Time elapsed for %d data = %f" % (n_data, delta_time))
-print("Average processing time for single data = %f" % (delta_time / n_data) )
+print("Time elapsed for total %d data = %f" % (data_count, delta_time))
+print("Average processing time for single data = %f" % (delta_time / data_count) )
 print()
 
 
