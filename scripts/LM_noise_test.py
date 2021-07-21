@@ -142,7 +142,7 @@ random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 3 # 2000 # 10 # 600 # 300 # The number of noise pattern for different sameples
+n_noise = 2000 # 10 # 600 # 300 # The number of noise pattern for different sameples
 anchor_point_key = "eye_c_51"
 n_point_to_perturb = len(point_3d_dict_list[0]) - 1
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
@@ -152,8 +152,8 @@ print("LM_noise_set.shape = %s" % str(LM_noise_set.shape))
 
 # Control variables list
 #-------------------------------------#
-n_ctrl_yaw = 20 # 15 # 10 # 15
-n_ctrl_noise_norm = 3 # 10 # 15 # 3 # 15
+n_ctrl_yaw = 30 # 20 # 15 # 10 # 15
+n_ctrl_noise_norm = 10 # 15 # 3 # 15
 #
 ctrl_bound_yaw = (0.0, 90.0) # deg
 ctrl_bound_noise_stddev = (0.0, 5.0) # pixel, in bbox local coordinate
@@ -335,6 +335,8 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
         print("Progress: %.1f%% (%d/%d)" % ( (100.0*data_count/float(n_data)), data_count, n_data))
         print("Time elapsed for total %d data = %f" % (data_count, delta_time))
         print("Average processing time for single data = %f" % (delta_time / data_count) )
+        estimated_remian_time = (n_data-data_count)*(delta_time / data_count)
+        print("Estimated remain time = %f" %  estimated_remian_time)
         print()
         last_epoch_stamp = _current_stamp
         #------------------------------------#
