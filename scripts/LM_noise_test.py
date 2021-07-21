@@ -339,6 +339,48 @@ print()
 
 
 
+
+
+def write_mesh_to_csv(mesh, row_value_list, col_value_list, csv_path):
+    '''
+    '''
+    with open(csv_path, mode='w') as _csv_f:
+        _csv_w = csv.writer(_csv_f)
+
+        header_0 = ["Yaw(deg.) \ noise_std(deg.)"] + list(col_value_list)
+        _csv_w.writerow(header_0)
+
+        for _idx in range(mesh.shape[0]):
+            _row_i = [row_value_list[_idx]] + list(mesh[_idx,:])
+            _csv_w.writerow(_row_i)
+
+        print("\n*** Wrote the results to the csv file:\n\t[%s]\n" % csv_path)
+
+
+# Write the result mesh to csv files
+#------------------------------------------#
+# Mean
+value_name = "yaw_error_mean"
+value_mesh = mesh_yn_yaw_error_mean
+csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s.csv' % value_name
+write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, csv_path)
+# stddev
+value_name = "yaw_error_stddev"
+value_mesh = mesh_yn_yaw_error_stddev
+csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s.csv' % value_name
+write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, csv_path)
+# MAE
+value_name = "yaw_MAE"
+value_mesh = mesh_yn_yaw_MAE
+csv_path = result_data_dir_str + 'mesh_yaw_x_noise_stddev_to_%s.csv' % value_name
+write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, csv_path)
+#------------------------------------------#
+
+
+
+
+
+
 def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, result_plot_dir_str, is_transparent=False):
     plt.figure(title)
     plt.plot(x, Y)
