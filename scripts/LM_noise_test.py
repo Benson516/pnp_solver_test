@@ -142,7 +142,7 @@ random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 3 # 10 # 300 # The number of noise pattern for different sameples
+n_noise = 10 # 600 # 300 # The number of noise pattern for different sameples
 anchor_point_key = "eye_c_51"
 n_point_to_perturb = len(point_3d_dict_list[0]) - 1
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
@@ -152,8 +152,8 @@ print("LM_noise_set.shape = %s" % str(LM_noise_set.shape))
 
 # Control variables list
 #-------------------------------------#
-n_ctrl_yaw = 10 # 15
-n_ctrl_noise_norm = 3 # 15
+n_ctrl_yaw = 20 # 10 # 15
+n_ctrl_noise_norm = 15 # 3 # 15
 #
 ctrl_bound_yaw = (0.0, 50.0) # deg
 ctrl_bound_noise_stddev = (0.0, 5.0) # pixel, in bbox local coordinate
@@ -382,20 +382,28 @@ write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, c
 
 
 def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, result_plot_dir_str, is_transparent=False):
+    num_groups = Y.shape[1]
+    num_groups_desired = 5
+    #
+    num_groups_desired = min(num_groups, num_groups_desired)
+    # _jump = max((num_groups // num_groups_desired), 1)
+    _index = np.linspace(0, (num_groups-1), num=num_groups_desired, endpoint=True, dtype='i')
     plt.figure(title)
-    plt.plot(x, Y)
+    plt.plot(x, Y[:, _index])
     plt.title(title)
     plt.xlabel('Yaw (deg.)')
     plt.ylabel(y_label)
-    plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
+    plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list[_index] ])
     file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
     plt.savefig( file_path, transparent=is_transparent)
 
 def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot_dir_str, is_transparent=False):
-    num_groups = 5
-    num_yaw = Y.shape[0]
-    # _jump = max((num_yaw // num_groups), 1)
-    _index = np.linspace(0, (num_yaw-1), num=num_groups, endpoint=True, dtype='i')
+    num_groups = Y.shape[0]
+    num_groups_desired = 5
+    #
+    num_groups_desired = min(num_groups, num_groups_desired)
+    # _jump = max((num_groups // num_groups_desired), 1)
+    _index = np.linspace(0, (num_groups-1), num=num_groups_desired, endpoint=True, dtype='i')
     print("Yaw indexes selected in noise-yaw_err plot: %s" % _index)
     plt.figure(title)
     plt.plot(x, Y[_index, :].T)
