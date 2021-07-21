@@ -16,27 +16,22 @@ from signal import signal, SIGINT
 
 #---------------------------#
 # Landmark (LM) dataset
-data_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/'
-data_file_str = 'LM_noise.txt'
+data_name = 'LM_noise'
+result_root_dir_str = '/home/benson516/test_PnP_solver/dataset/' + data_name + '/'
 #---------------------------#
-# Image of Alexander
-# Original image
-image_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ/'
-# The image used for analysis
-image_result_unflipped_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result_unflipped/'
+# Plots
 # The same as the original image
-image_result_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/images/alexander_SZ_result/'
+result_plot_dir_str = result_root_dir_str + 'plots/'
 #---------------------------#
 # Result CSV file
-result_csv_dir_str = '/home/benson516/test_PnP_solver/dataset/Huey_face_landmarks_pose/result_CSVs/'
-result_csv_file_prefix_str = "result_csv_"
-result_statistic_txt_file_prefix_str = "statistic_"
+result_data_dir_str = result_root_dir_str + 'result_data/'
+
 
 # Make directories for storing the results if they do not exist.
 #------------------------------------------------------------------#
-os.makedirs(image_result_unflipped_dir_str, mode=0o777, exist_ok=True)
-os.makedirs(image_result_dir_str, mode=0o777, exist_ok=True)
-os.makedirs(result_csv_dir_str, mode=0o777, exist_ok=True)
+os.makedirs(result_plot_dir_str, mode=0o777, exist_ok=True)
+os.makedirs(result_plot_dir_str, mode=0o777, exist_ok=True)
+os.makedirs(result_data_dir_str, mode=0o777, exist_ok=True)
 #------------------------------------------------------------------#
 
 # Behavior of this program
@@ -327,19 +322,92 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
         #------------------------------------#
 
 
-#
-plt.figure("Yaw to error")
-plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_MAE)
-plt.title('Yaw to error')
+
+
+# is_transparent = True
+is_transparent = False
+
+def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, result_plot_dir_str, is_transparent=False):
+    plt.figure(title)
+    plt.plot(x, Y)
+    plt.title(title)
+    plt.xlabel('Yaw (deg.)')
+    plt.ylabel(y_label)
+    plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
+    file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+    plt.savefig( file_path, transparent=is_transparent)
+
+def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot_dir_str, is_transparent=False):
+    plt.figure(title)
+    plt.plot(x, Y[::3, :].T)
+    plt.title(title)
+    plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
+    plt.ylabel(y_label)
+    plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
+    file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+    plt.savefig( file_path, transparent=is_transparent)
+
+# Mean
+title = "Yaw to yaw error mean"
+plt.figure(title)
+plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_error_mean)
+plt.title(title)
 plt.xlabel('Yaw (deg.)')
 plt.ylabel('Yaw MAE (deg.)')
 plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
+file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+plt.savefig( file_path, transparent=is_transparent)
+# stddev
+title = "Yaw to yaw error stddev"
+plt.figure(title)
+plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_error_stddev)
+plt.title(title)
+plt.xlabel('Yaw (deg.)')
+plt.ylabel('Yaw MAE (deg.)')
+plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
+file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+plt.savefig( file_path, transparent=is_transparent)
+# MAE
+title = "Yaw to yaw MAE"
+plt.figure(title)
+plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_MAE)
+plt.title(title)
+plt.xlabel('Yaw (deg.)')
+plt.ylabel('Yaw MAE (deg.)')
+plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
+file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+plt.savefig( file_path, transparent=is_transparent)
 
-plt.figure("Noise stddev to error")
-plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_MAE[::3, :].T)
-plt.title(r'Noise stddev ($\sigma$) to error')
+
+# Mean
+title = "Noise stddev to yaw error mean"
+plt.figure(title)
+plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_mean[::3, :].T)
+plt.title(title)
 plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
 plt.ylabel('Yaw MAE (deg.)')
 plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
+file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+plt.savefig( file_path, transparent=is_transparent)
+# stddev
+title = "Noise stddev to yaw error stddev"
+plt.figure(title)
+plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_stddev[::3, :].T)
+plt.title(title)
+plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
+plt.ylabel('Yaw MAE (deg.)')
+plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
+file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+plt.savefig( file_path, transparent=is_transparent)
+# MAE
+title = "Noise stddev to yaw MAE"
+plt.figure(title)
+plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_MAE[::3, :].T)
+plt.title(title)
+plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
+plt.ylabel('Yaw MAE (deg.)')
+plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
+file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+plt.savefig( file_path, transparent=is_transparent)
 
 plt.show()
