@@ -5,6 +5,7 @@ import csv
 import os
 #
 import cv2
+import matplotlib.pyplot as plt
 #
 import PNP_SOLVER_LIB as PNPS
 import TEST_TOOLBOX as TTBX
@@ -146,7 +147,7 @@ random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 10 # 300 # The number of noise pattern for different sameples
+n_noise = 3 # 10 # 300 # The number of noise pattern for different sameples
 anchor_point_key = "eye_c_51"
 n_point_to_perturb = len(point_3d_dict_list[0]) - 1
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
@@ -233,8 +234,13 @@ s_stamp = time.time()
 sample_count = 0
 
 
-for noise_stddev_i in test_ctrl_noise_stddev_list:
-    for yaw_i in test_ctrl_yaw_list:
+# Result mesh
+mesh_yn_yaw_error_mean = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
+mesh_yn_yaw_error_stddev = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
+mesh_yn_yaw_MAE = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
+#
+for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
+    for ctrl_yaw_idx, yaw_i in enumerate(test_ctrl_yaw_list):
         # at (yaw_i, noise_stddev_i)
         print("(yaw_i, noise_stddev_i) = (%f, %f)" % (yaw_i, noise_stddev_i))
 
@@ -312,3 +318,28 @@ for noise_stddev_i in test_ctrl_noise_stddev_list:
         print("yaw_error_stddev = %f" % yaw_error_stddev)
         print("yaw_MAE = %f" % yaw_MAE)
         #------------------------------------#
+
+        # Store the result into the meshes
+        #------------------------------------#
+        mesh_yn_yaw_error_mean[ctrl_yaw_idx, ctrl_noise_idx] = yaw_error_mean
+        mesh_yn_yaw_error_stddev[ctrl_yaw_idx, ctrl_noise_idx] = yaw_error_stddev
+        mesh_yn_yaw_MAE[ctrl_yaw_idx, ctrl_noise_idx] = yaw_MAE
+        #------------------------------------#
+
+
+#
+plt.figure("Yaw to error")
+plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_MAE)
+plt.title('Yaw to error')
+plt.xlabel('Yaw (deg.)')
+plt.ylabel('Yaw MAE (deg.)')
+plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
+
+plt.figure("Noise stddev to error")
+plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_MAE[::3, :].T)
+plt.title(r'Noise stddev ($\sigma$) to error')
+plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
+plt.ylabel('Yaw MAE (deg.)')
+plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
+
+plt.show()
