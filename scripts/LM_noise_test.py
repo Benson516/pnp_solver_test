@@ -234,8 +234,12 @@ mesh_yn_yaw_error_mean = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
 mesh_yn_yaw_error_stddev = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
 mesh_yn_yaw_MAE = np.zeros( (n_ctrl_yaw, n_ctrl_noise_norm) )
 #
+s_stamp = time.time()
+#
 for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
     for ctrl_yaw_idx, yaw_i in enumerate(test_ctrl_yaw_list):
+        print()
+        print('-'*20 + ' (%d, %d) ' % (ctrl_yaw_idx, ctrl_noise_idx) + '-'*20)
         # at (yaw_i, noise_stddev_i)
         print("(yaw_i, noise_stddev_i) = (%f, %f)" % (yaw_i, noise_stddev_i))
 
@@ -321,11 +325,19 @@ for ctrl_noise_idx, noise_stddev_i in enumerate(test_ctrl_noise_stddev_list):
         mesh_yn_yaw_MAE[ctrl_yaw_idx, ctrl_noise_idx] = yaw_MAE
         #------------------------------------#
 
+#
+print("\nFinished\n")
+
+n_data = mesh_yn_yaw_error_mean.size
+
+delta_time = time.time() - s_stamp
+print()
+print("Time elapsed for %d data = %f" % (n_data, delta_time))
+print("Average processing time for single data = %f" % (delta_time / n_data) )
+print()
 
 
 
-# is_transparent = True
-is_transparent = False
 
 def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, result_plot_dir_str, is_transparent=False):
     plt.figure(title)
@@ -338,76 +350,75 @@ def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, resu
     plt.savefig( file_path, transparent=is_transparent)
 
 def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot_dir_str, is_transparent=False):
+    num_groups = 5
+    num_yaw = Y.shape[0]
+    # _jump = max((num_yaw // num_groups), 1)
+    _index = np.linspace(0, (num_yaw-1), num=num_groups, endpoint=True, dtype='i')
+    print("Yaw indexes selected in noise-yaw_err plot: %s" % _index)
     plt.figure(title)
-    plt.plot(x, Y[::3, :].T)
+    plt.plot(x, Y[_index, :].T)
     plt.title(title)
     plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
     plt.ylabel(y_label)
-    plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
+    plt.legend( ["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list[_index] ] )
     file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
     plt.savefig( file_path, transparent=is_transparent)
 
+
+
+
+# is_transparent = True
+is_transparent = False
+
+# Plot: Yaw - Yaw error
+#---------------------------------------------------#
 # Mean
 title = "Yaw to yaw error mean"
-plt.figure(title)
-plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_error_mean)
-plt.title(title)
-plt.xlabel('Yaw (deg.)')
-plt.ylabel('Yaw MAE (deg.)')
-plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
-file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
-plt.savefig( file_path, transparent=is_transparent)
+plot_yaw_2_yaw_error(test_ctrl_yaw_list, mesh_yn_yaw_error_mean,
+                    title, "Yaw error mean (deg.)",
+                    test_ctrl_noise_stddev_list,
+                    result_plot_dir_str,
+                    is_transparent=is_transparent)
 # stddev
 title = "Yaw to yaw error stddev"
-plt.figure(title)
-plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_error_stddev)
-plt.title(title)
-plt.xlabel('Yaw (deg.)')
-plt.ylabel('Yaw MAE (deg.)')
-plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
-file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
-plt.savefig( file_path, transparent=is_transparent)
+plot_yaw_2_yaw_error(test_ctrl_yaw_list, mesh_yn_yaw_error_stddev,
+                    title, "Yaw error stddev (deg.)",
+                    test_ctrl_noise_stddev_list,
+                    result_plot_dir_str,
+                    is_transparent=is_transparent)
 # MAE
 title = "Yaw to yaw MAE"
-plt.figure(title)
-plt.plot(test_ctrl_yaw_list, mesh_yn_yaw_MAE)
-plt.title(title)
-plt.xlabel('Yaw (deg.)')
-plt.ylabel('Yaw MAE (deg.)')
-plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list])
-file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
-plt.savefig( file_path, transparent=is_transparent)
+plot_yaw_2_yaw_error(test_ctrl_yaw_list, mesh_yn_yaw_MAE,
+                    title, "Yaw error MAE (deg.)",
+                    test_ctrl_noise_stddev_list,
+                    result_plot_dir_str,
+                    is_transparent=is_transparent)
+#---------------------------------------------------#
 
 
+# Plot: Noise stddev - Yaw error
+#---------------------------------------------------#
 # Mean
 title = "Noise stddev to yaw error mean"
-plt.figure(title)
-plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_mean[::3, :].T)
-plt.title(title)
-plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
-plt.ylabel('Yaw MAE (deg.)')
-plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
-file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
-plt.savefig( file_path, transparent=is_transparent)
+plot_noise_2_yaw_error(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_mean,
+                    title, "Yaw error mean (deg.)",
+                    test_ctrl_yaw_list,
+                    result_plot_dir_str,
+                    is_transparent=is_transparent)
 # stddev
 title = "Noise stddev to yaw error stddev"
-plt.figure(title)
-plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_stddev[::3, :].T)
-plt.title(title)
-plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
-plt.ylabel('Yaw MAE (deg.)')
-plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
-file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
-plt.savefig( file_path, transparent=is_transparent)
+plot_noise_2_yaw_error(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_stddev,
+                    title, "Yaw error stddev (deg.)",
+                    test_ctrl_yaw_list,
+                    result_plot_dir_str,
+                    is_transparent=is_transparent)
 # MAE
 title = "Noise stddev to yaw MAE"
-plt.figure(title)
-plt.plot(test_ctrl_noise_stddev_list, mesh_yn_yaw_MAE[::3, :].T)
-plt.title(title)
-plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
-plt.ylabel('Yaw MAE (deg.)')
-plt.legend(["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list])
-file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
-plt.savefig( file_path, transparent=is_transparent)
+plot_noise_2_yaw_error(test_ctrl_noise_stddev_list, mesh_yn_yaw_MAE,
+                    title, "Yaw error MAE (deg.)",
+                    test_ctrl_yaw_list,
+                    result_plot_dir_str,
+                    is_transparent=is_transparent)
+#---------------------------------------------------#
 
 plt.show()
