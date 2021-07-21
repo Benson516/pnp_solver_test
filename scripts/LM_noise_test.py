@@ -159,7 +159,8 @@ n_ctrl_yaw = 15 # 20 # 30 # 20 # 15 # 10 # 15
 n_ctrl_noise_norm = 10 # 15 # 3 # 15
 #
 ctrl_bound_yaw = (0.0, 90.0) # deg
-ctrl_bound_noise_stddev = (0.0, 5.0) # pixel, in bbox local coordinate
+ctrl_bound_noise_stddev = (0.0, 5.0) # pixel, in bbox local coordinate, for 112x112 model
+# ctrl_bound_noise_stddev = (0.0, 10.0) # pixel, in bbox local coordinate, for 224x224 model
 #
 # Generate value list
 test_ctrl_yaw_list = np.linspace(ctrl_bound_yaw[0], ctrl_bound_yaw[1], num=n_ctrl_yaw) # deg.
