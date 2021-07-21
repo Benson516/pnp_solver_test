@@ -142,7 +142,7 @@ random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 2000 # 10 # 600 # 300 # The number of noise pattern for different sameples
+n_noise = 3 # 2000 # 10 # 600 # 300 # The number of noise pattern for different sameples
 anchor_point_key = "eye_c_51"
 n_point_to_perturb = len(point_3d_dict_list[0]) - 1
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
@@ -153,9 +153,9 @@ print("LM_noise_set.shape = %s" % str(LM_noise_set.shape))
 # Control variables list
 #-------------------------------------#
 n_ctrl_yaw = 20 # 15 # 10 # 15
-n_ctrl_noise_norm = 10 # 15 # 3 # 15
+n_ctrl_noise_norm = 3 # 10 # 15 # 3 # 15
 #
-ctrl_bound_yaw = (0.0, 50.0) # deg
+ctrl_bound_yaw = (0.0, 90.0) # deg
 ctrl_bound_noise_stddev = (0.0, 5.0) # pixel, in bbox local coordinate
 #
 # Generate value list
@@ -410,25 +410,54 @@ write_mesh_to_csv(value_mesh, test_ctrl_yaw_list, test_ctrl_noise_stddev_list, c
 
 
 
+exp_condition_dict = dict()
+exp_condition_dict["bbox_resolution"] = bbox_resolution
+exp_condition_dict["bbox_size"] = bbox_size
+exp_condition_dict["fixed_depth"] = fixed_depth
+exp_condition_dict["fixed_roll"] = fixed_roll
+exp_condition_dict["fixed_pitch"] = fixed_pitch
 
-
-def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, result_plot_dir_str, is_transparent=False):
+def plot_yaw_2_yaw_error(x, Y, title, y_label, test_ctrl_noise_stddev_list, result_plot_dir_str, exp_condition_dict=None, is_transparent=False):
     num_groups = Y.shape[1]
     num_groups_desired = 5
     #
     num_groups_desired = min(num_groups, num_groups_desired)
     # _jump = max((num_groups // num_groups_desired), 1)
     _index = np.linspace(0, (num_groups-1), num=num_groups_desired, endpoint=True, dtype='i')
+    print("Noise stddev indexes selected in yaw-yaw_err plot: %s" % _index)
     plt.figure(title)
+    # plt.figure(title, figsize=(8,6))
     plt.plot(x, Y[:, _index])
     plt.title(title)
     plt.xlabel('Yaw (deg.)')
     plt.ylabel(y_label)
-    plt.legend([r"$\sigma$ = %.1f deg." % e for e in test_ctrl_noise_stddev_list[_index] ])
-    file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+    plt.legend([r"$\sigma$ = %.1f pixel" % e for e in test_ctrl_noise_stddev_list[_index] ])
+    #
+    _condition_name = ""
+    if exp_condition_dict is not None:
+        bbox_resolution = exp_condition_dict["bbox_resolution"]
+        bbox_size = exp_condition_dict["bbox_size"]
+        fixed_depth = exp_condition_dict["fixed_depth"]
+        fixed_roll = exp_condition_dict["fixed_roll"]
+        fixed_pitch = exp_condition_dict["fixed_pitch"]
+        #
+        ax = plt.gca()
+        _text = "bbox res=%dpx" % bbox_resolution
+        _text += "\n" + "bbox size=%dpx @ depth=%.1fm" % (bbox_size, fixed_depth)
+        _text += "\n" + "roll=%d deg." % fixed_roll
+        _text += "\n" + "pitch=%d deg." % fixed_pitch
+        # plt.text(0.02, 0.98, _text, fontsize=8, ha="left", va="top", transform=ax.transAxes)
+        plt.text(0.0, 1.02, _text, fontsize=8, ha="left", va="bottom", transform=ax.transAxes)
+        #
+        _condition_name = "_bbxr%dbbxs%dd%dr%dp%d" % (bbox_resolution, bbox_size, int(fixed_depth*100.0), fixed_roll, fixed_pitch)
+        # print("_condition_name = %s" % _condition_name)
+    #
+    file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + _condition_name + '.png'
     plt.savefig( file_path, transparent=is_transparent)
 
-def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot_dir_str, is_transparent=False):
+
+
+def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot_dir_str, exp_condition_dict=None, is_transparent=False):
     num_groups = Y.shape[0]
     num_groups_desired = 5
     #
@@ -437,12 +466,33 @@ def plot_noise_2_yaw_error(x, Y, title, y_label, test_ctrl_yaw_list, result_plot
     _index = np.linspace(0, (num_groups-1), num=num_groups_desired, endpoint=True, dtype='i')
     print("Yaw indexes selected in noise-yaw_err plot: %s" % _index)
     plt.figure(title)
+    # plt.figure(title, figsize=(8,6))
     plt.plot(x, Y[_index, :].T)
     plt.title(title)
-    plt.xlabel(r'Noise stddev $\sigma$ (deg.)')
+    plt.xlabel(r'Noise stddev $\sigma$ (pixel)')
     plt.ylabel(y_label)
     plt.legend( ["Yaw = %.1f deg." % e for e in test_ctrl_yaw_list[_index] ] )
-    file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + '.png'
+    #
+    _condition_name = ""
+    if exp_condition_dict is not None:
+        bbox_resolution = exp_condition_dict["bbox_resolution"]
+        bbox_size = exp_condition_dict["bbox_size"]
+        fixed_depth = exp_condition_dict["fixed_depth"]
+        fixed_roll = exp_condition_dict["fixed_roll"]
+        fixed_pitch = exp_condition_dict["fixed_pitch"]
+        #
+        ax = plt.gca()
+        _text = "bbox res=%dpx" % bbox_resolution
+        _text += "\n" + "bbox size=%dpx @ depth=%.1fm" % (bbox_size, fixed_depth)
+        _text += "\n" + "roll=%d deg." % fixed_roll
+        _text += "\n" + "pitch=%d deg." % fixed_pitch
+        # plt.text(0.02, 0.98, _text, fontsize=8, ha="left", va="top", transform=ax.transAxes)
+        plt.text(0.0, 1.02, _text, fontsize=8, ha="left", va="bottom", transform=ax.transAxes)
+        #
+        _condition_name = "_bbxr%dbbxs%dd%dr%dp%d" % (bbox_resolution, bbox_size, int(fixed_depth*100.0), fixed_roll, fixed_pitch)
+        # print("_condition_name = %s" % _condition_name)
+    #
+    file_path = result_plot_dir_str + '_'.join( title.split(" ") ) + _condition_name + '.png'
     plt.savefig( file_path, transparent=is_transparent)
 
 
@@ -459,6 +509,7 @@ plot_yaw_2_yaw_error(test_ctrl_yaw_list, mesh_yn_yaw_error_mean,
                     title, "Yaw error mean (deg.)",
                     test_ctrl_noise_stddev_list,
                     result_plot_dir_str,
+                    exp_condition_dict=exp_condition_dict,
                     is_transparent=is_transparent)
 # stddev
 title = "Yaw to yaw error stddev"
@@ -466,6 +517,7 @@ plot_yaw_2_yaw_error(test_ctrl_yaw_list, mesh_yn_yaw_error_stddev,
                     title, "Yaw error stddev (deg.)",
                     test_ctrl_noise_stddev_list,
                     result_plot_dir_str,
+                    exp_condition_dict=exp_condition_dict,
                     is_transparent=is_transparent)
 # MAE
 title = "Yaw to yaw MAE"
@@ -473,6 +525,7 @@ plot_yaw_2_yaw_error(test_ctrl_yaw_list, mesh_yn_yaw_MAE,
                     title, "Yaw error MAE (deg.)",
                     test_ctrl_noise_stddev_list,
                     result_plot_dir_str,
+                    exp_condition_dict=exp_condition_dict,
                     is_transparent=is_transparent)
 #---------------------------------------------------#
 
@@ -485,6 +538,7 @@ plot_noise_2_yaw_error(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_mean,
                     title, "Yaw error mean (deg.)",
                     test_ctrl_yaw_list,
                     result_plot_dir_str,
+                    exp_condition_dict=exp_condition_dict,
                     is_transparent=is_transparent)
 # stddev
 title = "Noise stddev to yaw error stddev"
@@ -492,6 +546,7 @@ plot_noise_2_yaw_error(test_ctrl_noise_stddev_list, mesh_yn_yaw_error_stddev,
                     title, "Yaw error stddev (deg.)",
                     test_ctrl_yaw_list,
                     result_plot_dir_str,
+                    exp_condition_dict=exp_condition_dict,
                     is_transparent=is_transparent)
 # MAE
 title = "Noise stddev to yaw MAE"
@@ -499,6 +554,7 @@ plot_noise_2_yaw_error(test_ctrl_noise_stddev_list, mesh_yn_yaw_MAE,
                     title, "Yaw error MAE (deg.)",
                     test_ctrl_yaw_list,
                     result_plot_dir_str,
+                    exp_condition_dict=exp_condition_dict,
                     is_transparent=is_transparent)
 #---------------------------------------------------#
 
