@@ -142,9 +142,12 @@ random_seed = 42
 # random_seed = None
 random_gen = np.random.default_rng(seed=random_seed)
 #
-n_noise = 1000 # 2000 # 10 # 600 # 300 # The number of noise pattern for different sameples
-anchor_point_key = "eye_c_51"
-n_point_to_perturb = len(point_3d_dict_list[0]) - 1
+n_noise = 2000 # 10 # 600 # 300 # The number of noise pattern for different sameples
+anchor_point_key = "" # None
+# anchor_point_key = "eye_c_51"
+n_point_to_perturb = len(point_3d_dict_list[0]) # All the point
+if anchor_point_key in point_3d_dict_list[0]:
+    n_point_to_perturb -= 1 # Remove the anchor point
 LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noise, n_point_to_perturb)) # shape = (n_noise, n_point_to_perturb, 2)
 print("LM_noise_set.shape = %s" % str(LM_noise_set.shape))
 #-------------------------------------#
