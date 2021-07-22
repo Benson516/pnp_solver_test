@@ -152,6 +152,13 @@ LM_noise_set = random_gen.multivariate_normal( np.zeros((2,)), np.eye(2), (n_noi
 print("LM_noise_set.shape = %s" % str(LM_noise_set.shape))
 #-------------------------------------#
 
+# Calculate the average norm of landmark noise
+LM_noise_norm_set = np.linalg.norm(LM_noise_set, axis=2)
+print(LM_noise_norm_set.shape)
+LM_noise_set_MAE = np.mean( LM_noise_norm_set)
+print("LM_noise_set_MAE = %f" % LM_noise_set_MAE)
+
+
 
 # Control variables list
 #-------------------------------------#
@@ -185,15 +192,15 @@ def convert_bbox_scale_to_global(value, bbox_size_local=112, bbox_size_global=30
 
 
 
-# Ground truth classification
-#-------------------------------#
-# Format
-drpy_class_format = "drpy_expand"
-# drpy_class_format = "HMI_inspection"
-
-# Get parameters for classification
-class_drpy_param_dict = TTBX.get_classification_parameters(drpy_class_format=drpy_class_format)
-#-------------------------------#
+# # Ground truth classification
+# #-------------------------------#
+# # Format
+# drpy_class_format = "drpy_expand"
+# # drpy_class_format = "HMI_inspection"
+#
+# # Get parameters for classification
+# class_drpy_param_dict = TTBX.get_classification_parameters(drpy_class_format=drpy_class_format)
+# #-------------------------------#
 
 
 
