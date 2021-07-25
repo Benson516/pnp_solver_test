@@ -4,7 +4,7 @@ import copy
 import time
 
 
-class PNP_SOLVER_A2_M3(object):
+class PNP_SOLVER(object):
     '''
     '''
     def __init__(self, np_K_camera_est, point_3d_dict_list, pattern_scale_list=None, verbose=False):
@@ -4498,7 +4498,7 @@ class PNP_SOLVER_A2_M3(object):
         '''
         return (R_in @ point_3D + t_in)
 
-    def perspective_projection(self, np_point_3d, np_K_camera, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=True):
+    def perspective_projection(self, np_point_3d, np_K_camera, np_R, np_t, is_quantized=False, quantize_q=1.0, is_returning_homogeneous_vec=True):
         '''
         input:
         - np_point_3d: [[x,y,z]].T
@@ -4517,7 +4517,7 @@ class PNP_SOLVER_A2_M3(object):
         projection_no_q = _ray/abs(_ray[2,0]) # Incase that the point is behind the camera
         # Quantize
         if is_quantized:
-            np_point_image = np.around(projection_no_q) # with quantization
+            np_point_image = np.around(projection_no_q/quantize_q)*quantize_q # with quantization
         else:
             np_point_image = projection_no_q # no quantization
         if is_returning_homogeneous_vec:
@@ -4526,7 +4526,7 @@ class PNP_SOLVER_A2_M3(object):
             return (np_point_image[0:2,0], projection_no_q[0:2,0])
 
 
-    def perspective_projection_obj_axis(self, np_R, np_t):
+    def perspective_projection_obj_axis(self, np_R, np_t, scale=1.0):
         '''
         Project the unit vector of each axis onto the image space.
         output:
@@ -4538,9 +4538,9 @@ class PNP_SOLVER_A2_M3(object):
         # Calculate the control points of each axis (i.e. the point at distance 1.0 on each axis)
         # Note: For uv_0, this operation is eqivelent to "uv_o = (K @ np_t)[0:2,0] "
         uv_o, _ = self.perspective_projection(np.array([[0.0, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
-        uv_x1, _ = self.perspective_projection(np.array([[1.0, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
-        uv_y1, _ = self.perspective_projection(np.array([[0.0, 1.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
-        uv_z1, _ = self.perspective_projection(np.array([[0.0, 0.0, 1.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_x1, _ = self.perspective_projection(np.array([[scale, 0.0, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_y1, _ = self.perspective_projection(np.array([[0.0, scale, 0.0]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
+        uv_z1, _ = self.perspective_projection(np.array([[0.0, 0.0, scale]]), self.np_K_camera_est, np_R, np_t, is_quantized=False, is_returning_homogeneous_vec=False)
         # Calculate the direction vector for each axis in the image space
         # Note: This operation is eqivelent to "dir_x = self.unit_vec(K @ np_R[:,0])"
         # dir_x = self.unit_vec(uv_x1 - uv_o)
@@ -4552,7 +4552,7 @@ class PNP_SOLVER_A2_M3(object):
         return (uv_o, dir_x, dir_y, dir_z)
 
 
-    def perspective_projection_golden_landmarks(self, np_R, np_t, is_quantized=False, is_pretrans_points=False, is_returning_homogeneous_vec=True):
+    def perspective_projection_golden_landmarks(self, np_R, np_t, is_quantized=False, quantize_q=1.0, is_pretrans_points=False, is_returning_homogeneous_vec=True):
         '''
         Project the golden landmarks onto the image space using the given camera intrinsic.
         '''
@@ -4571,7 +4571,7 @@ class PNP_SOLVER_A2_M3(object):
                 _point = _np_point_3d_pretransfer_dict[_k]
             else:
                 _point = _np_point_3d_dict[_k]
-            _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized, is_returning_homogeneous_vec=is_returning_homogeneous_vec)
+            _np_point_image, _projection_no_q = self.perspective_projection(_point, self.np_K_camera_est, np_R, np_t, is_quantized=is_quantized, quantize_q=quantize_q, is_returning_homogeneous_vec=is_returning_homogeneous_vec)
             np_point_image_dict[_k] = _np_point_image
             np_point_quantization_error_dict[_k] = (_np_point_image - _projection_no_q)
             np_point_image_no_q_err_dict[_k] = _projection_no_q
@@ -4687,7 +4687,7 @@ def main():
     np_K_camera_est = np.array([[fx_camera, 0.0, xo_camera], [0.0, fy_camera, yo_camera], [0.0, 0.0, 1.0]]) # Estimated
     print("np_K_camera_est = \n%s" % str(np_K_camera_est))
     #
-    pnp_solver = PNP_SOLVER_A2_M3(np_K_camera_est, [point_3d_dict], verbose=True)
+    pnp_solver = PNP_SOLVER(np_K_camera_est, [point_3d_dict], verbose=True)
 
     # test
     # roll = 10.0
