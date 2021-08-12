@@ -469,6 +469,7 @@ def plot_LMs_and_axies(
             np_homo_point_LM_dict,
             np_homo_point_GT_golden_dict,
             np_homo_point_reproject_golden_dict,
+            np_homo_point_LM_frontal_view_dict=None,
             is_ploting_LMs=True,
             is_mirrored_image=False,
             LM_img_width=320,
@@ -616,6 +617,13 @@ def plot_LMs_and_axies(
         _color = _color_RED # BGR
         # _color = _color_BLUE # BGR
         cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        if np_homo_point_LM_frontal_view_dict is not None:
+            # Frontal view
+            _center_pixel = (np_homo_point_LM_frontal_view_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+            _radius = 5
+            _color = (0, 180, 0) # BGR
+            # _color = _color_BLUE # BGR
+            cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
     #----------------------------------#
 
     # Text

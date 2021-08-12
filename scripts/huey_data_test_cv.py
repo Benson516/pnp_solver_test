@@ -361,6 +361,24 @@ for _idx in range(len(data_list)):
     # np_R_ca_est = copy.deepcopy(pnp_solver.np_R_c_a_est)
     # np_t_ca_est = copy.deepcopy(pnp_solver.np_t_c_a_est)
 
+    # Convert the LMs to frontal look
+    #----------------------------------------------------#
+    # d2 = 1.0 # m
+    d2 = 0.3 # m
+    np_nf = np.array([0., 0., 1.]).reshape((3,1))
+    H_a2o = np_R_est + (np_t_est / d2 - np_R_est @ np_nf) @ (np_nf.T)
+    G_a2o = np_K_camera_est @ H_a2o @ np.linalg.inv(np_K_camera_est)
+    G_o2a = np.linalg.inv(G_a2o)
+    #
+    np_point_image_frontal_dict = dict()
+    for _key in np_point_image_dict:
+        _homo_point_o = np_point_image_dict[_key]
+        _homo_point_a = G_o2a @ _homo_point_o
+        _homo_point_a /= _homo_point_a[2,0] # Normalize
+        np_point_image_frontal_dict[_key] = _homo_point_a
+    #----------------------------------------------------#
+
+
     # Compare result
     #-----------------------------#
 
@@ -461,6 +479,7 @@ for _idx in range(len(data_list)):
                 np_point_image_dict,
                 np_point_image_dict_reproject_GT_ori_golden_patern,
                 np_point_image_dict_reproject,
+                np_homo_point_LM_frontal_view_dict=np_point_image_frontal_dict,
                 is_mirrored_image=is_mirrored_image,
                 is_ploting_LMs=True,
                 LM_img_width=320,
