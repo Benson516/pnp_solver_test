@@ -72,7 +72,8 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy = {"distance":"160", "roll":"25", "pitch":"-30", "yaw":"-40"} # Error type LM
 # specific_drpy = {"distance":"100", "roll":"45", "pitch":"-30", "yaw":"-40"} # Error type LM
 # specific_drpy = {"distance":"160", "roll":"-25", "pitch":"0", "yaw":"-40"} # Error type fitting
-# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"20"}
+# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"-20"}
+# specific_drpy = {"distance":"100", "roll":"0", "pitch":"-15", "yaw":"20"}
 specific_drpy = None
 #
 DATA_COUNT = 3
@@ -367,6 +368,7 @@ for _idx in range(len(data_list)):
     d2 = 0.3 # m
     np_nf = np.array([0., 0., 1.]).reshape((3,1))
     H_a2o = np_R_est + (np_t_est / d2 - np_R_est @ np_nf) @ (np_nf.T)
+    # H_a2o = np_R_est
     G_a2o = np_K_camera_est @ H_a2o @ np.linalg.inv(np_K_camera_est)
     G_o2a = np.linalg.inv(G_a2o)
     #
