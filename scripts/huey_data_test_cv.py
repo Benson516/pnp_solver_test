@@ -296,9 +296,9 @@ for _idx in range(len(data_list)):
     LM_pixel_data_matrix = data_list[_idx]['LM_pixel'] # [LM_id] --> [x,y]
     np_point_image_dict = dict()
     # [x,y,1].T, shape: (3,1)
-    np_point_image_dict["eye_l_96"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[96], mirrored=is_mirrored_image)
-    np_point_image_dict["eye_r_97"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[97], mirrored=is_mirrored_image)
-    np_point_image_dict["eye_c_51"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[51], mirrored=is_mirrored_image)
+    # np_point_image_dict["eye_l_96"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[96], mirrored=is_mirrored_image)
+    # np_point_image_dict["eye_r_97"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[97], mirrored=is_mirrored_image)
+    # np_point_image_dict["eye_c_51"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[51], mirrored=is_mirrored_image)
     np_point_image_dict["mouse_l_76"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[76], mirrored=is_mirrored_image)
     np_point_image_dict["mouse_r_82"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[82], mirrored=is_mirrored_image)
     np_point_image_dict["nose_t_54"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[54], mirrored=is_mirrored_image)
@@ -307,6 +307,10 @@ for _idx in range(len(data_list)):
     # np_point_image_dict["brow_il_37"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[37], mirrored=is_mirrored_image)
     # np_point_image_dict["brow_ir_42"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[42], mirrored=is_mirrored_image)
     # np_point_image_dict["brow_cr_44"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[44], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_lo_60"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[60], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_li_64"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[64], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_ro_72"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[72], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_ri_68"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[68], mirrored=is_mirrored_image)
     #
     # np_point_image_dict["face_c"] = TTBX.convert_pixel_to_homo(      TTBX.solving_center_point(
     #                                                             LM_pixel_data_matrix[97],
