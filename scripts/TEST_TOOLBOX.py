@@ -113,10 +113,10 @@ def get_golden_pattern(pattern_name="Alexander"):
         point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
         point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
         point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
-        point_3d_dict["eye_lo_60"] = [0.05, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-        point_3d_dict["eye_li_64"] = [0.014, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-        point_3d_dict["eye_ro_72"] = [-0.05, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
-        point_3d_dict["eye_ri_68"] = [-0.014, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_lo_60"] = [0.047, 0.0, 0.005] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_li_64"] = [0.018, 0.0, 0.00] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_ro_72"] = [-0.047, 0.0, 0.005] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_ri_68"] = [-0.018, 0.0, 0.00] # [ 0.035, 0.0, 0.0]
         #
         # point_3d_dict["face_c"] = solving_center_point(
         #                         point_3d_dict["eye_r_97"],
