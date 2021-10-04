@@ -72,8 +72,8 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy = {"distance":"160", "roll":"25", "pitch":"-30", "yaw":"-40"} # Error type LM
 # specific_drpy = {"distance":"100", "roll":"45", "pitch":"-30", "yaw":"-40"} # Error type LM
 # specific_drpy = {"distance":"160", "roll":"-25", "pitch":"0", "yaw":"-40"} # Error type fitting
-# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"-20"}
-# specific_drpy = {"distance":"100", "roll":"0", "pitch":"-15", "yaw":"20"}
+# specific_drpy = {"distance":"60", "roll":"0", "pitch":"0", "yaw":"-40"}
+# specific_drpy = {"distance":"60", "roll":"0", "pitch":"0", "yaw":"0"}
 specific_drpy = None
 #
 DATA_COUNT = 3
