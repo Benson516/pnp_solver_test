@@ -149,20 +149,34 @@ class PNP_SOLVER(object):
         idx_best = None
         result_best = None
 
+
+        # The selected landmark subset
+        #-----------------------------------------#
+        # LM_key_list = None
+        LM_key_list = ['eye_l_96', 'eye_r_97', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16'] # Standard frontal look 6 points
+        # LM_key_list = ['eye_lo_60', 'eye_ro_72', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16'] # Outer eye corners
+        # LM_key_list = ['eye_li_64', 'eye_ri_68', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16'] # Inner eye corners
+        # LM_key_list = ['eye_lo_60', 'eye_li_64', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16'] # Left eye
+        # LM_key_list = ['eye_ro_72', 'eye_ri_68', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16'] # Right eye
+        # LM_key_list = ['eye_lo_60', 'eye_li_64', 'eye_ro_72', 'eye_ri_68', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16'] # Left + right eye
+        # LM_key_list = ['eye_lo_60', 'eye_li_64', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16'] # Candidated left-side 6 points
+        self.lib_print("LM_key_list = %s" % str(LM_key_list) )
+        #-----------------------------------------#
+
         for _idx in range(len(self.np_point_3d_pretransfer_dict_list)):
             _point_3d_dict = self.np_point_3d_pretransfer_dict_list[_idx]
             # # _result = (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
-            # _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict) # f2
-            # _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_EKF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_UKF2_single_pattern(np_point_image_dict, _point_3d_dict)
-            # _result = self.solve_pnp_LM_single_pattern(np_point_image_dict, _point_3d_dict)
-            _result = self.solve_pnp_QEIF_single_pattern(np_point_image_dict, _point_3d_dict)
+            # _result = self.solve_pnp_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_seperate_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_formulation_2_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list) # f2
+            # _result = self.solve_pnp_constrained_optimization_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_EKF_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_EIF_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_EKF2_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_EIF2_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_UKF2_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            # _result = self.solve_pnp_LM_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
+            _result = self.solve_pnp_QEIF_single_pattern(np_point_image_dict, _point_3d_dict, LM_key_list=LM_key_list)
             # _res_norm_n_est = _result[-1] * _result[2] # (res_norm * t3_est) Normalize the residual with distance estimation
             _res_norm = _result[-1]
             # Note: _res_norm is more stable than the _res_norm_n_est. When using _res_norm_n_est, the estimated depth will prone to smaller (since the _res_norm_n_est is smaller when estimated depth is smaller)
@@ -174,6 +188,7 @@ class PNP_SOLVER(object):
                 result_best = _result
 
         self.lib_print("-"*70)
+        self.lib_print("LM_key_list = %s" % str(LM_key_list) )
         for _idx in range(len(res_norm_list)):
             self.lib_print("Pattern [%d]: _res_norm = %f" % (_idx, res_norm_list[_idx]))
         self.lib_print("-"*70)
@@ -187,7 +202,7 @@ class PNP_SOLVER(object):
         return result_best
         # return [*result_best, idx_best, min_res_norm]
 
-    def solve_pnp_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -414,7 +429,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_seperate_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_seperate_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -675,7 +690,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_formulation_2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_formulation_2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -937,7 +952,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_constrained_optimization_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_constrained_optimization_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -1294,7 +1309,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_EKF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_EKF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -1514,7 +1529,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_EIF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_EIF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -1757,7 +1772,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_EKF2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_EKF2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -1983,7 +1998,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_EIF2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_EIF2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -2259,7 +2274,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_UKF2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_UKF2_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -2549,7 +2564,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_LM_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_LM_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -2753,7 +2768,7 @@ class PNP_SOLVER(object):
         # Note: Euler angles are in degree
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est, res_norm)
 
-    def solve_pnp_QEIF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict):
+    def solve_pnp_QEIF_single_pattern(self, np_point_image_dict, np_point_3d_pretransfer_dict, LM_key_list=None):
         '''
         For each image frame,
         return (np_R_est, np_t_est, t3_est, roll_est, yaw_est, pitch_est )
@@ -2762,7 +2777,7 @@ class PNP_SOLVER(object):
         # Constant, only changed when golden pattern changed
         #--------------------------------#
         # LM_key_list = None
-        LM_key_list = ['eye_l_96', 'eye_r_97', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16']
+        # LM_key_list = ['eye_l_96', 'eye_r_97', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16']
         # LM_key_list = ['eye_lo_60', 'eye_li_64', 'mouse_l_76', 'mouse_r_82', 'nose_t_54', 'chin_t_16']
         self.lib_print("LM_key_list = %s" % str(LM_key_list) )
 
