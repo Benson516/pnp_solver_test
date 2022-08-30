@@ -80,10 +80,14 @@ def get_golden_pattern(pattern_name="Alexander"):
         point_3d_dict["mouse_r_82"] = [ -0.025, 0.060, 0.0] # [ -0.025, 0.085, 0.0]
         point_3d_dict["nose_t_54"] = [ 0.00, 0.039, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
         point_3d_dict["chin_t_16"] = [0.0, 0.098, 0.0]
-        # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
-        # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
-        # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
-        # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+        point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+        point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+        point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+        point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+        point_3d_dict["eye_lo_60"] = [0.046, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_li_64"] = [0.01, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_ro_72"] = [-0.046, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_ri_68"] = [-0.01, 0.0, 0.0] # [ 0.035, 0.0, 0.0]
         #
         # point_3d_dict["face_c"] = solving_center_point(
         #                         point_3d_dict["eye_r_97"],
@@ -105,10 +109,14 @@ def get_golden_pattern(pattern_name="Alexander"):
         point_3d_dict["mouse_r_82"] = [ -0.027, 0.070, 0.0] # [ -0.025, 0.085, 0.0]
         point_3d_dict["nose_t_54"] = [ -0.005, 0.0455, -0.03] # [ 0.0, 0.0455, 0.03] # [ 0.0, 0.046, 0.03]
         point_3d_dict["chin_t_16"] = [0.0, 0.12, 0.0]
-        # point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
-        # point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
-        # point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
-        # point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+        point_3d_dict["brow_cl_35"] = [ 0.035, -0.0228, 0.0]
+        point_3d_dict["brow_il_37"] = [ 0.0135, -0.017, 0.0]
+        point_3d_dict["brow_ir_42"] = [ -0.0135, -0.017, 0.0]
+        point_3d_dict["brow_cr_44"] = [ -0.035, -0.0228, 0.0]
+        point_3d_dict["eye_lo_60"] = [0.047, 0.0, 0.005] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_li_64"] = [0.018, 0.0, 0.00] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_ro_72"] = [-0.047, 0.0, 0.005] # [ 0.035, 0.0, 0.0]
+        point_3d_dict["eye_ri_68"] = [-0.018, 0.0, 0.00] # [ 0.035, 0.0, 0.0]
         #
         # point_3d_dict["face_c"] = solving_center_point(
         #                         point_3d_dict["eye_r_97"],
@@ -469,6 +477,7 @@ def plot_LMs_and_axies(
             np_homo_point_LM_dict,
             np_homo_point_GT_golden_dict,
             np_homo_point_reproject_golden_dict,
+            np_homo_point_LM_frontal_view_dict=None,
             is_ploting_LMs=True,
             is_mirrored_image=False,
             LM_img_width=320,
@@ -616,6 +625,13 @@ def plot_LMs_and_axies(
         _color = _color_RED # BGR
         # _color = _color_BLUE # BGR
         cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
+        if np_homo_point_LM_frontal_view_dict is not None:
+            # Frontal view
+            _center_pixel = (np_homo_point_LM_frontal_view_dict[_k][0:2,0] * LM_2_image_scale).astype('int')
+            _radius = 5
+            _color = (0, 180, 0) # BGR
+            # _color = _color_BLUE # BGR
+            cv2.circle(_img_LM, _center_pixel, _radius, _color, -1)
     #----------------------------------#
 
     # Text
@@ -632,7 +648,7 @@ def plot_LMs_and_axies(
                                             result_idx_dict["roll_GT"],
                                             result_idx_dict["pitch_GT"],
                                             result_idx_dict["yaw_GT"])
-    _err_text = "drpy_est = (%.2f, %.2f, %.2f, %.2f)" % (result_idx_dict["depth_err"]*100.0,
+    _err_text = "drpy_err = (%.2f, %.2f, %.2f, %.2f)" % (result_idx_dict["depth_err"]*100.0,
                                             result_idx_dict["roll_err"],
                                             result_idx_dict["pitch_err"],
                                             result_idx_dict["yaw_err"])

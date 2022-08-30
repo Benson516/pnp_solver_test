@@ -72,7 +72,8 @@ DATA_START_ID = 379 # (0, 0, 0), Note: #380 and #381 has dramatical shift in pos
 # specific_drpy = {"distance":"160", "roll":"25", "pitch":"-30", "yaw":"-40"} # Error type LM
 # specific_drpy = {"distance":"100", "roll":"45", "pitch":"-30", "yaw":"-40"} # Error type LM
 # specific_drpy = {"distance":"160", "roll":"-25", "pitch":"0", "yaw":"-40"} # Error type fitting
-# specific_drpy = {"distance":"100", "roll":"0", "pitch":"0", "yaw":"20"}
+# specific_drpy = {"distance":"60", "roll":"0", "pitch":"0", "yaw":"-40"}
+# specific_drpy = {"distance":"60", "roll":"0", "pitch":"0", "yaw":"0"}
 specific_drpy = None
 #
 DATA_COUNT = 3
@@ -302,10 +303,14 @@ for _idx in range(len(data_list)):
     np_point_image_dict["mouse_r_82"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[82], mirrored=is_mirrored_image)
     np_point_image_dict["nose_t_54"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[54], mirrored=is_mirrored_image)
     np_point_image_dict["chin_t_16"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[16], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_cl_35"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[35], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_il_37"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[37], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_ir_42"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[42], mirrored=is_mirrored_image)
-    # np_point_image_dict["brow_cr_44"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[44], mirrored=is_mirrored_image)
+    np_point_image_dict["brow_cl_35"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[35], mirrored=is_mirrored_image)
+    np_point_image_dict["brow_il_37"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[37], mirrored=is_mirrored_image)
+    np_point_image_dict["brow_ir_42"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[42], mirrored=is_mirrored_image)
+    np_point_image_dict["brow_cr_44"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[44], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_lo_60"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[60], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_li_64"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[64], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_ro_72"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[72], mirrored=is_mirrored_image)
+    np_point_image_dict["eye_ri_68"] = TTBX.convert_pixel_to_homo(LM_pixel_data_matrix[68], mirrored=is_mirrored_image)
     #
     # np_point_image_dict["face_c"] = TTBX.convert_pixel_to_homo(      TTBX.solving_center_point(
     #                                                             LM_pixel_data_matrix[97],
@@ -360,6 +365,25 @@ for _idx in range(len(data_list)):
     np_t_ca_est = pnp_solver.np_t_c_a_est
     # np_R_ca_est = copy.deepcopy(pnp_solver.np_R_c_a_est)
     # np_t_ca_est = copy.deepcopy(pnp_solver.np_t_c_a_est)
+
+    # Convert the LMs to frontal look
+    #----------------------------------------------------#
+    # d2 = 1.0 # m
+    d2 = 0.3 # m
+    np_nf = np.array([0., 0., 1.]).reshape((3,1))
+    H_a2o = np_R_est + (np_t_est / d2 - np_R_est @ np_nf) @ (np_nf.T)
+    # H_a2o = np_R_est
+    G_a2o = np_K_camera_est @ H_a2o @ np.linalg.inv(np_K_camera_est)
+    G_o2a = np.linalg.inv(G_a2o)
+    #
+    np_point_image_frontal_dict = dict()
+    for _key in np_point_image_dict:
+        _homo_point_o = np_point_image_dict[_key]
+        _homo_point_a = G_o2a @ _homo_point_o
+        _homo_point_a /= _homo_point_a[2,0] # Normalize
+        np_point_image_frontal_dict[_key] = _homo_point_a
+    #----------------------------------------------------#
+
 
     # Compare result
     #-----------------------------#
@@ -461,6 +485,7 @@ for _idx in range(len(data_list)):
                 np_point_image_dict,
                 np_point_image_dict_reproject_GT_ori_golden_patern,
                 np_point_image_dict_reproject,
+                np_homo_point_LM_frontal_view_dict=np_point_image_frontal_dict,
                 is_mirrored_image=is_mirrored_image,
                 is_ploting_LMs=True,
                 LM_img_width=320,
