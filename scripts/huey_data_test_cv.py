@@ -524,4 +524,6 @@ with open(failed_sample_filename_list_file_path, "w") as _f:
 # Data analysis and saving
 #-----------------------------------#
 TTBX.data_analysis_and_saving(result_list, result_csv_dir_str, result_csv_file_prefix_str, result_statistic_txt_file_prefix_str, data_file_str, is_statistic_csv_horizontal=is_statistic_csv_horizontal)
+
+TTBX.data_analysis_pandas(result_list, result_csv_dir_str)
 #-----------------------------------#

@@ -10,6 +10,16 @@ import cv2
 import PNP_SOLVER_LIB as PNPS
 # import joblib
 
+# Powerful data processing libraries
+import pandas as pd
+# matplotlib
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+# mpl.use('Agg') # Change the backend from TkAgg to Agg to solve the bug: "Fail to create pixmap with Tk_GetPixmap in TkImgPhotoInstanceSetSize"
+# seaborn
+import seaborn as sns
+
+
 # Integration tools
 #----------------------------------------------#
 def solving_center_point(p1,p2,p3,p4):
@@ -1342,5 +1352,65 @@ def data_analysis_and_saving(result_list, result_csv_dir_str, result_csv_file_pr
     matric_label = "%s(%s)" % (matric_name, unit)
     statistic_csv_path = result_csv_dir_str + result_statistic_txt_file_prefix_str + data_file_str[:-4] + ( "_%s_to_%s" % ("drpy", statistic_data_name) ) + '_' + matric_label + '.csv'
     write_drpy_2_depth_statistic_CSV(drpy_2_data_statistic_dict, statistic_csv_path, d_label_list, r_label_list, p_label_list, y_label_list, matric_label=matric_label)
+
+def data_analysis_pandas(result_list, result_csv_dir_str):
+    '''
+    '''
+    data_df = pd.DataFrame(result_list)
+    print(data_df)
+
+    # Inspecting the keys
+    keys = list(data_df.axes[1])
+    # print(keys)
+    print('\nkeys')
+    for _id, _k in enumerate(keys):
+        print(f"{_id}: {_k}")
+    print('-'*70)
+    print()
+
+    # Keys and generated columns
+    #---------------------------#
+    # error
+    k_err_depth = 'depth_err'
+    k_err_roll  = 'roll_err'
+    k_err_pitch = 'pitch_err'
+    k_err_yaw   = 'yaw_err'
+    # abs error
+    k_abserr_depth = 'abs_depth_err'
+    k_abserr_roll  = 'abs_roll_err'
+    k_abserr_pitch = 'abs_pitch_err'
+    k_abserr_yaw   = 'abs_yaw_err'
+    # Ground Truth
+    k_GT_depth = 'distance_GT'
+
+    # Reprojection errors
+    k_err_fitting    = 'predict_LM_error_average_normalize'
+    k_err_LM         = 'LM_GT_error_average_normalize'
+    k_err_prediction = 'predict_GT_error_average_normalize'
+
+    # Generated keys
+    # Unit change (depth: m-->cm)
+    k_abserr_depth_cm = 'abs_depth_err_cm'
+    data_df[k_abserr_depth_cm] = data_df[k_abserr_depth] * 100.0
+    # Normalize depth (unitless)
+    k_normAbsErr_depth = 'normalized_absdepth_err'
+    data_df[k_normAbsErr_depth] = data_df[k_err_depth] / data_df[k_GT_depth]
+    #---------------------------#
+
+    # drpy error table (no separated by depth classes)
+    MAE_df = data_df[[k_abserr_depth_cm, k_abserr_roll, k_abserr_pitch, k_abserr_yaw]].mean()
+    print(f'MAE_df = \n{MAE_df}')
+
+    # drpy error tables, classified by depth classes
+
+    # # Plot the scatter plots
+    # fig = plt.figure()
+    # #
+    # # ax = sns.regplot(x=k_err_LM, y=k_abserr_pitch, data=data_df)
+    # ax = sns.regplot(x=k_abserr_pitch, y=k_err_LM, data=data_df)
+    # #
+    # plt.show()
+    # # Close the figure
+    # plt.close(fig)
 
 #----------------------------------------------#
