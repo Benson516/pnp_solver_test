@@ -324,6 +324,7 @@ while (sample_count < DATA_COUNT) and (not received_SIGINT):
     # # OpenCV method
     # #----------------------------------------------------#
     # _key_list = list(np_point_image_dict.keys())
+    # point_3d_dict = point_3d_dict_list[0] # Use the first golden pattern
     # model_points = np.array([ point_3d_dict[_k] for _k in _key_list] )
     # image_points = np.array([ np_point_image_dict[_k][0:2,0] for _k in _key_list])
     # camera_matrix = np_K_camera_est
